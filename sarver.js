@@ -24,7 +24,7 @@ app.use(bodyParser.json());
 // ------- Routes ------------------------//
 
 app.use("/auth",auth_route); //.. auth_route
-app.use("/routine",rutin_route );//.. rutin_route
+app.use("/rutin",rutin_route );//.. rutin_route
 app.use("/class",class_route);//.. class_route
 
 

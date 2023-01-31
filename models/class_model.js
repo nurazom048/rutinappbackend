@@ -7,9 +7,6 @@ const classscheme = new Schema({
     type: String,
     required: true
     },
-
-  //  noclass:{type:Boolean ,enum: [true,falsw],}
-
     room: {
     type: String,
    
@@ -40,7 +37,13 @@ const classscheme = new Schema({
     end_time: {
     type: Date,
     required: true
-    }
+    },
+    rutin_id: {
+        type: Schema.Types.ObjectId,
+        ref: 'Routine',
+        required: true,
+        },
+
     });
     
     const classs = mongoose.model('Class', classscheme);

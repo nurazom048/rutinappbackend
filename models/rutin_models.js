@@ -16,10 +16,10 @@ const rutinshema = new Schema({
 
 
 
-class:[   {
+class:[{
     type: Schema.Types.ObjectId,
     ref: 'Class'
-  }     ],
+  }],
 
   
 
