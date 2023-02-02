@@ -38,12 +38,22 @@ exports.createAccount = async (req, res)=> {
 
 // login 
 exports.login = async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password } = req.params;
     console.log(req.body.password);
     try {
+
+      if (!username) return res.status(400).json({ message: "req send error usernamw", username,password });
+
       // Find user by username
-      const user = await Account.findOne({ username });
-      if (!user) return res.status(400).json({ message: "user not found" });
+      const user = await Account.findOne({ username }).populate({ 
+        path: 'routines', 
+        select: 'name ownerid class',
+        populate: {
+          path: 'class',
+          model: 'Class'
+        }
+      });
+      if (!user) return res.status(400).json({ message: "user id not found", username,password });
   
       // Compare passwords
       if (password != user.password) return res.status(400).json({ message: "Invalid credentials" });

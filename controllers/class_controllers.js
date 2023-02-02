@@ -5,7 +5,7 @@
  
  
  
-  //************   edit_class       *************** */
+  //************   creat class       *************** */
  exports.create_class =  async (req, res) => {
     const { rutin_id } = req.params;
     const { name,room,subjectcode, start, end,weekday,start_time,end_time } = req.body;
@@ -31,9 +31,11 @@
       name, room,subjectcode,start,end,weekday, start_time,end_time ,rutin_id});
   
       await newClass.save();
+      const new_id_Into_rutin = await Routine.findOneAndUpdate({ _id: rutin_id }, {$push: {class: newClass._id}}, {new : true});
+
       rutin.class.push(newClass._id);
       await rutin.save();
-      res.send({ class: newClass, message: 'Class added successfully' });
+      res.send({ class: newClass, message: 'Class added successfully',new_id_Into_rutin });
   }
   
 

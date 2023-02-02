@@ -17,11 +17,18 @@ exports.createRutin =  async (req, res) => {
     const ownerid = req.user.id;
     
     try {
+  
+
+
     // Create a new routine
+
     const routine = new Routine({ name, ownerid });
     const created = await routine.save();
+
+    const user = await Account.findOneAndUpdate({ _id: ownerid }, {$push: {routines: created._id}}, {new : true});
+
     // Send response
-    res.status(200).json({ message: "Routine created successfully", created });
+    res.status(200).json({ message: "Routine created successfully", created,user });
     } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error creating routine" });

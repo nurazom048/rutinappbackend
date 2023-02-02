@@ -5,9 +5,9 @@ const mongoose = require('mongoose');
 const rutin_route = require('./routes/rutin_routes');
 const auth_route = require('./routes/auth_route');
 const class_route = require('./routes/class_route');
+const cors = require("cors");
 
-
-
+app.use(cors({origin: 'https://localhost:58313'}))
 
 //..... Connection
 mongoose.connect('mongodb+srv://nurapp:rr1234@cluster0.wwfxxwu.mongodb.net/?retryWrites=true&w=majority')
@@ -28,8 +28,14 @@ app.use("/rutin",rutin_route );//.. rutin_route
 app.use("/class",class_route);//.. class_route
 
 
+app.get("/ok", (req, res) => {
+  res.status(200).json({ message: "hi i am working"});
+});
 
 
+
+
+//.. class_route
 
 
 
