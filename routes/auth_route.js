@@ -6,7 +6,7 @@ const auth = require("../controllers/auth_controllers")
 
 // 1
 app.post("/create",auth.createAccount);
-app.post("/login/:username/:password",auth.login);
+app.post("/login",auth.login);
 app.delete("/delete/:id", verifyToken ,auth.deleteAccount);
 
 

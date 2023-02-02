@@ -7,6 +7,9 @@ const auth_route = require('./routes/auth_route');
 const class_route = require('./routes/class_route');
 const cors = require("cors");
 
+app.use(bodyParser.urlencoded());
+
+
 app.use(cors({origin: 'https://localhost:58313'}))
 
 //..... Connection

@@ -38,7 +38,7 @@ exports.createAccount = async (req, res)=> {
 
 // login 
 exports.login = async (req, res) => {
-    const { username, password } = req.params;
+    const { username, password } = req.body;
     console.log(req.body.password);
     try {
 
