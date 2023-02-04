@@ -7,6 +7,10 @@ const classscheme = new Schema({
     type: String,
     required: true
     },
+   instuctor_name: {
+        type: String,
+        required: true
+        },
     room: {
     type: String,
    
@@ -38,6 +42,12 @@ const classscheme = new Schema({
     type: Date,
     required: true
     },
+    has_class: {
+        type: String,
+        enum: ["has_class", "no_class"],
+        required: true,
+        default : "has_class"
+        },
     rutin_id: {
         type: Schema.Types.ObjectId,
         ref: 'Routine',
