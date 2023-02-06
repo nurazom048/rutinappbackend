@@ -8,8 +8,8 @@ const verifyToken = require("../varifitoken")
 app.post("/create", verifyToken,rutin.createRutin);
 app.delete("/delete/:id", verifyToken,rutin.delete);
 
-
-
+//
+app.post("/allrutins", verifyToken,rutin.allRutin);
 
 
 

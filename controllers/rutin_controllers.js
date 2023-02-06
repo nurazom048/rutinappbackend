@@ -66,3 +66,35 @@ exports.createRutin =  async (req, res) => {
    res.status(500).json({ message: "Error deleting routine" });
    }
    }
+
+
+
+   
+
+//********** alL RUTIN   ************* */
+exports.allRutin = async (req, res) => {
+  console.log(req.user);
+  const userid = req.user.id;
+
+  try {
+    const user = await Account.findOne({ _id: userid }).populate({ 
+      path: 'routines', 
+      select: 'name ownerid class',
+      options: {
+        sort: { createdAt: -1 } // -1 for descending, 1 for ascending
+        },
+      populate: {
+        path: 'ownerid',
+       // model: 'name'
+       select: 'name username',
+      }
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error getting routines" });
+  }
+};

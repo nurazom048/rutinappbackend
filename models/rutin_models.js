@@ -23,7 +23,12 @@ class:[{
 
   
 
-});
+},
+
+  { timestamps: true }
+
+
+);
 
 const Account = mongoose.model('Routine', rutinshema);
 
