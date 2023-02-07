@@ -47,15 +47,20 @@
   //************   edit_class       *************** */
   exports.edit_class = async (req, res) => {
 
-    const { rutin_id, class_id } = req.params;
+    const {  class_id } = req.params;
     const { name,room,subjectcode, start, end,weekday,start_time,end_time } = req.body;
 
 
     try {
-
-  /// 1 chack rutin
-    const rutin = await Routine.findOne({ _id: rutin_id });
+    // 1 chack clases
+    const classs = await Class.findOne({ _id: class_id });
+    if (!classs) return res.status(404).send('Class not found');
+    
+  /// 2 chack rutin
+    const rutin = await Routine.findOne({ _id: classs.rutin_id });
     if (!rutin) return res.status(404).send('Routine not found');
+
+    // 3 chack permition 
     if (rutin.ownerid.toString() !== req.user.id)
       return res.status(401).send('You can only edit classes in your own routine');
     
@@ -66,9 +71,9 @@
     // if (isAllradyBookingEnd) return res.status(404).send({ message: 'This week day and end time is already booked' });
     
 
-    // 3 update 
+    // 5 update 
     const updatedClass = await Class.findOneAndUpdate(
-      { _id: class_id, rutin_id: rutin._id },
+      { _id: class_id, rutin_id: classs.rutin_id },
       { name, room, subjectcode, start, end, weekday, start_time, end_time },
       { new: true }
     );
@@ -86,26 +91,32 @@
 
     //************ delete_class *************** */
 exports.delete_class = async (req, res) => {
-  const { rutin_id, class_id } = req.params;
+  const { class_id } = req.params;
   console.log(req.user);
   
 
 
   try {
-    //.. 1 chack rutin 
-    const routine = await Routine.findOne({ _id: rutin_id });
+
+
+    // 1 chack clases
+    const classs = await Class.findOne({ _id: class_id });
+    if (!classs) return res.status(404).send('Class not found');
+    
+    //..2 chack rutin 
+    const routine = await Routine.findOne({ _id: classs.rutin_id });
     console.log(routine.ownerid.toString()); 
     if (!routine) return res.status(404).send('Routine not found');
+
+
+    // 3 chack premition
     if (routine.ownerid.toString() !== req.user.id)
     return res.status(401).send('You can only delete classes from your own routine');
     
 
-    // 2 chack clases
-    const classs = await Class.findOne({ _id: class_id });
-    if (!classs) return res.status(404).send('Class not found');
-    
+ 
 
-    // 3 remove
+    // 4 remove
     await classs.remove();
     res.send({ message: 'Class deleted successfully' });
     
