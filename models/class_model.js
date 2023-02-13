@@ -53,12 +53,25 @@ const classscheme = new Schema({
         ref: 'Routine',
         required: true,
         },
-    summary: [{
+    summary: [
+        
+{
     text: {
         type: String,
         required: true
-          }
-             }] 
+          },
+          time: {
+            type: Date,
+            required: true,
+            default: Date.now
+        }
+        
+}, 
+             
+        
+            
+            
+            ] 
     });
     
     const classs = mongoose.model('Class', classscheme);

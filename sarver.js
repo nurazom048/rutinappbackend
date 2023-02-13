@@ -11,7 +11,7 @@ const cors = require("cors");
 app.use(bodyParser.urlencoded());
 
 
-app.use(cors({origin: 'https://localhost:58313'}))
+app.use(cors());
 
 //..... Connection
 mongoose.connect('mongodb+srv://nurapp:rr1234@cluster0.wwfxxwu.mongodb.net/?retryWrites=true&w=majority')
