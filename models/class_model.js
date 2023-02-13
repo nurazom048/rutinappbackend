@@ -53,7 +53,12 @@ const classscheme = new Schema({
         ref: 'Routine',
         required: true,
         },
-
+    summary: [{
+    text: {
+        type: String,
+        required: true
+          }
+             }] 
     });
     
     const classs = mongoose.model('Class', classscheme);

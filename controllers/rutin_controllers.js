@@ -3,6 +3,7 @@ const app = express()
 const Account = require('../models/Account')
 const Routine = require('../models/rutin_models')
 const Class = require('../models/class_model');
+const { checkout } = require('../routes/class_route');
 
 
 
@@ -77,18 +78,30 @@ exports.allRutin = async (req, res) => {
   const userid = req.user.id;
 
   try {
-    const user = await Account.findOne({ _id: userid }).populate({ 
-      path: 'routines', 
-      select: 'name ownerid class',
-      options: {
-        sort: { createdAt: -1 } // -1 for descending, 1 for ascending
+    const user = await Account.findOne({ _id: userid }).populate([
+      {
+        path: 'routines',
+        select: 'name ownerid class',
+        options: {
+          sort: { createdAt: -1 }
         },
-      populate: {
-        path: 'ownerid',
-       // model: 'name'
-       select: 'name username',
+        populate: {
+          path: 'ownerid',
+          select: 'name username'
+        }
+      },
+      {
+        path: 'Saved_routines',
+        select: 'name ownerid class',
+        options: {
+          sort: { createdAt: -1 }
+        },
+        populate: {
+          path: 'ownerid',
+          select: 'name username'
+        }
       }
-    });
+    ]);
     if (!user) return res.status(404).json({ message: "User not found" });
 
 
@@ -98,3 +111,118 @@ exports.allRutin = async (req, res) => {
     res.status(500).json({ message: "Error getting routines" });
   }
 };
+
+//********** createRutin   ************* */
+exports.save_routine = async (req, res) => {
+  const { rutin_id } = req.params;
+  const ownerid = req.user.id;
+  
+  try {
+  // 1. Find the routine
+  const routine = await Routine.findById(rutin_id);
+  if (!routine) return res.status(404).json({ message: "Routine not found" });
+  
+ 
+  // 2. Find the user
+  const user = await Account.findById(ownerid);
+  if (!user) return res.status(404).json({ message: "User not found" });
+  
+  // 3. Check if routine is already saved
+  if (user.Saved_routines.includes(routine._id)) {
+    return res.status(200).json({ message: "Routine already saved", save: true });
+  }
+  
+  // 4. Push the routine ID into the saved_routines array
+  user.Saved_routines.push(routine._id);
+  await user.save();
+  
+  // Send response
+  res.status(200).json({ message: "Routine saved successfully", save: true });
+  } catch (error) {
+  console.error(error);
+  res.status(500).json({ message: "Error saving routine" });
+  }
+  };
+
+
+
+
+
+
+
+
+
+  //.... unsave rutin 
+  exports.unsave_routine = async (req, res) => {
+    const { rutin_id } = req.params;
+    const ownerid = req.user.id;
+    
+    try {
+    // 1. Find the routine
+    const routine = await Routine.findById(rutin_id);
+    if (!routine) return res.status(404).json({ message: "Routine not found" });
+    
+
+    // 2. Find the user
+    const user = await Account.findById(ownerid);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    
+    // 3. Check if routine is already saved
+    if (!user.Saved_routines.includes(routine._id)) {
+      return res.status(400).json({ message: "Routine not saved" });
+    }
+    
+    // 4. Remove the routine ID from the saved_routines array
+    user.Saved_routines.pull(routine._id);
+    await user.save();
+    
+    // Send response
+    res.status(200).json({ message: "Routine unsaved successfully", save: false });
+    } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error unsaving routine" });
+    }
+    };
+
+
+    ///.... chack save or not
+    exports.save_checkout = async (req, res) => {
+      const { rutin_id } = req.params;
+      const ownerid = req.user.id;
+      
+      try {
+      // 1. Find the routine
+      const routine = await Routine.findById(rutin_id);
+      if (!routine) return res.status(404).json({ message: "Routine not found" });
+      
+     
+      // 2. Find the user
+      const user = await Account.findById(ownerid);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      
+      // 3. Check if routine is already saved
+      let isSaved;
+       isOwner = false;
+      if (user.Saved_routines.includes(routine._id)) {
+        isSaved = true;
+      }
+
+      if (!user.Saved_routines.includes(routine._id)) {
+        isSaved = false;
+
+      }
+
+    // chack is owner is not
+      if (routine.ownerid.toString() == req.user.id) 
+       { isOwner = true; };
+
+   
+     
+      
+      // Send response
+      res.status(200).json({ message: "Routine saved conditon", save: isSaved ,isOwner , user  });
+      } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Error saving routine" });
+      }
+      };

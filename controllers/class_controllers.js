@@ -173,3 +173,25 @@ exports.allclass = async (req, res) => {
     res.status(400).send({ error });
   }
 };
+  //************   edit_class       *************** */
+  exports.findclass = async (req, res) => {
+
+    const {  class_id } = req.params;
+    console.log(class_id);
+    
+
+
+    try {
+    // 1 chack clases
+    const classs = await Class.findOne({ _id: class_id });
+    if (!classs) return res.status(404).send('Class not found');
+
+    res.status(200).send({ classs });
+
+    //
+    } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Error updating class' });
+    }
+    };
+

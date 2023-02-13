@@ -14,8 +14,7 @@ app.delete('/delete/:class_id',verifyToken, classs.delete_class);
 //
 app.get('/:rutin_id/:weekday',classs.show_weekday_classes);
 app.get('/:rutin_id/all/class',classs.allclass);
-
-
+app.get('/find/class/:class_id',verifyToken, classs.findclass);
 
 
 

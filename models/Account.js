@@ -12,6 +12,10 @@ const accountSchema = new Schema({
     required: true,
    
   },
+ Saved_routines: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Routine'
+  }],
 
   password: {
     type: String,
