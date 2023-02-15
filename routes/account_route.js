@@ -3,30 +3,40 @@ const express = require('express');
 const app = express();
 const verifyToken = require("../varifitoken");
 const ac = require("../controllers/account_controllers");
-
-//
 const multer = require('multer');
+const fs = require('fs');
 
-
-//
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, 'uploads/'); // the destination folder for uploaded files
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    
-      cb(null, file.fieldname + '-' + uniqueSuffix); // the filename format for uploaded files
-    }
-  })
+// Define the storage for multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null,  './upload/image/cover');
+  },
+  filename: (req, file , callBack) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    callBack(null, uniqueSuffix + "_" + file.originalname);
+  }
 });
 
-// update account with image
-app.post("/eddit", upload.single('image'), verifyToken, ac.eddit_account);
+// Set up multer with the storage
+const upload = multer({storage: storage});
 
+// Route to update the account with an image
+app.post("", verifyToken, upload.single("image"), ac.edit_account);
 
+app.get('/image/:filename', (req, res) => {
+  const imagePath = path.join(__dirname, '../upload/image/cover', req.params.filename);
+console.log(imagePath);
+  // Check if the file exists
+  if (!fs.existsSync(imagePath)) {
+    return res.status(404).send('Image not found');
+  }
 
+  // Set the Content-Type header
+  res.setHeader('Content-Type', 'image/jpeg');
+
+  // Send the file as a response
+  fs.createReadStream(imagePath).pipe(res);
+});
 
 
 module.exports = app;       

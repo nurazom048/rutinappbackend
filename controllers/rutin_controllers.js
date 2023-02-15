@@ -70,9 +70,6 @@ exports.createRutin =  async (req, res) => {
 
 
 
-   
-
-//********** alL RUTIN   ************* */
 exports.allRutin = async (req, res) => {
   console.log(req.user);
   const userid = req.user.id;
@@ -87,7 +84,7 @@ exports.allRutin = async (req, res) => {
         },
         populate: {
           path: 'ownerid',
-          select: 'name username'
+          select: 'name username image'
         }
       },
       {
@@ -98,19 +95,31 @@ exports.allRutin = async (req, res) => {
         },
         populate: {
           path: 'ownerid',
-          select: 'name username'
+          select: 'name username image'
         }
       }
     ]);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-
-    res.status(200).json({ user });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error getting routines" });
-  }
-};
+      // // Prepend image path to image file name
+      // user.routines.forEach(routine => {
+      //   routine.ownerid.image = `http://192.168.31.229:3000/account/image/${routine.ownerid.image}`;
+      // });
+  
+      // user.Saved_routines.forEach(savedRoutine => {
+      //   savedRoutine.ownerid.image = `http://192.168.31.229:3000/account/image/${savedRoutine.ownerid.image}`;
+      // });
+       user.image  = `http://192.168.31.229:3000/account/image/${user.image}`;
+      // //  
+      // // });
+  
+      res.status(200).json({ user });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Error getting routines" });
+    }
+  };
+  
 
 //********** createRutin   ************* */
 exports.save_routine = async (req, res) => {
