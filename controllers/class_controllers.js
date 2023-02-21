@@ -9,7 +9,7 @@
  exports.create_class =  async (req, res) => {
     const { rutin_id } = req.params;
     const { name,room,subjectcode, start, end,weekday,start_time,end_time,instuctor_name,has_class } = req.body;
-    console.log(req.user);
+    console.log(start_time,end_time);
   
   
     const rutin = await Routine.findOne( {_id : rutin_id});

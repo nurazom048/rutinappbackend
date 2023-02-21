@@ -101,17 +101,7 @@ exports.allRutin = async (req, res) => {
     ]);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-      // // Prepend image path to image file name
-      // user.routines.forEach(routine => {
-      //   routine.ownerid.image = `http://192.168.31.229:3000/account/image/${routine.ownerid.image}`;
-      // });
-  
-      // user.Saved_routines.forEach(savedRoutine => {
-      //   savedRoutine.ownerid.image = `http://192.168.31.229:3000/account/image/${savedRoutine.ownerid.image}`;
-      // });
-       user.image  = `http://192.168.31.229:3000/account/image/${user.image}`;
-      // //  
-      // // });
+
   
       res.status(200).json({ user });
     } catch (error) {
@@ -121,7 +111,7 @@ exports.allRutin = async (req, res) => {
   };
   
 
-//********** createRutin   ************* */
+//********** save rutin   ************* */
 exports.save_routine = async (req, res) => {
   const { rutin_id } = req.params;
   const ownerid = req.user.id;
