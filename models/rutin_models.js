@@ -21,6 +21,25 @@ class:[{
     ref: 'Class'
   }],
 
+  priode:[
+
+
+{
+  start_time:{
+    type: Date,
+  required: true,
+  default: Date.now
+  },
+  end_time:{
+    type: Date,
+  required: true,
+  default: Date.now
+  }
+  
+}
+
+  ]
+
   
 
 },

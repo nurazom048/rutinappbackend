@@ -78,10 +78,11 @@ exports.allRutin = async (req, res) => {
     const user = await Account.findOne({ _id: userid }).populate([
       {
         path: 'routines',
-        select: 'name ownerid class',
+        select: 'name ownerid class priode',
         options: {
           sort: { createdAt: -1 }
         },
+   
         populate: {
           path: 'ownerid',
           select: 'name username image'

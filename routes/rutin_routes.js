@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express()
 const rutin = require('../controllers/rutin_controllers');
+const priode = require('../controllers/priode_controller');
 const verifyToken = require("../varifitoken")
 
 
@@ -18,8 +19,11 @@ app.get('/unsave/:rutin_id',verifyToken, rutin.unsave_routine);
 app.get('/save/:rutin_id/chack',verifyToken, rutin.save_checkout);
 
 
+//... priode add...//
+app.post('/add_priode/:rutin_id',verifyToken,priode.add_priode );
 
-
+//
+app.post('/all_priode/:rutin_id',priode.all_priode );
 
 
 module.exports = app;
