@@ -19,7 +19,8 @@ const upload = multer({
 //... Eddit account....///
 app.post("/eddit", verifyToken,upload.single('image'),  ac.edit_account);
 
-
+//... Eddit account....///
+app.post("/view_others/:accountID", ac.view_account);
 
 
 

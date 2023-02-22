@@ -3,6 +3,8 @@ const app = express()
 const Account = require('../models/Account')
 const Routine = require('../models/rutin_models')
 const Class = require('../models/class_model');
+const { async } = require('@firebase/util');
+const { findOne } = require('../models/rutin_models');
 
 
 
@@ -29,7 +31,10 @@ const Class = require('../models/class_model');
      //.. push the summary and send responce 
    classInstance.summary.push({ text });
    await classInstance.save();
-   return res.status(200).send(classInstance);
+
+   //.. also push to rutin last summay onject ...//
+  const last_summary = await   Routine.findOneAndUpdate({_id:find_rutin._id },{last_summary:{text:text}},{new:true})
+   return res.status(200).send({classInstance,last_summary});
 
    //
  } catch (error) {
@@ -111,3 +116,22 @@ return res.status(200).send(classInstance);
 return res.status(400).send(error.message);
 }
 };
+
+
+//.... get last updated summay....//
+exports.get_last_updated_summary = async (req,res) => {
+
+
+try {
+
+
+
+
+  
+} catch (error) {
+  
+}
+
+
+
+}

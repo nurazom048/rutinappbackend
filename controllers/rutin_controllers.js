@@ -4,6 +4,7 @@ const Account = require('../models/Account')
 const Routine = require('../models/rutin_models')
 const Class = require('../models/class_model');
 const { checkout } = require('../routes/class_route');
+const { async } = require('@firebase/util');
 
 
 
@@ -72,13 +73,16 @@ exports.createRutin =  async (req, res) => {
 
 exports.allRutin = async (req, res) => {
   console.log(req.user);
-  const userid = req.user.id;
+  const {accountID}= req.params;
+   const  userid  = req.user.id ;
 
   try {
-    const user = await Account.findOne({ _id: userid }).populate([
+    const pramsAC = await Account.findOne({ _id:accountID });
+
+    const user = await Account.findOne({ _id: userid}).populate([
       {
         path: 'routines',
-        select: 'name ownerid class priode',
+        select: 'name ownerid class priode last_summary',
         options: {
           sort: { createdAt: -1 }
         },
@@ -226,3 +230,36 @@ exports.save_routine = async (req, res) => {
       res.status(500).json({ message: "Error saving routine" });
       }
       };
+
+
+
+
+
+
+
+  //.....   Search rutins   .....///
+
+exports.search_rutins = async (req,res)=> {
+  const {src}= req.params;
+              
+try {
+
+
+
+  const rutins = await Routine.find({ name: { $regex: src, $options: "i" } })
+  .select("-createdAt -class -updatedAt -priode -__v")
+  .populate({
+    path: "ownerid",
+    select: "_id name username image"
+  }); 
+ 
+  if(!rutins) return res.send({message:"not Found",});
+  
+  res.send({message:" Found", rutins})
+
+  
+} catch (error) {
+  
+}
+
+}

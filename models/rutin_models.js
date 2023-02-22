@@ -14,7 +14,22 @@ const rutinshema = new Schema({
     required: true,
   },
 
+last_summary:{
 
+  
+    text: {
+        type: String,
+        required: true,
+        default:"not resent Summay",
+
+          },
+    time: {
+            type: Date,
+            required: true,
+            default: Date.now
+        },
+       
+},
 
 class:[{
     type: Schema.Types.ObjectId,

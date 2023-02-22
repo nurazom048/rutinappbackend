@@ -17,7 +17,7 @@ exports.add_priode = async (req, res) => {
   routine.priode.push({ start_time, end_time });
 
     // Save the changes to the routine
-    const   aded = await  await routine.save();
+    const   aded =   await routine.save();
 
 res.status(200).send({message:'Period added to routine',aded});
   } catch (error) {
@@ -36,7 +36,7 @@ exports.all_priode = async (req, res) => {
     console.log(rutin_id);
   
     try {
-        const routine = await Routine.findOne({ _id: rutin_id }).populate();
+        const routine = await Routine.findOne({ _id: rutin_id });
         //console.log(routine);
     
       if (!routine) return res.status(404).send('Routine not found');

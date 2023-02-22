@@ -178,7 +178,7 @@ exports.allclass = async (req, res) => {
     const Friday = await Class.find({ weekday:6,  rutin_id: rutin_id  }).select('-summary -__v -rutin_id').sort({start: 1});
     const Saturday = await Class.find({ weekday:7,  rutin_id: rutin_id  }).select('-summary -__v -rutin_id').sort({start: 1});
     
-    res.send({priodes,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday, Saturday});
+  res.send({ priodes:priodes,Classes: {Sunday,Monday,Tuesday,Wednesday,Thursday,Friday, Saturday}});
   } catch (error) {
     res.status(400).send({  error });
   }

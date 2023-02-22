@@ -62,3 +62,48 @@ console.log(update);
     res.status(500).json({ message:  err });
   }
 };
+//....view Account...//
+exports.view_account = async (req, res) => {
+  console.log(req.user);
+  const {accountID}= req.params;
+  // const  userid  = req.user.id ;
+
+  try {
+  
+
+    const user = await Account.findOne({ _id: accountID}).populate([
+      {
+        path: 'routines',
+        select: 'name ownerid class priode last_summary',
+        options: {
+          sort: { createdAt: -1 }
+        },
+   
+        populate: {
+          path: 'ownerid',
+          select: 'name username image'
+        }
+      },
+      {
+        path: 'Saved_routines',
+        select: 'name ownerid class',
+        options: {
+          sort: { createdAt: -1 }
+        },
+        populate: {
+          path: 'ownerid',
+          select: 'name username image'
+        }
+      }
+    ]);
+    if (!user) return res.status(404).json({ message: "User not found" });
+   
+
+  
+      res.status(200).json({ user , });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Error getting routines" });
+    }
+  };
+  
