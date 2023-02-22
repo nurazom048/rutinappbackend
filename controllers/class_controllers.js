@@ -159,18 +159,28 @@ exports.allclass = async (req, res) => {
     if (!routine) return res.status(404).send('Routine not found');
     console.log(routine);
  
+    const priode = await Routine.find({ _id: rutin_id }).select('-_id priode');
+
+      
+    console.log(priode);
+    const priodes = priode[0].priode.map(p => ({
+      start_time: p.start_time,
+      end_time: p.end_time,
+      _id: p._id,
+    }));
+    // res.send(priode[0]);
     
-    const Sunday = await Class.find({ weekday:1,  rutin_id: rutin_id  }).sort({start: 1});
-    const Monday = await Class.find({ weekday:2,  rutin_id: rutin_id  }).sort({start: 1});
-    const Tuesday = await Class.find({ weekday:3,  rutin_id: rutin_id  }).sort({start: 1});
-    const Wednesday = await Class.find({ weekday:4,  rutin_id: rutin_id  }).sort({start: 1});
-    const Thursday = await Class.find({ weekday:5,  rutin_id: rutin_id  }).sort({start: 1});
-    const Friday = await Class.find({ weekday:6,  rutin_id: rutin_id  }).sort({start: 1});
-    const Saturday = await Class.find({ weekday:7,  rutin_id: rutin_id  }).sort({start: 1});
+    const Sunday = await Class.find({ weekday:1, rutin_id: rutin_id }).select('-summary -__v -rutin_id').sort({start: 1});
+    const Monday = await Class.find({ weekday:2,  rutin_id: rutin_id  }).select('-summary -__v -rutin_id').sort({start: 1});
+    const Tuesday = await Class.find({ weekday:3,  rutin_id: rutin_id  }).select('-summary -__v -rutin_id').sort({start: 1});
+    const Wednesday = await Class.find({ weekday:4,  rutin_id: rutin_id  }).select('-summary -__v -rutin_id').sort({start: 1});
+    const Thursday = await Class.find({ weekday:5,  rutin_id: rutin_id  }).select('-summary -__v -rutin_id').sort({start: 1});
+    const Friday = await Class.find({ weekday:6,  rutin_id: rutin_id  }).select('-summary -__v -rutin_id').sort({start: 1});
+    const Saturday = await Class.find({ weekday:7,  rutin_id: rutin_id  }).select('-summary -__v -rutin_id').sort({start: 1});
     
-    res.send({ Sunday,Monday,Tuesday,Wednesday,Thursday,Friday, Saturday});
+    res.send({priodes,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday, Saturday});
   } catch (error) {
-    res.status(400).send({ error });
+    res.status(400).send({  error });
   }
 };
   //************   edit_class       *************** */

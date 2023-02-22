@@ -42,15 +42,12 @@ exports.all_priode = async (req, res) => {
       if (!routine) return res.status(404).send('Routine not found');
 
    
-      const priode = await Routine.find({ _id:rutin_id }).select('priode');
+      const priode = await Routine.find({ _id: rutin_id }).select('-_id priode');
+
       
-      
-      //const classs = await Class.find({ rutin_id : routine._id });
       console.log(priode);
-     
+      res.send(priode[0]);
       
-     
-    res.send(priode[0].priode);
     } catch (error) {
         
       res.status(400).send({ error });
