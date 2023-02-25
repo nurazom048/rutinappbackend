@@ -3,6 +3,7 @@ const app = express();
 const verifyToken = require("../varifitoken");
 const ac = require("../controllers/account_controllers");
 const multer = require('multer');
+const varifitoken = require('../varifitoken');
 
 
 
@@ -17,10 +18,10 @@ const upload = multer({
 
 
 //... Eddit account....///
-app.post("/eddit", verifyToken,upload.single('image'),  ac.edit_account);
+app.post("/eddit", verifyToken, upload.single('image'), ac.edit_account);
 
 //... Eddit account....///
-app.post("/view_others/:accountID", ac.view_account);
+app.post("/view_others/:username", varifitoken, ac.view_account);
 
 
 
