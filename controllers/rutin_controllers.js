@@ -201,7 +201,7 @@ exports.save_routine = async (req, res) => {
       
      
       // 2. Find the user
-      const user = await Account.findById(ownerid);
+      const user = await Account.findOne({ownerid});
       if (!user) return res.status(404).json({ message: "User not found" });
       
       // 3. Check if routine is already saved

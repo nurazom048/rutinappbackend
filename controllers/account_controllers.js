@@ -8,9 +8,6 @@ initializeApp(firebase_stroage.firebaseConfig);
 
 
 
-
-
-
 // Account controller to update the account with an image
 exports.edit_account = async (req, res) => {
   const { name } = req.body;

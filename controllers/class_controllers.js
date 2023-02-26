@@ -1,6 +1,7 @@
 
  const Routine = require('../models/rutin_models')
  const Class = require('../models/class_model');
+const Account = require('../models/Account');
 
  
  
@@ -178,7 +179,12 @@ exports.allclass = async (req, res) => {
     const Friday = await Class.find({ weekday:6,  rutin_id: rutin_id  }).select('-summary -__v -rutin_id').sort({start: 1});
     const Saturday = await Class.find({ weekday:7,  rutin_id: rutin_id  }).select('-summary -__v -rutin_id').sort({start: 1});
     
-  res.send({ priodes:priodes,Classes: {Sunday,Monday,Tuesday,Wednesday,Thursday,Friday, Saturday}});
+
+    //
+    const routines = await Routine.findById(rutin_id);
+    const owner = await Account.findOne({ _id: routines.ownerid }, { _id: 1, name: 1, ownerid: 1, image: 1 , username:1} ); 
+    //
+    res.send({ priodes,Classes: {Sunday,Monday,Tuesday,Wednesday,Thursday,Friday, Saturday}, owner});
   } catch (error) {
     res.status(400).send({  error });
   }
