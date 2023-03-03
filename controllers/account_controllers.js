@@ -106,3 +106,35 @@ exports.view_account = async (req, res) => {
     res.status(500).json({ message: "Error getting routines" });
   }
 };
+
+
+//... views others account 
+exports.view_others_account = async (req, res) => {
+
+  const { username } = req.params;
+
+  try {
+    const user = await Account.findOne({ username })
+      .populate({
+        path: 'routines Saved_routines',
+        options: {
+          sort: { createdAt: -1 },
+        },
+        populate: {
+          path: 'ownerid',
+          select: 'name username image',
+        },
+      });
+
+    // if user found by usename 
+    if (user) return res.status(200).json({ user });
+
+    // if user not found by usename 
+    if (!user) return res.status(200).json({ message: "Error getting Account " });
+
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error getting routines" });
+  }
+};

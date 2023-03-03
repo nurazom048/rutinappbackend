@@ -31,5 +31,6 @@ app.post('/all_priode/:rutin_id', priode.all_priode);
 
 //....... cap 10 .....//
 app.post('/cap10/add/', verifyToken, cp10.addCap10);
+app.post('/cap10/remove', verifyToken, cp10.removeCap10);
 
 module.exports = app;

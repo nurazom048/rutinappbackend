@@ -1,5 +1,4 @@
 
-const Class = require('../models/class_model');
 const Account = require('../models/Account');
 const Routine = require('../models/rutin_models');
 
@@ -34,3 +33,31 @@ exports.addCap10 = async (req, res) => {
         res.json({ message: error.toString() });
     }
 }
+
+
+
+
+
+
+//!....... Remove Cap10....//
+exports.removeCap10 = async (req, res) => {
+    const { rutinid, cap10Ac } = req.body;
+
+    try {
+        const rutin = await Routine.findOne({ _id: rutinid });
+        if (!rutin) return res.json({ message: "Routine not found" });
+
+        if (req.user.id !== rutin.ownerid.toString()) return res.json({ message: "You are not the owner" });
+
+        const cap10Index = rutin.cap10s.findIndex(c => c.cap10Ac.toString() === cap10Ac.toString());
+        if (cap10Index === -1) return res.json({ message: "Cap 10 not found" });
+
+        rutin.cap10s.splice(cap10Index, 1);
+
+        const updatedRutin = await rutin.save();
+        res.json({ message: "Cap 10 removed successfully", updatedRutin });
+    } catch (error) {
+        console.error(error);
+        res.json({ message: error.toString() });
+    }
+};

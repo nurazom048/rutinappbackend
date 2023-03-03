@@ -22,7 +22,7 @@ app.post("/eddit", verifyToken, upload.single('image'), ac.edit_account);
 
 //... Eddit account....///
 app.post("/view_others/:username", varifitoken, ac.view_account);
-
+app.post("/:username", ac.view_others_account);// foe view others account 
 
 
 
