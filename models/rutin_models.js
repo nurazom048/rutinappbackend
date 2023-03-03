@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const rutinshema = new Schema({
- 
+
   name: {
     type: String,
     required: true,
-   
+
   },
   ownerid: {
     type: Schema.Types.ObjectId,
@@ -14,48 +14,64 @@ const rutinshema = new Schema({
     required: true,
   },
 
-last_summary:{
+  last_summary: {
 
-  
+
     text: {
-        type: String,
-        required: true,
-        default:"not resent Summay",
+      type: String,
+      required: true,
+      default: "not resent Summay",
 
-          },
+    },
     time: {
-            type: Date,
-            required: true,
-            default: Date.now
-        },
-       
-},
+      type: Date,
+      required: true,
+      default: Date.now
+    },
 
-class:[{
+  },
+
+  class: [{
     type: Schema.Types.ObjectId,
     ref: 'Class'
   }],
 
-  priode:[
+  priode: [
 
 
-{
-  start_time:{
-    type: Date,
-  required: true,
-  default: Date.now
-  },
-  end_time:{
-    type: Date,
-  required: true,
-  default: Date.now
-  }
-  
-}
+    {
+      start_time: {
+        type: Date,
+        required: true,
+        default: Date.now
+      },
+      end_time: {
+        type: Date,
+        required: true,
+        default: Date.now
+      }
 
+    }
+
+  ],
+
+  cap10s: [
+    {
+
+      cap10Ac: {
+        type: Schema.Types.ObjectId,
+        ref: 'Account',
+      },
+      position: {
+        type: String,
+        default: "cap10",
+
+      },
+
+    }
   ]
 
-  
+
 
 },
 
