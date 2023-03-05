@@ -138,3 +138,32 @@ exports.view_others_account = async (req, res) => {
     res.status(500).json({ message: "Error getting routines" });
   }
 };
+
+
+//.......... Search Account ....//
+
+exports.getAccounts = async (req, res) => {
+  const { page = 1, limit = 10, username } = req.query;
+
+  console.log(req.query);
+  const query = username ? { username: new RegExp(username, 'i') } : {};
+
+  try {
+    const accounts = await Account.find(query)
+      .skip((page - 1) * limit).limit(limit)
+      .select('_id username name image');
+
+
+
+    const count = await Account.countDocuments(query);
+
+    res.json({
+      accounts,
+      totalPages: Math.ceil(count / limit),
+      currentPage: parseInt(page),
+    });
+  } catch (error) {
+    console.error(error);
+    res.json({ message: error.toString() });
+  }
+};

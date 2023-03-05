@@ -26,7 +26,7 @@ app.post("/:username", ac.view_others_account);// foe view others account
 
 
 
-
+app.post("/accounts/find", ac.getAccounts);
 
 
 module.exports = app;       
