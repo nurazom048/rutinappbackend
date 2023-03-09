@@ -160,17 +160,17 @@ exports.allclass = async (req, res) => {
   try {
     const routine = await Routine.findById(rutin_id);
     if (!routine) return res.status(404).send('Routine not found');
-    // console.log(routine);
 
+    //.... Rutins Priode ....//
     const priode = await Routine.find({ _id: rutin_id }).select('-_id priode');
-
-
-    // console.log(priode);
     const priodes = priode[0].priode.map(p => ({
       start_time: p.start_time,
       end_time: p.end_time,
       _id: p._id,
     }));
+
+
+    //.... Rutins class...//
 
     const Sunday = await Class.find({ weekday: 1, rutin_id: rutin_id }).select('-summary -__v -rutin_id').sort({ start: 1 });
     const Monday = await Class.find({ weekday: 2, rutin_id: rutin_id }).select('-summary -__v -rutin_id').sort({ start: 1 });
@@ -185,6 +185,8 @@ exports.allclass = async (req, res) => {
     const routines = await Routine.findById(rutin_id);
     const owner = await Account.findOne({ _id: routines.ownerid }, { _id: 1, name: 1, ownerid: 1, image: 1, username: 1 });
     //
+
+    //.... Captens list of routines .....///
     const listOfCa10s = await Routine.findOne({ _id: rutin_id }, { _id: 0, cap10s: 1 })
       .populate({
         path: 'cap10s.cap10Ac',
@@ -203,10 +205,19 @@ exports.allclass = async (req, res) => {
     }
     const finalCap10List = listOfCa10s.cap10s ?? [];
 
+    //..... Eddit permition only for Ownwes and captens....///
+    isOwnwer = false;
+    isCapten = false;
+    isSaved = false;
+
+    if (routines.ownerid.toString() == req.user.id) { isOwnwer = true; }
+    if (routines.cap10s.includes(req.user.id)) { isCapten = true; }
+    const reac = await Account.findOne({ _id: routines.ownerid },);
+    if (reac.Saved_routines.includes(rutin_id)) { isSaved = true; }
 
 
 
-    res.send({ rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner, finalCap10List, });
+    res.send({ rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner, finalCap10List, isOwnwer, isCapten, isSaved });
   } catch (error) {
     console.log(error);
     res.status(400).send(error.message);

@@ -10,7 +10,7 @@ const verifyToken = require("../varifitoken")
 app.post("/create", verifyToken, rutin.createRutin);
 app.delete("/delete/:id", verifyToken, rutin.delete);
 
-//
+//... grt full rutine
 app.post("/allrutins", verifyToken, rutin.allRutin);
 
 
@@ -18,13 +18,13 @@ app.post("/allrutins", verifyToken, rutin.allRutin);
 app.get('/save/:rutin_id', verifyToken, rutin.save_routine);
 app.get('/unsave/:rutin_id', verifyToken, rutin.unsave_routine);
 app.get('/save/:rutin_id/chack', verifyToken, rutin.save_checkout);
+
+
 //.. search rutin ...//
 app.post('/search/:src', rutin.search_rutins);
 
 //... priode add...//
 app.post('/add_priode/:rutin_id', verifyToken, priode.add_priode);
-
-//
 app.post('/all_priode/:rutin_id', priode.all_priode);
 
 
