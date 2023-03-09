@@ -26,6 +26,7 @@ app.post('/search/:src', rutin.search_rutins);
 //... priode add...//
 app.post('/add_priode/:rutin_id', verifyToken, priode.add_priode);
 app.post('/all_priode/:rutin_id', priode.all_priode);
+app.delete('priode/remove/:priodeId', verifyToken,   priode.delete_priode);
 
 
 

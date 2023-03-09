@@ -29,27 +29,58 @@ res.status(200).send({message:'Period added to routine',aded});
 
 
 
-//************ all priode *************** */
-exports.all_priode = async (req, res) => {
-    const { rutin_id } = req.params;
-    
-    console.log(rutin_id);
-  
-    try {
-        const routine = await Routine.findOne({ _id: rutin_id });
-        //console.log(routine);
-    
-      if (!routine) return res.status(404).send('Routine not found');
+//************  Delete Priode *************** */
+exports.delete_priode = async (req, res) => {
+  const { priodeId } = req.params;
 
-   
-      const priode = await Routine.find({ _id: rutin_id }).select('-_id priode');
+  try {
+    const routine = await Routine.findOne({ "priode._id": priodeId });
+    if (!routine) return res.status(404).json({ message: "Priode not found" });
+    
 
-      
-      console.log(priode);
-      res.send(priode[0]);
-      
-    } catch (error) {
-        
-      res.status(400).send({ error });
+    const priode = routine.priode.id(priodeId);
+    if (!priode) return res.status(404).json({ message: "Priode not found" });
+    
+
+    if (req.user.id.toString() !== routine.ownerid.toString()) {
+      return res.status(403).json({ message: "You don't have permission to delete" });
     }
-  };
+
+    priode.remove();
+    await routine.save();
+    res.json({ message: "Priode deleted successfully" });
+
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message : "Server error" });
+  }
+};
+
+
+
+
+  //************ all priode  *************** */
+exports.all_priode = async (req, res) => {
+  const { rutin_id } = req.params;
+  
+  console.log(rutin_id);
+
+  try {
+      const routine = await Routine.findOne({ _id: rutin_id });
+      //console.log(routine);
+  
+    if (!routine) return res.status(404).send('Routine not found');
+
+ 
+    const priode = await Routine.find({ _id: rutin_id }).select('-_id priode');
+
+    
+    console.log(priode);
+    res.send(priode[0]);
+    
+  } catch (error) {
+      
+    res.status(400).send({ error });
+  }
+};
