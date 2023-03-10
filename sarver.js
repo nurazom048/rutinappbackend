@@ -28,14 +28,14 @@ app.use(bodyParser.json());
 
 // ------- Routes ------------------------//
 
-app.use("/auth",auth_route); //.. auth_route
-app.use("/rutin",rutin_route );//.. rutin_route
-app.use("/class",class_route);//.. class_route
+app.use("/auth", auth_route); //.. auth_route
+app.use("/rutin", rutin_route);//.. rutin_route
+app.use("/class", class_route);//.. class_route
 app.use("/summary", summary);//.. class_route
-app.use("/account",account);//.. acount_route
+app.use("/account", account);//.. acount_route
 
 app.get("/ok", (req, res) => {
-  res.status(200).json({ message: "hi i am working"});
+  res.status(200).json({ message: "hi i am working" });
 });
 
 
@@ -82,17 +82,17 @@ app.get("/ok", (req, res) => {
 //     if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
 //     // Check if name is not empty
 //     if (!req.body.name)return res.status(400).json({ message: 'Name is required' });
-   
+
 
 
 //   try {
-  
+
 //    // Initialize Firebase
 // initializeApp(firebase_stroage.firebaseConfig);
 
-   
+
 //     // 1 uplode firebsae ad get url
-  
+
 //     const timestamp = Date.now();
 //     const filename = `${timestamp}-${req.file.originalname}`;   // Generate a unique filename 
 //     const metadata = {contentType: req.file.mimetype,};    // Set metadata for the uploaded image
@@ -121,7 +121,7 @@ app.get("/ok", (req, res) => {
 //       { new: true }
 //     ).lean();
 
- 
+
 
 //     // Send response
 //     console.log("File uploaded successfully to: ");
@@ -149,6 +149,6 @@ app.get("/ok", (req, res) => {
 
 
 
-app.listen(3000, function(){
+app.listen(3000, function () {
   console.log(" ****server started ********");
 });
