@@ -2,11 +2,11 @@ const Routine = require('../models/rutin_models');
 
 //**************    permition_add_priode    ************** */   
 exports.permition_add_priode = async (req, res, next) => {
-    const { priodeId } = req.params;
+    const { rutin_id } = req.params;
 
     try {
         // 1. Find Routine and Priode
-        const routine = await Routine.findOne({ "priode._id": priodeId });
+        const routine = await Routine.findOne({ _id: rutin_id });
         if (!routine) return res.status(404).json({ message: "Routine not found" });
 
 

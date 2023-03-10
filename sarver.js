@@ -34,7 +34,7 @@ app.use("/class", class_route);//.. class_route
 app.use("/summary", summary);//.. class_route
 app.use("/account", account);//.. acount_route
 
-app.get("/ok", (req, res) => {
+app.get("/", (req, res) => {
   res.status(200).json({ message: "hi i am working" });
 });
 

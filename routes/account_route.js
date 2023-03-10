@@ -3,6 +3,7 @@ const router = express.Router();
 const verifyToken = require("../varifitoken");
 const ac = require("../controllers/account_controllers");
 const multer = require('multer');
+const rutin = require('../controllers/rutin_controllers');
 
 
 
@@ -23,12 +24,21 @@ router.post("/eddit", verifyToken, upload.single('image'), ac.edit_account);
 
 
 router.route("/").post(verifyToken, ac.view_my_account);
-router.route("/:username").post(verifyToken, ac.view_others_Account);
+router.route("/:username").post(ac.view_others_Account);
 
 
 
 
 router.post("/accounts/find", ac.getAccounts);
+
+
+
+
+
+
+
+
+
 
 
 module.exports = router;       

@@ -1,14 +1,5 @@
-const express = require('express')
-const app = express()
 const Account = require('../models/Account')
 const Routine = require('../models/rutin_models')
-const Class = require('../models/class_model');
-const { checkout } = require('../routes/class_route');
-const { async } = require('@firebase/util');
-
-
-
-
 
 
 //********** createRutin   ************* */
@@ -19,9 +10,6 @@ exports.createRutin = async (req, res) => {
   const ownerid = req.user.id;
 
   try {
-
-
-
     // Create a new routine
 
     const routine = new Routine({ name, ownerid });
@@ -39,11 +27,7 @@ exports.createRutin = async (req, res) => {
 
 
 
-
-
 //*******      delete   ***** */
-
-
 exports.delete = async (req, res) => {
   const { id } = req.params;
 
@@ -66,11 +50,11 @@ exports.delete = async (req, res) => {
 
 exports.allRutin = async (req, res) => {
   console.log(req.user);
-  const { accountID } = req.params;
+
   const userid = req.user.id;
 
   try {
-    const pramsAC = await Account.findOne({ _id: accountID });
+
 
     const user = await Account.findOne({ _id: userid }).populate([
       {
@@ -110,7 +94,7 @@ exports.allRutin = async (req, res) => {
 
 
 //********** save rutin   ************* */
-exports.save_routine = async (req, res) => {
+exports.add_to_save_routine = async (req, res) => {
   const { rutin_id } = req.params;
   const ownerid = req.user.id;
 
@@ -227,9 +211,7 @@ exports.save_checkout = async (req, res) => {
 
 
 
-
-
-//.....   Search rutins   .....///
+//********** Search rutins    ************* */
 
 exports.search_rutins = async (req, res) => {
   const { src } = req.params;
@@ -255,4 +237,66 @@ exports.search_rutins = async (req, res) => {
 
   }
 
+}
+
+
+
+//.......  /save_rutins.../
+exports.save_rutins = async (req, res) => {
+  const { username } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  try {
+    // Find the account by primary username
+    const account = await Account.findOne({ username: username || req.user.username });
+    if (!account) return res.status(404).json({ message: "Account not found" });
+
+    // Find the saved routines for the account and populate owner details
+    const savedRoutines = await Routine.find({ _id: { $in: account.Saved_routines } })
+      .select("_id name last_summary ownerid")
+      .populate({ path: "ownerid", select: "name username image" })
+      .limit(limit)
+      .skip((page - 1) * limit);
+
+    res.status(200).json({ savedRoutines });
+  } catch (error) {
+    res.send({ message: error.message });
+  }
+};
+
+
+
+
+
+//**************  uploaded_rutins     *********** */
+exports.uploaded_rutins = async (req, res) => {
+  const { username } = req.params;
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  try {
+    const findAccount = await Account.findOne({ username: username || req.user.username })
+    if (!findAccount) return res.status(404).json({ message: "Account not found" });
+
+    const count = await Routine.countDocuments({ ownerid: findAccount._id });
+
+    const rutins = await Routine.find({ ownerid: findAccount._id })
+      .select("name ownerid last_summary")
+      .populate({ path: 'ownerid', select: 'name image username' })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    if (!rutins) return res.status(404).json({ message: "rutins not found" });
+
+    res.status(200).json({
+      rutins,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit)
+    });
+
+  } catch (error) {
+    res.send({ message: error.message });
+  }
 }

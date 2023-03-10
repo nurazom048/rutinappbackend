@@ -2,11 +2,6 @@ const Routine = require('../models/rutin_models');
 const Class = require('../models/class_model');
 
 
-
-
-
-
-
 //************  add Priode *************** */
 exports.add_priode = async (req, res) => {
 
@@ -16,9 +11,9 @@ exports.add_priode = async (req, res) => {
 
     const routine = req.routine;
     routine.priode.push({ start_time, end_time });
+    const aded = await routine.save();    // Save the changes to the routine
 
-    // Save the changes to the routine
-    const aded = await routine.save();
+
 
     res.status(200).send({ message: 'Period added to routine', aded });
   } catch (error) {

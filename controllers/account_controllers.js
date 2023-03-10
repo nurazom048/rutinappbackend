@@ -75,6 +75,8 @@ exports.view_my_account = async (req, res) => {
           select: 'name username image',
         },
       });
+    console.error(user);
+    if (!user) return res.status(404).json({ message: "Account not found" });
 
     return res.status(200).json({ user });
   } catch (error) {
@@ -102,7 +104,7 @@ exports.view_my_account = async (req, res) => {
 //....view others Account...//
 
 exports.view_others_Account = async (req, res) => {
-  console.log(req.user.id);
+
   const { username } = req.params;
 
   try {
@@ -120,7 +122,7 @@ exports.view_others_Account = async (req, res) => {
 
 
     if (!user) return res.status(404).json({ message: "User id not found " });
-
+    console.error(user);
     res.status(404).json({ user });
 
   } catch (error) {
