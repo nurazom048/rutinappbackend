@@ -245,7 +245,7 @@ exports.search_rutins = async (req, res) => {
 exports.save_rutins = async (req, res) => {
   const { username } = req.params;
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const limit = parseInt(req.query.limit) || 2;
 
   try {
     // Find the account by primary username
