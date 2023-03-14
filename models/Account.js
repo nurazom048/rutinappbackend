@@ -10,12 +10,12 @@ const accountSchema = new Schema({
   name: {
     type: String,
     required: true,
-   
+
   },
   image: {
-    type: String 
+    type: String
   },
- Saved_routines: [{
+  Saved_routines: [{
     type: Schema.Types.ObjectId,
     ref: 'Routine'
   }],
@@ -24,6 +24,13 @@ const accountSchema = new Schema({
     type: String,
     required: true
   },
+  account_type: {
+    type: String,
+    enum: ['user', 'academy'],
+    required: true,
+    default: 'user'
+  },
+
   routines: [{
     type: Schema.Types.ObjectId,
     ref: 'Routine'

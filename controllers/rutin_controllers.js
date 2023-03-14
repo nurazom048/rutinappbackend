@@ -215,10 +215,9 @@ exports.save_checkout = async (req, res) => {
 
 exports.search_rutins = async (req, res) => {
   const { src } = req.params;
+  console.log(src);
 
   try {
-
-
 
     const rutins = await Routine.find({ name: { $regex: src, $options: "i" } })
       .select("-createdAt -class -updatedAt -priode -sunday -cap10s -__v")
