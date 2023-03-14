@@ -29,7 +29,7 @@ router.route("/:username").post(ac.view_others_Account);
 
 
 
-router.post("/accounts/find", ac.getAccounts);
+router.post("/find/account", ac.getAccounts);
 
 
 

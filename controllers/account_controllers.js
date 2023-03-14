@@ -138,14 +138,18 @@ exports.view_others_Account = async (req, res) => {
 
 exports.getAccounts = async (req, res) => {
   const { page = 1, limit = 10, username } = req.query;
+ 
 
-  console.log(req.query);
-  const query = username ? { username: new RegExp(username, 'i') } : {};
+  console.log(username);
+ const query = username ? { username: new RegExp(username, 'i') } : {};
 
   try {
-    const accounts = await Account.find(query)
+    const accounts = await Account.find({username:username})
       .skip((page - 1) * limit).limit(limit)
       .select('_id username name image');
+
+
+    if(!accounts ) return res.json({message: "Account Not found"});
 
 
 
