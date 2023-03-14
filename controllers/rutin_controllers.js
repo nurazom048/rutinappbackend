@@ -259,7 +259,14 @@ exports.save_rutins = async (req, res) => {
       .limit(limit)
       .skip((page - 1) * limit);
 
-    res.status(200).json({ savedRoutines });
+    const count = await Routine.countDocuments({ _id: { $in: account.Saved_routines } });
+
+
+    res.status(200).json({
+      savedRoutines,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit)
+    });
   } catch (error) {
     res.send({ message: error.message });
   }
@@ -274,7 +281,7 @@ exports.uploaded_rutins = async (req, res) => {
   const { username } = req.params;
 
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const limit = parseInt(req.query.limit) || 3;
 
   try {
     const findAccount = await Account.findOne({ username: username || req.user.username })
