@@ -346,7 +346,7 @@ exports.current_user_status = async (req, res) => {
     const pendingRequest = routine.send_request.includes(req.user.id);
     if (pendingRequest) { activeStatus = "request_pending"; }
 
-    res.status(200).json({isOwner, isCapten,activeStatus });
+    res.status(200).json({isOwner, isCapten,activeStatus,isSave });
   } catch (error) {
     res.send({ message: error.message });
   }
