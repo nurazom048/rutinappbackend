@@ -6,7 +6,9 @@ const priode = require('../controllers/priode_controller');
 const cp10 = require('../controllers/cp10');
 const verifyToken = require("../varifitoken")
 const Middleware = require('../midlewere/rutinMidewere');
+const member = require('../controllers/members_controller');
 
+const member_mid = require('../midlewere/member_mid');
 
 
 
@@ -45,6 +47,14 @@ app.post('/cap10/add/', verifyToken, cp10.addCap10);
 app.post('/cap10/remove', verifyToken, cp10.removeCap10);
 
 
+//........... Add member .....//
+app.post('/member/add/:rutin_id/:username', verifyToken,member_mid.permition_add_member, member.addMebers);
+app.post('/member/remove/:rutin_id/:username', verifyToken,member_mid.permition_add_member, member.removeMember);
+app.post('/member/send_request/:rutin_id', verifyToken, member.sendMemberRequest);
+
+
+
+
 //......... for vieew ritins.........//
 
 //... Show save rutin
@@ -55,6 +65,11 @@ app.route("/save_rutins/:username").post(rutin.save_rutins);
 //... Show uploaded save rutin
 app.route("/uploded_rutins").post(verifyToken, rutin.uploaded_rutins);
 app.route("/uploded_rutins/:username").post(rutin.uploaded_rutins);
+
+//.. chack current stuts ...//
+
+app.post('/status/:rutin_id/', verifyToken, rutin.current_user_status);
+
 
 
 

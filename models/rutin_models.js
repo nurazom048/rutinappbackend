@@ -15,13 +15,10 @@ const rutinshema = new Schema({
   },
 
   last_summary: {
-
-
     text: {
       type: String,
       required: true,
       default: "not resent Summay",
-
     },
     time: {
       type: Date,
@@ -37,8 +34,6 @@ const rutinshema = new Schema({
   }],
 
   priode: [
-
-
     {
       start_time: {
         type: Date,
@@ -50,7 +45,6 @@ const rutinshema = new Schema({
         required: true,
         default: Date.now
       }
-
     }
 
   ],
@@ -69,10 +63,20 @@ const rutinshema = new Schema({
       },
 
     }
-  ]
+  ],
 
-
-
+  send_request: [
+    {
+        type: Schema.Types.ObjectId,
+        ref: 'Account',
+    }
+  ],
+  members: [
+    {
+        type: Schema.Types.ObjectId,
+        ref: 'Account',
+    }
+  ],
 },
 
   { timestamps: true }

@@ -306,3 +306,48 @@ exports.uploaded_rutins = async (req, res) => {
     res.send({ message: error.message });
   }
 }
+//.. currenu user status ...
+
+//**************  uploaded_rutins     *********** */
+exports.current_user_status = async (req, res) => {
+  const { rutin_id } = req.params;
+  const { username } = req.user;
+
+  //
+  let isOwner = false;
+  let isCapten = false;
+  let activeStatus = "not_joined";
+  let isSave = false;
+
+  try {
+   
+
+    // Find the routine to check user status
+    const routine = await Routine.findOne({ _id: rutin_id });
+    if (!routine) return res.json({ message: "Routine not found" });
+
+//.. chack save 
+    const findAccount = await Account.findOne({ username});
+    if (!findAccount ) return  res.status(200).json({isOwner,isCapten, activeStud});
+    if (findAccount.Saved_routines.includes(rutin_id)) { isSave = true; }
+
+    // Check if the user is the owner
+    if (routine.ownerid.toString() === req.user.id) { isOwner = true }
+
+    // Check if the user is a captain
+    const cap10s = routine.cap10s.map((c) => c.cap10Ac.toString());
+    if (cap10s.includes(req.user.id)) {isCapten = true}
+
+    // Check if the user is an active member
+    const alreadyMember = routine.members.includes(req.user.id);
+    if (alreadyMember) { activeStatus = "joined" }
+
+    // Check if the user has a pending request
+    const pendingRequest = routine.send_request.includes(req.user.id);
+    if (pendingRequest) { activeStatus = "request_pending"; }
+
+    res.status(200).json({isOwner, isCapten,activeStatus });
+  } catch (error) {
+    res.send({ message: error.message });
+  }
+};
