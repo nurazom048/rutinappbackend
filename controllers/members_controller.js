@@ -106,7 +106,14 @@ exports.allMembers = async (req, res) => {
 
   try {
     // Find the routine and its members 
-    const routine = await Routine.findOne({ _id: rutin_id }, { members: 1 });
+    const routine = await Routine.findOne({ _id: rutin_id }, { members: 1 })
+    .populate({
+      path: 'members',
+      select: 'name username image',
+      options: {
+        sort: { createdAt: -1 },
+      },
+    });
     if (!routine) return res.json({ message: "Routine not found" });
 
     const members = routine.members;
@@ -127,7 +134,8 @@ exports.allRequest = async (req, res) => {
 
   try {
     // Find the routine and  member 
-    const routine = await Routine.findOne({ _id: rutin_id }, { send_request: 1 }).populate({
+    const routine = await Routine.findOne({ _id: rutin_id }, { send_request: 1 })
+    .populate({
       path: 'send_request',
       select: 'name username image',
       options: {
@@ -153,27 +161,29 @@ exports.allRequest = async (req, res) => {
 
 exports.acceptRequest = async (req, res) => {
   const { rutin_id } = req.params;
-  const { user_id } = req.body;
+  const { username } = req.body;
 
   try {
     const routine = await Routine.findById(rutin_id);
-    if (!routine) {
-      return res.json({ message: "Routine not found" });
-    }
+    if (!routine)  return res.json({ message: "Routine not found" });
+
+    const member_ac = await Account.findOne({username });
+    if (!member_ac) return res.json({ message: "Account not found" });
+
+    
 
     // Check if user_id is already in the members array
-    const isMember = routine.members.includes(user_id);
-    if (isMember) {
-      return res.json({ message: "User is already a member" });
-    }
+    const isMember = routine.members.includes(member_ac._id);
+    if (isMember) return res.json({ message: "User is already a member" });
+    
 
     // Check if user_id is present in the send_request array
-    const isRequestSent = routine.send_request.includes(user_id);
-    if (!isRequestSent) return res.json({ message: "User not found in send_request" });
+    // const isRequestSent = routine.send_request.includes(user_id);
+    // if (!isRequestSent) return res.json({ message: "User not found in send_request" });
 
 
     const updatedRoutine = await Routine.findOneAndUpdate(
-      { _id: rutin_id }, { $addToSet: { members: user_id }, $pull: { send_request: user_id }, },
+      { _id: rutin_id }, { $addToSet: { members: member_ac._id }, $pull: { send_request:  member_ac._id }, },
       { new: true }
     );
 
