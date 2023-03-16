@@ -48,9 +48,16 @@ app.post('/cap10/remove', verifyToken, cp10.removeCap10);
 
 
 //........... Add member .....//
-app.post('/member/add/:rutin_id/:username', verifyToken,member_mid.permition_add_member, member.addMebers);
-app.post('/member/remove/:rutin_id/:username', verifyToken,member_mid.permition_add_member, member.removeMember);
+app.post('/member/add/:rutin_id/:username', verifyToken, member_mid.permition_add_member, member.addMebers);
+app.post('/member/remove/:rutin_id/:username', verifyToken, member_mid.permition_add_member, member.removeMember);
+app.post('/member/:rutin_id/', member.allMembers);
+
+//
 app.post('/member/send_request/:rutin_id', verifyToken, member.sendMemberRequest);
+app.post('/member/see_all_request/:rutin_id', verifyToken, member.allRequest);
+app.post('/member/acsept_request/:rutin_id', verifyToken, member.acceptRequest);
+app.post('/member/reject_request/:rutin_id', verifyToken, member.rejectMember);
+
 
 
 
