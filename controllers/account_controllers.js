@@ -137,31 +137,27 @@ exports.view_others_Account = async (req, res) => {
 //.......... Search Account ....//
 
 exports.getAccounts = async (req, res) => {
-  const { page = 1, limit = 10, username } = req.query;
- 
-
-  console.log(username);
- const query = username ? { username: new RegExp(username, 'i') } : {};
+  const { page = 1, limit = 10, q: searchQuery = '' } = req.query;
 
   try {
-    const accounts = await Account.find({username:username})
-      .skip((page - 1) * limit).limit(limit)
+    const regex = new RegExp(searchQuery, 'i');
+    const accounts = await Account.find({ username: { $regex: regex } })
+      .skip((page - 1) * limit)
+      .limit(limit)
       .select('_id username name image');
 
+    const count = await Account.countDocuments({ username: { $regex: regex } });
 
-    if(!accounts ) return res.json({message: "Account Not found"});
+    const totalPages = Math.ceil(count / limit);
 
-
-
-    const count = await Account.countDocuments(query);
-
-    res.json({
+    res.status(200).json({
       accounts,
-      totalPages: Math.ceil(count / limit),
       currentPage: parseInt(page),
+      totalPages,
+      totalCount: count,
     });
   } catch (error) {
     console.error(error);
-    res.json({ message: error.toString() });
+    res.status(500).json({ message: error.toString() });
   }
 };
