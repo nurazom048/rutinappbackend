@@ -197,20 +197,23 @@ exports.acceptRequest = async (req, res) => {
 
 exports.rejectMember = async (req, res) => {
   const { rutin_id } = req.params;
-  const { user_id } = req.body;
+  const { username } = req.body;
 
   try {
     const routine = await Routine.findById(rutin_id);
     if (!routine) return res.json({ message: "Routine not found" });
 
+    const member_ac = await Account.findOne({username });
+    if (!member_ac) return res.json({ message: "Account not found" });
+
 
     // Check if user_id is present in the members array
-    const isSenRequest = routine.send_request.includes(user_id);
+    const isSenRequest = routine.send_request.includes(member_ac._id);
     if (!isSenRequest) return res.json({ message: "User id is not presend into send request array" });
 
 
     const updatedRoutine = await Routine.findOneAndUpdate(
-      { _id: rutin_id }, { $pull: { send_request: user_id } },
+      { _id: rutin_id }, { $pull: { send_request: member_ac._id } },
       { new: true }
     );
 
