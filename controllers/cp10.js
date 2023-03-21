@@ -6,14 +6,16 @@ const Routine = require('../models/rutin_models');
 exports.addCap10 = async (req, res) => {
     //const { username } =req.params;
     const { rutinid, position, username } = req.body;
-    console.log(username.toString());
+    console.log(req.body);
 
     try {
         const rutin = await Routine.findOne({ _id: rutinid });
         if (!rutin) return res.json({ message: "Routine not found" });
 
+
         const account = await Account.findOne({ _id: rutin.ownerid });
         if (!account) return res.json({ message: "Account not found" });
+        console.log(!account);
 
         if (req.user.id !== rutin.ownerid.toString()) return res.json({ message: "You are not the owner" });
 
@@ -28,6 +30,7 @@ exports.addCap10 = async (req, res) => {
 
         const newCap10 = await rutin.save();
         res.json({ message: "Cap10 added successfully", newCap10 });
+        console.error(res.json({ message: "Cap10 added successfully", newCap10 }));
     } catch (error) {
         console.error(error);
         res.json({ message: error.toString() });

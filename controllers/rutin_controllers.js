@@ -97,8 +97,7 @@ exports.allRutin = async (req, res) => {
 exports.add_to_save_routine = async (req, res) => {
   const { rutin_id } = req.params;
   const ownerid = req.user.id;
-  const { svaeCondition } = req.body
-  console.log(svaeCondition);
+  const { saveCondition } = req.body; console.log(req.body);
 
   try {
     // 1. Find the routine
@@ -107,41 +106,37 @@ exports.add_to_save_routine = async (req, res) => {
     const user = await Account.findById(ownerid);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-
+    let message, save;
     // 2. Find the user
-   if(svaeCondition === true){
- 
+    if (saveCondition == "true") {
 
-    // 3. Check if routine is already saved
-    if (user.Saved_routines.includes(routine._id)) {
-      return res.status(200).json({ message: "Routine already saved", save: true });
+      // 3. Check if routine is already saved
+      if (user.Saved_routines.includes(routine._id)) {
+        message = "Routine already saved";
+        save = true;
+      } else {
+        // 4. Push the routine ID into the saved_routines array
+        user.Saved_routines.push(routine._id);
+        await user.save();
+        message = "Routine saved successfully";
+        save = true;
+      }
     }
 
-    // 4. Push the routine ID into the saved_routines array
-    user.Saved_routines.push(routine._id);
-    await user.save();
-
-    res.status(200).json({ message: "Routine saved successfully", save: true });
-   }
- 
-
-   //
-   if(svaeCondition === false){
-    if (!user.Saved_routines.includes(routine._id)) {
-      return res.status(400).json({ message: "Routine not saved" });
+    if (saveCondition == "false") {
+      if (!user.Saved_routines.includes(routine._id)) {
+        return res.status(400).json({ message: "Routine not saved" });
+      }
+      // 4. Remove the routine ID from the saved_routines array
+      user.Saved_routines.pull(routine._id);
+      await user.save();
+      message = "Routine unsaved successfully";
+      save = false;
     }
-
-    // 4. Remove the routine ID from the saved_routines array
-    user.Saved_routines.pull(routine._id);
-    await user.save();
 
     // Send response
-    res.status(200).json({ message: "Routine unsaved successfully", save: false });
+    res.status(200).json({ message: message, save: save });
 
-
-   }
-
-  
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error saving routine" });

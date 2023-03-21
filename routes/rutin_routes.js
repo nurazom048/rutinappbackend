@@ -51,6 +51,7 @@ app.post('/cap10/remove', verifyToken, cp10.removeCap10);
 app.post('/member/add/:rutin_id/:username', verifyToken, member_mid.permition_add_member, member.addMebers);
 app.post('/member/remove/:rutin_id/:username', verifyToken, member_mid.permition_add_member, member.removeMember);
 app.post('/member/:rutin_id/', member.allMembers);
+app.post('/member/leave/:rutin_id', verifyToken, member.leave);
 
 //
 app.post('/member/send_request/:rutin_id', verifyToken, member.sendMemberRequest);
