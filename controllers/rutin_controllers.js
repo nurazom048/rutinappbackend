@@ -377,3 +377,24 @@ exports.current_user_status = async (req, res) => {
     res.send({ message: error.message });
   }
 };
+
+
+
+///.... joined rutins ......///
+exports.joined_rutins = async (req, res) => {
+
+  const { id } = req.user;
+
+  try {
+    const routines = await Routine.find({ members: id })
+      .select("name ownerid last_summary")
+      .populate({ path: 'ownerid', select: 'name image username' });
+
+    if (!routines) return res.status(404).json({ message: "No joined routines found" });
+
+    res.status(200).json({ message: "All joined routines", routines });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error retrieving joined routines" });
+  }
+};
