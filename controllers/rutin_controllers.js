@@ -398,3 +398,74 @@ exports.joined_rutins = async (req, res) => {
     res.status(500).json({ message: "Error retrieving joined routines" });
   }
 };
+//**************  uploaded_rutins     *********** */
+exports.rutinDetails = async (req, res) => {
+  const { rutin_id } = req.params;
+  const { username } = req.user;
+
+  //
+  let isOwner = false;
+  let isCapten = false;
+  let activeStatus = "not_joined";
+  let isSave = false;
+  let sentRequestCount = 0;
+
+  try {
+
+
+    // Find the routine to check user status
+    const routine = await Routine.findOne({ _id: rutin_id });
+    if (!routine) return res.json({ message: "Routine not found" });
+
+    // Get the member count
+    const memberCount = routine.members.length;
+
+    // Get the count of sent member requests
+    const sentRequests = routine.send_request;
+    sentRequestCount = sentRequests.length;
+
+    // Check if the user has saved the routine
+    const findAccount = await Account.findOne({ username });
+    if (!findAccount) return res.status(200).json({ isOwner, isCapten, activeStatus, memberCount, sentRequestCount });
+    if (findAccount.Saved_routines.includes(rutin_id)) { isSave = true; }
+
+    // Check if the user is the owner
+    if (routine.ownerid.toString() === req.user.id) { isOwner = true }
+
+    // Check if the user is a captain
+    const cap10s = routine.cap10s.map((c) => c.cap10Ac.toString());
+    if (cap10s.includes(req.user.id)) { isCapten = true }
+
+    // Check if the user is an active member
+    const alreadyMember = routine.members.includes(req.user.id);
+    if (alreadyMember) { activeStatus = "joined" }
+
+    // Check if the user has a pending request
+    const pendingRequest = routine.send_request.includes(req.user.id);
+    if (pendingRequest) { activeStatus = "request_pending"; }
+
+
+
+    //..........also demd ..... rutin name id owener id image and member,,,
+
+    // Find the routine and its members 
+    const routines = await Routine.findOne({ _id: rutin_id }, { members: 1 })
+      .populate({
+        path: 'members',
+        select: 'name username image',
+        options: {
+          sort: { createdAt: -1 },
+        },
+      });
+    if (!routine) return res.json({ message: "Routine not found" });
+
+    const members = routines.members;
+
+
+    //res.json({ message: "All Members", count, members });
+
+    res.status(200).json({ current_userstatus: { isOwner, isCapten, activeStatus, isSave, memberCount, sentRequestCount }, members, })
+  } catch (error) {
+    res.send({ message: error.message });
+  }
+};

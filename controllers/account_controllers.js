@@ -78,7 +78,8 @@ exports.view_my_account = async (req, res) => {
     console.error(user);
     if (!user) return res.status(404).json({ message: "Account not found" });
 
-    return res.status(200).json({ user });
+
+    return res.status(200).json(user.toObject({ getters: true }));
   } catch (error) {
     return res.status(404).json({ message: error.message });
   }
@@ -122,8 +123,8 @@ exports.view_others_Account = async (req, res) => {
 
 
     if (!user) return res.status(404).json({ message: "User id not found " });
-    console.error(user);
-    res.status(404).json({ user });
+
+    return res.status(200).json(user.toObject({ getters: true }));
 
   } catch (error) {
     console.error(error);

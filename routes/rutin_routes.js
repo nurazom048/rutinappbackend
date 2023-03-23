@@ -48,6 +48,8 @@ app.post('/all_priode/:rutin_id', priode.all_priode);
 //....... cap 10 .....//
 app.post('/cap10/add/', verifyToken, cp10.addCap10);
 app.post('/cap10/remove', verifyToken, cp10.removeCap10);
+app.post('/cap10/:rutin_id', cp10.getAllCaptains);
+
 
 
 //........... Add member .....//
@@ -80,7 +82,8 @@ app.route("/uploded_rutins/:username").post(rutin.uploaded_rutins);
 //.. chack current stuts ...//
 
 app.post('/status/:rutin_id/', verifyToken, rutin.current_user_status);
-
+app.route("/details").post(rutin.rutinDetails);
+app.route("/details").post(verifyToken, rutin.rutinDetails);
 
 
 
