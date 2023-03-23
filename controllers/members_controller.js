@@ -66,6 +66,7 @@ exports.removeMember = async (req, res) => {
 exports.sendMemberRequest = async (req, res) => {
   const { rutin_id } = req.params;
   const { username } = req.user;
+  let activeStatus = "not_joined";
 
   try {
     // Check if the member's account exists
@@ -78,16 +79,25 @@ exports.sendMemberRequest = async (req, res) => {
 
     // Check if the member is already added
     const allradySend = routine.send_request.includes(member_ac._id.toString());
-    if (allradySend) return res.json({ message: "Request already sent" });
+    if (allradySend) {
+      activeStatus = "request_pending"
+      return res.json({ message: "Request already sent", activeStatus });
+    }
 
     // Check if the member is already a part of the routine
     const isMember = routine.members.includes(member_ac._id.toString());
-    if (isMember) return res.json({ message: "User is already a member of the routine" });
+    if (isMember) {
+      activeStatus = "joined"
+
+
+      return res.json({ message: "User is already a member of the routine", activeStatus });
+    }
 
     // Add the member to send request
     routine.send_request.push(member_ac._id);
     const new_request = await routine.save();
-    res.json({ message: "Request sent successfully", new_request });
+    activeStatus = "request_pending"
+    res.json({ message: "Request sent successfully", activeStatus, new_request });
 
   } catch (error) {
     console.error(error);
@@ -247,7 +257,11 @@ exports.leave = async (req, res) => {
       { new: true }
     ).exec();
 
-    res.json({ message: "Routine leave successfull", routine: updatedRoutine });
+    res.json({
+      message: "Routine leave successfull", activeStatus: "not_joined",
+
+      routine: updatedRoutine
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
