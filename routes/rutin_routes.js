@@ -28,7 +28,7 @@ app.post('/save_unsave/:rutin_id', verifyToken, rutin.add_to_save_routine);
 app.get('/unsave/:rutin_id', verifyToken, rutin.unsave_routine);
 app.get('/save/:rutin_id/chack', verifyToken, rutin.save_checkout);
 //
-app.get('/joined', verifyToken, rutin.joined_rutins);
+app.post('/joined', verifyToken, rutin.joined_rutins);
 
 
 //.. search rutin ...//

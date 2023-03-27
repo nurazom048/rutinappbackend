@@ -13,16 +13,25 @@ exports.permition_add_priode = async (req, res, next) => {
 
 
         // 2. Check permission is owner or captain
-        if (routine.ownerid.toString() !== req.user.id) return res.status(401).json({ message: "You don't have permission to add" });
-
-
         const cap10s = routine.cap10s.map((c) => c.cap10Ac.toString());
-        if (!cap10s.includes(req.user.id)) return res.status(401).json({ message: "You don't have permission to add" });
+        if (!((routine.ownerid.toString() == req.user.id || cap10s.includes(req.user.id)))) return res.status(401).json({ message: "You don't have permission to add" });
+
+
 
 
         req.routine = routine;
 
         next();
+
+
+
+
+
+
+
+
+
+
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: "Server error: " + err.message });
@@ -49,11 +58,8 @@ exports.permition_remove_priode = async (req, res, next) => {
 
 
         // 2. Check permission is owner or captain
-        if (routine.ownerid.toString() !== req.user.id) return res.status(401).json({ message: "You don't have permission to add" });
-
-
         const cap10s = routine.cap10s.map((c) => c.cap10Ac.toString());
-        if (!cap10s.includes(req.user.id)) return res.status(401).json({ message: "You don't have permission to add" });
+        if (!((routine.ownerid.toString() == req.user.id || cap10s.includes(req.user.id)))) return res.status(401).json({ message: "You don't have permission to add" });
 
 
         req.routine = routine;

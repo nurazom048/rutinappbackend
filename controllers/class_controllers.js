@@ -10,7 +10,7 @@ const Account = require('../models/Account');
 exports.create_class = async (req, res) => {
   const { rutin_id } = req.params;
   const { name, room, subjectcode, start, end, weekday, start_time, end_time, instuctor_name, has_class } = req.body;
-  console.log(start_time, end_time);
+  console.log(req.body);
 
 
   const rutin = await Routine.findOne({ _id: rutin_id });
@@ -204,20 +204,15 @@ exports.allclass = async (req, res) => {
       }
     }
     const finalCap10List = listOfCa10s.cap10s ?? [];
-
-    //..... Eddit permition only for Ownwes and captens....///
-    isOwnwer = false;
-    isCapten = false;
     isSaved = false;
+    //..... Eddit permition only for Ownwes and captens....///
 
-    if (routines.ownerid.toString() == req.user.id) { isOwnwer = true; }
-    if (routines.cap10s.includes(req.user.id)) { isCapten = true; }
     const reac = await Account.findOne({ _id: routines.ownerid },);
     if (reac.Saved_routines.includes(rutin_id)) { isSaved = true; }
 
 
 
-    res.send({ rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner, finalCap10List, isOwnwer, isCapten, isSaved });
+    res.send({ rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
   } catch (error) {
     console.log(error);
     res.status(400).send(error.message);
