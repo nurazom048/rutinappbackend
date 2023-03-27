@@ -233,28 +233,32 @@ exports.save_checkout = async (req, res) => {
 
 exports.search_rutins = async (req, res) => {
   const { src } = req.params;
-  console.log(src);
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 2;
 
   try {
-
-    const rutins = await Routine.find({ name: { $regex: src, $options: "i" } })
-      .select("-createdAt -class -updatedAt -priode -sunday -cap10s -__v")
+    const regex = new RegExp(src, "i");
+    const count = await Routine.countDocuments({ name: regex });
+    const rutins = await Routine.find({ name: regex })
+      .select("_id name ownerid last_summary")
       .populate({
         path: "ownerid",
-        select: "_id name username image"
-      });
+        select: "_id name username image"})
+      .limit(limit)
+      .skip((page - 1) * limit);
 
-    if (!rutins) return res.send({ message: "not Found", });
+    if (!rutins) return res.status(404).send({ message: "Not found" });
 
-    res.send({ message: " Found", rutins })
-
-
+    res.status(200).json({
+      rutins,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit)
+    });
   } catch (error) {
-    res.send({ message: e.message })
-
+    res.send({ message: error.message });
   }
+};
 
-}
 
 
 

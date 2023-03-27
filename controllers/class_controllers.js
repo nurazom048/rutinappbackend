@@ -49,6 +49,9 @@ exports.create_class = async (req, res) => {
 //************   edit_class       *************** */
 exports.edit_class = async (req, res) => {
 
+  console.log("from eddit");
+  console.log(req.body);
+
   const { class_id } = req.params;
   const { name, room, subjectcode, start, end, weekday, start_time, end_time } = req.body;
 
@@ -80,7 +83,9 @@ exports.edit_class = async (req, res) => {
       { new: true }
     );
     if (!updatedClass) return res.status(404).send('Class not found');
+    console.log(updatedClass);
     res.send({ class: updatedClass, message: 'Class updated successfully' });
+    
 
     //
   } catch (error) {
