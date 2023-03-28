@@ -137,28 +137,31 @@ exports.view_others_Account = async (req, res) => {
 
 //.......... Search Account ....//
 
-exports.getAccounts = async (req, res) => {
-  const { page = 1, limit = 10, q: searchQuery = '' } = req.query;
-
-  try {
-    const regex = new RegExp(searchQuery, 'i');
-    const accounts = await Account.find({ username: { $regex: regex } })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .select('_id username name image');
-
-    const count = await Account.countDocuments({ username: { $regex: regex } });
-
-    const totalPages = Math.ceil(count / limit);
-
-    res.status(200).json({
-      accounts,
-      currentPage: parseInt(page),
-      totalPages,
-      totalCount: count,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.toString() });
-  }
-};
+  exports.searchAccounts = async (req, res) => {
+    const { q: searchQuery = '', page = 1, limit = 10 } = req.query;
+    console.log("search ac");
+    console.log(req.query);
+  
+    try {
+      const regex = new RegExp(searchQuery, 'i');
+      const count = await Account.countDocuments({ username: { $regex: regex } });
+      const accounts = await Account.find({ username: { $regex: regex } })
+        .select('_id username name image')
+        .limit(limit)
+        .skip((page - 1) * limit);
+  
+      if (!accounts) {
+        return res.status(404).send({ message: 'Not found' });
+      }
+  
+      res.status(200).json({
+        accounts,
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(count / limit),
+        totalCount: count
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+  

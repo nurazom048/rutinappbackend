@@ -32,7 +32,7 @@ app.post('/joined', verifyToken, rutin.joined_rutins);
 
 
 //.. search rutin ...//
-app.get('/search/:src', rutin.search_rutins);
+app.get('/search', rutin.search_rutins);
 
 
 
@@ -72,7 +72,7 @@ app.post('/member/reject_request/:rutin_id', verifyToken, member.rejectMember);
 
 //... Show save rutin
 
-app.route("/save_rutins").post(verifyToken, rutin.save_rutins);
+app.route("/save_rutins").post(verifyToken, rutin.save_rutins);//
 app.route("/save_rutins/:username").post(rutin.save_rutins);
 
 //... Show uploaded save rutin

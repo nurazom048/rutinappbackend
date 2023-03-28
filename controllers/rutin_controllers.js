@@ -232,7 +232,7 @@ exports.save_checkout = async (req, res) => {
 //********** Search rutins    ************* */
 
 exports.search_rutins = async (req, res) => {
-  const { src } = req.params;
+  const { src } = req.query; // get the value of 'src' from the query parameters
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 2;
 
@@ -243,7 +243,8 @@ exports.search_rutins = async (req, res) => {
       .select("_id name ownerid last_summary")
       .populate({
         path: "ownerid",
-        select: "_id name username image"})
+        select: "_id name username image"
+      })
       .limit(limit)
       .skip((page - 1) * limit);
 

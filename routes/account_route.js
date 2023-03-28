@@ -27,9 +27,7 @@ router.route("/").post(verifyToken, ac.view_my_account);
 router.route("/:username").post(ac.view_others_Account);
 
 
-
-
-router.post("/find/account", ac.getAccounts);
+router.route("/find").get(ac.searchAccounts);//search account
 
 
 
