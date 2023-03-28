@@ -243,7 +243,8 @@ exports.search_rutins = async (req, res) => {
       .select("_id name ownerid last_summary")
       .populate({
         path: "ownerid",
-        select: "_id name username image"})
+        select: "_id name username image"
+      })
       .limit(limit)
       .skip((page - 1) * limit);
 
@@ -313,6 +314,7 @@ exports.uploaded_rutins = async (req, res) => {
     const rutins = await Routine.find({ ownerid: findAccount._id })
       .select("name ownerid last_summary")
       .populate({ path: 'ownerid', select: 'name image username' })
+      .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
 
