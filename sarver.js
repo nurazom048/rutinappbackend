@@ -7,6 +7,7 @@ const auth_route = require('./routes/auth_route');
 const class_route = require('./routes/class_route');
 const summary = require('./routes/summary_route');
 const account = require('./routes/account_route');
+const notice = require('./routes/notice_route');
 const cors = require("cors");
 
 app.use(bodyParser.urlencoded());
@@ -33,6 +34,7 @@ app.use("/rutin", rutin_route);//.. rutin_route
 app.use("/class", class_route);//.. class_route
 app.use("/summary", summary);//.. class_route
 app.use("/account", account);//.. acount_route
+app.use("/notice", notice);//.. notice_route
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "hi i am working" });
