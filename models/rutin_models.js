@@ -8,6 +8,7 @@ const rutinshema = new Schema({
     required: true,
 
   },
+  image: { type: String },
   ownerid: {
     type: Schema.Types.ObjectId,
     ref: 'Account',
@@ -32,18 +33,30 @@ const rutinshema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'Class'
   }],
-
+  //! Priode
   priode: [
     {
+
+      priode_number: {
+        type: Number,
+        required: [true, 'Please provide a period number'],
+        default: 0,
+        validate: {
+          validator: function (v) {
+            return v > 0;
+          },
+          message: 'Period number must be greater than zero'
+        }
+      },
       start_time: {
         type: Date,
-        required: true,
-        default: Date.now
+        required: [true, 'Start Time is required '],
+        // default: Date.now
       },
       end_time: {
         type: Date,
-        required: true,
-        default: Date.now
+        required: [true, 'end_time is required'],
+        //default: Date.now
       }
     }
 
@@ -67,14 +80,14 @@ const rutinshema = new Schema({
 
   send_request: [
     {
-        type: Schema.Types.ObjectId,
-        ref: 'Account',
+      type: Schema.Types.ObjectId,
+      ref: 'Account',
     }
   ],
   members: [
     {
-        type: Schema.Types.ObjectId,
-        ref: 'Account',
+      type: Schema.Types.ObjectId,
+      ref: 'Account',
     }
   ],
 },

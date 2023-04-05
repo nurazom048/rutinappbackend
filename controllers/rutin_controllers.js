@@ -21,7 +21,8 @@ exports.createRutin = async (req, res) => {
     res.status(200).json({ message: "Routine created successfully", created, user });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error creating routine" });
+    if (!handleValidationError(res, error))
+      return res.status(500).send({ message: error.message });
   }
 }
 

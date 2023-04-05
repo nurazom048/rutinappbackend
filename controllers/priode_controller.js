@@ -1,27 +1,34 @@
 const Routine = require('../models/rutin_models');
 const Class = require('../models/class_model');
+const { handleValidationError } = require('../methode/validation_error');
+
 
 
 //************  add Priode *************** */
 exports.add_priode = async (req, res) => {
+  const routine = req.routine;
 
-  const { start_time, end_time } = req.body;
+  const { start_time, end_time, priode_number } = req.body;
+  const { rutin_id } = req.params;
 
   try {
 
-    const routine = req.routine;
-    routine.priode.push({ start_time, end_time });
-    const aded = await routine.save();    // Save the changes to the routine
+    //.. Chack this Priode number is free or not 
+    const existingRoutine = await Routine.findOne({ _id: rutin_id });
+    const isBokingPriodeNumber = existingRoutine.priode.some(priode => priode.priode_number.toString() === priode_number.toString());
+    if (isBokingPriodeNumber) return res.status(404).send({ message: "In this routine, this period number is not free" });
 
 
+    routine.priode.push({ start_time, end_time, priode_number });
+    const added = await routine.save();
 
-    res.status(200).send({ message: 'Period added to routine', aded });
+    res.status(200).send({ message: 'Period added to routine', added });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({ message: error.message });
+    if (!handleValidationError(res, error))
+      return res.status(500).send({ message: error.message });
+
   }
 }
-
 
 
 

@@ -73,15 +73,3 @@ exports.permition_remove_priode = async (req, res, next) => {
 };
 
 
-exports.vadlidator_add_priode = async (req, res, next) => {
-    const { start_time, end_time } = req.body;
-
-    try {
-        if (!start_time || !end_time) return res.status(400).json({ message: "start_time and end_time are required" });
-        next();
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server error" });
-    }
-};

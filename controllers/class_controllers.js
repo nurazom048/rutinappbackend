@@ -2,48 +2,65 @@
 const Routine = require('../models/rutin_models')
 const Class = require('../models/class_model');
 const Account = require('../models/Account');
+const { handleValidationError } = require('../methode/validation_error');
+const { getClasses } = require('../methode/get_class_methode');
+
 
 
 
 
 //************   creat class       *************** */
 exports.create_class = async (req, res) => {
+
   const { rutin_id } = req.params;
-  const { name, room, subjectcode, start, end, weekday, start_time, end_time, instuctor_name, has_class } = req.body;
+  const { name, room, subjectcode, start, end, weekday, instuctor_name, has_class } = req.body;
   console.log(req.body);
+  try {
 
 
-  const rutin = await Routine.findOne({ _id: rutin_id });
-  // console.log(rutin.ownerid.toString());
+    const rutin = await Routine.findOne({ _id: rutin_id });
+    if (!rutin) return res.status(404).send('Routine not found');
+    if (rutin.ownerid.toString() !== req.user.id)
+      return res.status(401).send('You can only add classes to your own routine');
 
-  if (!rutin) return res.status(404).send('Routine not found');
-  if (rutin.ownerid.toString() !== req.user.id)
-    return res.status(401).send('You can only add classes to your own routine');
+    // validation
 
-  // validation
-  if (start > start) return res.status(404).send({ message: 'end priode should be biger the star prioide ' });
+    if (weekday < 1 || weekday > 7) throw new Error('Weekday should be between 1 and 7');
 
-  const isAllradyBooking = await Class.findOne({ weekday, start, rutin_id: rutin._id });
-  if (isAllradyBooking) return res.status(404).send({ message: 'on this weakday staring priode is not free' });
-  const isAllradyBookingEnd = await Class.findOne({ weekday, end, rutin_id: rutin._id });
-  if (isAllradyBookingEnd) return res.status(404).send({ message: 'on this weakday end priode is not free' });
-  //
-  const isAllradyStrt = await Class.findOne({ weekday, start: end, rutin_id: rutin._id });
-  if (isAllradyStrt) return res.status(404).send({ message: 'end priode is not free' });
-  const isAllradyEnd = await Class.findOne({ weekday, end: start, rutin_id: rutin._id });
-  if (isAllradyEnd) return res.status(404).send({ message: 'start priode is not free' });
+    const isAllradyBooking = await Class.findOne({ weekday, start, rutin_id: rutin._id });
+    if (isAllradyBooking) {
+      return res.status(400).send({ message: 'This weekday starting period is already booked' });
+    }
 
-  const newClass = new Class({
-    name, room, subjectcode, start, end, weekday, start_time, end_time, rutin_id, instuctor_name, has_class
-  });
+    const isAllradyBookingEnd = await Class.findOne({ weekday, end, rutin_id: rutin._id });
+    if (isAllradyBookingEnd) {
+      return res.status(400).send({ message: 'This weekday ending period is already booked' });
+    }
 
-  await newClass.save();
-  const new_id_Into_rutin = await Routine.findOneAndUpdate({ _id: rutin_id }, { $push: { class: newClass._id } }, { new: true });
+    const isAllradyStrt = await Class.findOne({ weekday, start: end, rutin_id: rutin._id });
+    if (isAllradyStrt) return res.status(400).send({ message: 'End period is not free' });
 
-  rutin.class.push(newClass._id);
-  await rutin.save();
-  res.send({ class: newClass, message: 'Class added successfully', new_id_Into_rutin });
-}
+
+    const isAllradyEnd = await Class.findOne({ weekday, end: start, rutin_id: rutin._id });
+    if (isAllradyEnd) return res.status(400).send({ message: 'Start period is not free' });
+
+
+    const newClass = new Class({
+      name, room, subjectcode, start, end, weekday, rutin_id, instuctor_name, has_class
+    });
+
+    await newClass.save();
+    const new_id_Into_rutin = await Routine.findOneAndUpdate({ _id: rutin_id }, { $push: { class: newClass._id } }, { new: true });
+
+    rutin.class.push(newClass._id);
+    await rutin.save();
+    res.send({ class: newClass, message: 'Class added successfully', new_id_Into_rutin });
+  } catch (error) {
+    if (!handleValidationError(res, error))
+      return res.status(500).send({ message: error.message });
+  }
+};
+
 
 
 //************   edit_class       *************** */
@@ -85,7 +102,7 @@ exports.edit_class = async (req, res) => {
     if (!updatedClass) return res.status(404).send('Class not found');
     console.log(updatedClass);
     res.send({ class: updatedClass, message: 'Class updated successfully' });
-    
+
 
     //
   } catch (error) {
@@ -160,69 +177,34 @@ exports.show_weekday_classes = async (req, res) => {
 exports.allclass = async (req, res) => {
   const { rutin_id } = req.params;
 
-
-
   try {
     const routine = await Routine.findById(rutin_id);
     if (!routine) return res.status(404).send('Routine not found');
 
-    //.... Rutins Priode ....//
-    const priode = await Routine.find({ _id: rutin_id }).select('-_id priode');
-    const priodes = priode[0].priode.map(p => ({
-      start_time: p.start_time,
-      end_time: p.end_time,
-      _id: p._id,
-    }));
 
+    // Find the routine's priodes and sort them by priode_number
+    const priodes = routine.priode.sort((a, b) => a.priode_number - b.priode_number);
 
-    //.... Rutins class...//
-
-    const Sunday = await Class.find({ weekday: 1, rutin_id: rutin_id }).select('-summary -__v -rutin_id').sort({ start: 1 });
-    const Monday = await Class.find({ weekday: 2, rutin_id: rutin_id }).select('-summary -__v -rutin_id').sort({ start: 1 });
-    const Tuesday = await Class.find({ weekday: 3, rutin_id: rutin_id }).select('-summary -__v -rutin_id').sort({ start: 1 });
-    const Wednesday = await Class.find({ weekday: 4, rutin_id: rutin_id }).select('-summary -__v -rutin_id').sort({ start: 1 });
-    const Thursday = await Class.find({ weekday: 5, rutin_id: rutin_id }).select('-summary -__v -rutin_id').sort({ start: 1 });
-    const Friday = await Class.find({ weekday: 6, rutin_id: rutin_id }).select('-summary -__v -rutin_id').sort({ start: 1 });
-    const Saturday = await Class.find({ weekday: 7, rutin_id: rutin_id }).select('-summary -__v -rutin_id').sort({ start: 1 });
-
+    //.. Get class By Weakday
+    const Sunday = await getClasses(1, rutin_id, priodes);
+    const Monday = await getClasses(2, rutin_id, priodes);
+    const Tuesday = await getClasses(3, rutin_id, priodes);
+    const Wednesday = await getClasses(4, rutin_id, priodes);
+    const Thursday = await getClasses(5, rutin_id, priodes);
+    const Friday = await getClasses(6, rutin_id, priodes);
+    const Saturday = await getClasses(7, rutin_id, priodes);
 
     //
-    const routines = await Routine.findById(rutin_id);
-    const owner = await Account.findOne({ _id: routines.ownerid }, { _id: 1, name: 1, ownerid: 1, image: 1, username: 1 });
-    //
-
-    //.... Captens list of routines .....///
-    const listOfCa10s = await Routine.findOne({ _id: rutin_id }, { _id: 0, cap10s: 1 })
-      .populate({
-        path: 'cap10s.cap10Ac',
-        select: 'name image username'
-      })
-      .lean();
-
-    if (listOfCa10s.cap10s && Array.isArray(listOfCa10s.cap10s)) {
-      for (const cap10 of listOfCa10s.cap10s) {
-        cap10._id = cap10.cap10Ac._id;
-        cap10.username = cap10.cap10Ac.username;
-        cap10.name = cap10.cap10Ac.name;
-        cap10.image = cap10.cap10Ac.image;
-        delete cap10.cap10Ac;
-      }
-    }
-    const finalCap10List = listOfCa10s.cap10s ?? [];
-    isSaved = false;
-    //..... Eddit permition only for Ownwes and captens....///
-
-    const reac = await Account.findOne({ _id: routines.ownerid },);
-    if (reac.Saved_routines.includes(rutin_id)) { isSaved = true; }
+    const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
 
 
-
-    res.send({ rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
+    res.send({ _id: routine._id, image: routine.image, rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
   } catch (error) {
     console.log(error);
     res.status(400).send(error.message);
   }
 };
+
 
 
 

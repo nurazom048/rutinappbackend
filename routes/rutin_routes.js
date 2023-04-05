@@ -36,11 +36,11 @@ app.get('/search', rutin.search_rutins);
 
 
 
-const { permition_add_priode, vadlidator_add_priode, permition_remove_priode } = require('../midlewere/priode_mid');
+const { permition_add_priode, permition_remove_priode } = require('../midlewere/priode_mid');
 
 //... priode add  remove priode ...//
 
-app.post('/priode/add/:rutin_id', verifyToken, permition_add_priode, vadlidator_add_priode, priode.add_priode);// add priode
+app.post('/priode/add/:rutin_id', verifyToken, permition_add_priode, priode.add_priode);// add priode
 app.delete('/priode/remove/:priodeId', verifyToken, permition_remove_priode, priode.delete_priode);
 app.post('/all_priode/:rutin_id', priode.all_priode);
 
