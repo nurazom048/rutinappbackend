@@ -1,5 +1,6 @@
 const Account = require('../models/Account')
 const Routine = require('../models/rutin_models')
+const { getClasses } = require('../methode/get_class_methode');
 
 
 //********** createRutin   ************* */
@@ -240,8 +241,8 @@ exports.search_rutins = async (req, res) => {
   try {
     const regex = new RegExp(src, "i");
     const count = await Routine.countDocuments({ name: regex });
-    const rutins = await Routine.find({ name: regex })
-      .select("_id name ownerid last_summary")
+    const routine = await Routine.findOne({ name: regex })
+      .select("_id name ownerid")
       .populate({
         path: "ownerid",
         select: "_id name username image"
@@ -249,10 +250,29 @@ exports.search_rutins = async (req, res) => {
       .limit(limit)
       .skip((page - 1) * limit);
 
-    if (!rutins) return res.status(404).send({ message: "Not found" });
+    if (!routine) return res.status(404).send({ message: "Not found" });
+
+
+    //.. if routin found ,,,..//
+
+
+
+
+
+
+    //.. Get class By Weakday
+    // const Sunday = await getClasses(1, routine.id, routine.priode);
+
+
+    //
+    // const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
+
+
+    // res.send({ _id: routine._id, image: routine.image, rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
 
     res.status(200).json({
-      rutins,
+      routine,
+      // Sunday,
       currentPage: page,
       totalPages: Math.ceil(count / limit)
     });
@@ -313,7 +333,7 @@ exports.uploaded_rutins = async (req, res) => {
     const count = await Routine.countDocuments({ ownerid: findAccount._id });
 
     const rutins = await Routine.find({ ownerid: findAccount._id })
-      .select("name ownerid last_summary")
+      .select("name ownerid last_summary ")
       .populate({ path: 'ownerid', select: 'name image username' })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)

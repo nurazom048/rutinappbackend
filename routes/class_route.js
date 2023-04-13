@@ -18,7 +18,8 @@ app.post('/:rutin_id/all/class', verifyToken, classs.allclass);
 app.get('/find/class/:class_id', verifyToken, classs.findclass);
 
 
-
+// weakday 
+app.post('/weakday/add/:class_id', classs.addWeakday);
 
 
 

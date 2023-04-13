@@ -26,33 +26,11 @@ const classscheme = new Schema({
 
     },
 
-    start: {
-        type: Number,
-        required: [true, 'Start period is required'],
-        validate: {
-            validator: function (value) {
-                return value <= this.end && value !== 0;
-            },
-            message: 'Start period should be less than End period and cannot be zero'
-        }
-    },
-    end: {
-        type: Number,
-        required: [true, 'End period is required'],
-        validate: {
-            validator: function (value) {
-                return value !== 0;
-            },
-            message: 'End period cannot be zero'
-        }
-    },
 
-    weekday: {
-        type: Number,
-        required: [true, 'Weekday is required'],
-        enum: [1, 2, 3, 4, 5, 6, 7],
-
-    },
+    weekday: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Weekday'
+    }],
 
     rutin_id: {
         type: Schema.Types.ObjectId,

@@ -4,60 +4,175 @@ const Class = require('../models/class_model');
 const Account = require('../models/Account');
 const { handleValidationError } = require('../methode/validation_error');
 const { getClasses } = require('../methode/get_class_methode');
-
+const Priode = require('../models/priodeModels');
+const Weekday = require('../models/weakdayModel');
 
 
 
 
 //************   creat class       *************** */
-exports.create_class = async (req, res) => {
 
+
+exports.create_class = async (req, res) => {
   const { rutin_id } = req.params;
-  const { name, room, subjectcode, start, end, weekday, instuctor_name, has_class } = req.body;
-  console.log(req.body);
+  const { name, room, subjectcode, instuctor_name } = req.body;
+  const { num, start, end, weekday, start_time, end_time } = req.body;
+
+
+
   try {
 
-
+    // find  Rutine to chack owener
     const rutin = await Routine.findOne({ _id: rutin_id });
     if (!rutin) return res.status(404).send('Routine not found');
-    if (rutin.ownerid.toString() !== req.user.id)
-      return res.status(401).send('You can only add classes to your own routine');
+    if (rutin.ownerid.toString() !== req.user.id) return res.status(401).send('You can only add classes to your own routine');
+    /////////////
+    // validation 1 chack priod is created or not  
+    const findEnd = await Priode.findOne({ rutin_id, priode_number: start });
+    const findstarpriod = await Priode.findOne({ rutin_id, priode_number: end });
+    if (!findEnd) return res.status(404).send({ message: `${end} priode is not created` });
+    if (!findstarpriod) return res.status(404).send({ message: `${start}priode is not created` });
 
-    // validation
+    //  validation  2 chack booking
+    const startPriodeAllradyBooking = await Weekday.findOne({ rutin_id, num, start });
+    if (startPriodeAllradyBooking) return res.status(404).send({ message: 'Sart priode is allrady booking ' });
+    const endPriodeAllradyBooking = await Weekday.findOne({ rutin_id, num, end });
+    if (endPriodeAllradyBooking) return res.status(404).send({ message: 'end priode is allrady booking' });
 
-    if (weekday < 1 || weekday > 7) throw new Error('Weekday should be between 1 and 7');
+    // console.log(start);
+    // console.log(end);
+    const mid = [];
+    const allStart = await Weekday.find({ rutin_id, num }, { start: 1 });
+    const allEnd = await Weekday.find({ rutin_id, num }, { end: 1 });
 
-    const isAllradyBooking = await Class.findOne({ weekday, start, rutin_id: rutin._id });
-    if (isAllradyBooking) {
-      return res.status(400).send({ message: 'This weekday starting period is already booked' });
+    for (let i = 0; i < allStart.length; i++) {
+      for (let j = allStart[i].start + 1; j < allEnd[i].end; j++) {
+        mid.push(j);
+      }
     }
+    console.log(mid);
 
-    const isAllradyBookingEnd = await Class.findOne({ weekday, end, rutin_id: rutin._id });
-    if (isAllradyBookingEnd) {
-      return res.status(400).send({ message: 'This weekday ending period is already booked' });
-    }
+    if (mid.includes(start)) return res.status(400).send({ message: `${start} This  period is already booked  all booking upto  ${mid} ` });
+    if (mid.includes(end)) return res.status(400).send({ message: `This ${end}  period is already booked all booking up to  ${mid} ` });
 
-    const isAllradyStrt = await Class.findOne({ weekday, start: end, rutin_id: rutin._id });
-    if (isAllradyStrt) return res.status(400).send({ message: 'End period is not free' });
-
-
-    const isAllradyEnd = await Class.findOne({ weekday, end: start, rutin_id: rutin._id });
-    if (isAllradyEnd) return res.status(400).send({ message: 'Start period is not free' });
-
-
+    //******* main code  */
+    // create and save new class
     const newClass = new Class({
-      name, room, subjectcode, start, end, weekday, rutin_id, instuctor_name, has_class
+      name,
+      room,
+      subjectcode,
+      rutin_id,
+      instuctor_name
     });
-
     await newClass.save();
-    const new_id_Into_rutin = await Routine.findOneAndUpdate({ _id: rutin_id }, { $push: { class: newClass._id } }, { new: true });
 
+    // create and save new weekday
+    const newWeekday = new Weekday({
+      class_id: newClass._id,
+      rutin_id,
+      num: num,
+      start,
+      end,
+      start_time,
+      end_time
+    });
+    await newWeekday.save();
+
+    // add new class to the class array of the routine
     rutin.class.push(newClass._id);
     await rutin.save();
-    res.send({ class: newClass, message: 'Class added successfully', new_id_Into_rutin });
+
+    const updatedRoutine = await Routine.findOne({ _id: rutin_id }).populate('class');
+    res.send({ class: newClass, message: 'Class added successfully', routine: updatedRoutine, newWeekday });
+
+    //
   } catch (error) {
+
+
     if (!handleValidationError(res, error))
       return res.status(500).send({ message: error.message });
+  }
+};
+
+
+
+
+
+
+
+//,, Add waakday to class
+exports.addWeakday = async (req, res) => {
+  const { class_id } = req.params;
+  const { num, start, end } = req.body;
+
+  try {
+    const classFind = await Class.findOne({ _id: class_id });
+    if (!classFind) return res.status(404).send('Class not found');
+
+    const routine = await Routine.findOne({ _id: classFind.rutin_id });
+    if (!routine) return res.status(404).send('Routine not found');
+    console.log(routine._id);
+
+
+
+    // priode not created validations
+    const findEnd = await Priode.findOne({ rutin_id: classFind.rutin_id, priode_number: start });
+    const findstarpriod = await Priode.findOne({ rutin_id: classFind.rutin_id, priode_number: end });
+    if (!findEnd) return res.status(404).send({ message: `${end} priode is not created` });
+    if (!findstarpriod) return res.status(404).send({ message: `${start}priode is not created` });
+
+
+
+
+    //  validation  2 chack booking
+
+    const startPriodeAllradyBooking = await Weekday.findOne({ class_id, num, start });
+    if (startPriodeAllradyBooking) return res.status(404).send({ message: 'Sart priode is allrady booking ' });
+
+    const endPriodeAllradyBooking = await Weekday.findOne({ class_id, num, end });
+    if (endPriodeAllradyBooking) return res.status(404).send({ message: 'end priode is allrady booking' });
+
+    // console.log(start);
+    // console.log(end);
+
+
+    const mid = [];
+    const allStart = await Weekday.find({ num });
+    const allEnd = await Weekday.find({ num }, { end: 1 });
+
+    for (let i = 0; i < allStart.length; i++) {
+      for (let j = allStart[i].start + 1; j < allEnd[i].end; j++) {
+        mid.push(j);
+      }
+    }
+    console.log(mid);
+
+    if (mid.includes(start)) return res.status(400).send({ message: `${start} This  period is already booked  all booking upto  ${mid} ` });
+    if (mid.includes(end)) return res.status(400).send({ message: `This ${end}  period is already booked all booking up to  ${mid} ` });
+
+
+
+
+
+    // create and save new weekday
+    const newWeekday = new Weekday({
+      class_id,
+      rutin_id: routine._id,
+      num,
+      start,
+      end
+    });
+    await newWeekday.save();
+
+    // add new weekday to the weekday array of the routine
+    classFind.weekday.push(newWeekday._id);
+    await classFind.save();
+
+    res.send({ message: 'Weekday added successfully', newWeekday });
+  } catch (error) {
+    if (!handleValidationError(res, error)) {
+      return res.status(500).send({ message: error.message });
+    }
   }
 };
 
@@ -104,14 +219,14 @@ exports.edit_class = async (req, res) => {
     res.send({ class: updatedClass, message: 'Class updated successfully' });
 
 
-    //
+
+
+
   } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: 'Error updating class' });
+    if (!handleValidationError(res, error))
+      return res.status(500).send({ message: error.message });
   }
 };
-
-
 
 //************ delete_class *************** */
 exports.delete_class = async (req, res) => {
@@ -182,31 +297,53 @@ exports.allclass = async (req, res) => {
     if (!routine) return res.status(404).send('Routine not found');
 
 
-    // Find the routine's priodes and sort them by priode_number
-    const priodes = routine.priode.sort((a, b) => a.priode_number - b.priode_number);
+    // find priod 
+    const priodes = await Priode.find({ rutin_id: rutin_id });
 
     //.. Get class By Weakday
-    const Sunday = await getClasses(1, rutin_id, priodes);
-    const Monday = await getClasses(2, rutin_id, priodes);
-    const Tuesday = await getClasses(3, rutin_id, priodes);
-    const Wednesday = await getClasses(4, rutin_id, priodes);
-    const Thursday = await getClasses(5, rutin_id, priodes);
-    const Friday = await getClasses(6, rutin_id, priodes);
-    const Saturday = await getClasses(7, rutin_id, priodes);
+    const SundayClass = await Weekday.find({ rutin_id, num: 0 }).populate('class_id');
+    const MondayClass = await Weekday.find({ rutin_id, num: 1 }).populate('class_id');
+    const TuesdayClass = await Weekday.find({ rutin_id, num: 2 }).populate('class_id');
+    const WednesdayClass = await Weekday.find({ rutin_id, num: 3 }).populate('class_id');
+    const ThursdayClass = await Weekday.find({ rutin_id, num: 4 }).populate('class_id');
+    const FridayClass = await Weekday.find({ rutin_id, num: 5 }).populate('class_id');
+    const SaturdayClass = await Weekday.find({ rutin_id, num: 6 }).populate('class_id');
 
-    //
+
+    // addd start time and end time with it 
+    const Sunday = await getClasses(SundayClass, priodes)
+    const Monday = await getClasses(MondayClass, priodes);
+    const Tuesday = await getClasses(TuesdayClass, priodes);
+    const Wednesday = await getClasses(WednesdayClass, priodes);
+    const Thursday = await getClasses(ThursdayClass, priodes);
+    const Friday = await getClasses(FridayClass, priodes);
+    const Saturday = await getClasses(SaturdayClass, priodes);
+
+
+    console.log(Sunday);
+
+
     const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
 
+    res.send({ _id: routine._id, rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
 
-    res.send({ _id: routine._id, image: routine.image, rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
   } catch (error) {
-    console.log(error);
-    res.status(400).send(error.message);
+
+    console.error(error);
+    res.status(500).send('Server Error');
   }
 };
 
 
 
+// //.. Get class By Weakday
+// const Sunday = await getClasses(1, rutin_id, priodes);
+// const Monday = await getClasses(2, rutin_id, priodes);
+// const Tuesday = await getClasses(3, rutin_id, priodes);
+// const Wednesday = await getClasses(4, rutin_id, priodes);
+// const Thursday = await getClasses(5, rutin_id, priodes);
+// const Friday = await getClasses(6, rutin_id, priodes);
+// const Saturday = await getClasses(7, rutin_id, priodes);
 
 
 

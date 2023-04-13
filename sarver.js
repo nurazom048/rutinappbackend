@@ -37,6 +37,8 @@ app.use("/account", account);//.. acount_route
 app.use("/notice", notice);//.. notice_route
 
 app.get("/", (req, res) => {
+
+  console.log(req.body)
   res.status(200).json({ message: "hi i am working" });
 });
 

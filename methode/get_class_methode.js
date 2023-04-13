@@ -3,11 +3,8 @@ const Class = require('../models/class_model');
 
 
 
-exports.getClasses = async (weekday, rutin_id, priodes) => {
-    const classes = await Class.find({ weekday, rutin_id })
-        .select('-summary -__v -rutin_id')
-        .sort({ start: 1 })
-        .exec();
+exports.getClasses = async (classes, priodes) => {
+
 
     return classes.map(cls => {
         const startPriode = priodes.find(p => p.priode_number === cls.start);
