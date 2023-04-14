@@ -2,6 +2,43 @@ const Account = require('../models/Account')
 const Routine = require('../models/rutin_models')
 const { getClasses } = require('../methode/get_class_methode');
 
+const Class = require('../models/class_model');
+
+const getRoutineData = async (rutin_id) => {
+  try {
+    const routine = await Routine.findOne({ _id: rutin_id });
+    if (!routine) throw new Error("Routine not found");
+
+    const priodes = await Priode.find({ rutin_id: rutin_id });
+
+    const SundayClass = await Weekday.find({ rutin_id, num: 0 }).populate('class_id');
+    const MondayClass = await Weekday.find({ rutin_id, num: 1 }).populate('class_id');
+    const TuesdayClass = await Weekday.find({ rutin_id, num: 2 }).populate('class_id');
+    const WednesdayClass = await Weekday.find({ rutin_id, num: 3 }).populate('class_id');
+    const ThursdayClass = await Weekday.find({ rutin_id, num: 4 }).populate('class_id');
+    const FridayClass = await Weekday.find({ rutin_id, num: 5 }).populate('class_id');
+    const SaturdayClass = await Weekday.find({ rutin_id, num: 6 }).populate('class_id');
+
+    const Sunday = await getClasses(SundayClass, priodes);
+    const Monday = await getClasses(MondayClass, priodes);
+    const Tuesday = await getClasses(TuesdayClass, priodes);
+    const Wednesday = await getClasses(WednesdayClass, priodes);
+    const Thursday = await getClasses(ThursdayClass, priodes);
+    const Friday = await getClasses(FridayClass, priodes);
+    const Saturday = await getClasses(SaturdayClass, priodes);
+
+    const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
+
+    return { _id: routine._id, rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner };
+  } catch (error) {
+    throw error;
+  }
+};
+
+
+
+const Weekday = require('../models/weakdayModel');
+
 
 //********** createRutin   ************* */
 exports.createRutin = async (req, res) => {
@@ -241,7 +278,7 @@ exports.search_rutins = async (req, res) => {
   try {
     const regex = new RegExp(src, "i");
     const count = await Routine.countDocuments({ name: regex });
-    const routine = await Routine.findOne({ name: regex })
+    const routine = await Routine.find({ name: regex })
       .select("_id name ownerid")
       .populate({
         path: "ownerid",
@@ -333,7 +370,7 @@ exports.uploaded_rutins = async (req, res) => {
     const count = await Routine.countDocuments({ ownerid: findAccount._id });
 
     const rutins = await Routine.find({ ownerid: findAccount._id })
-      .select("name ownerid last_summary ")
+      .select("name ownerid last_summary")
       .populate({ path: 'ownerid', select: 'name image username' })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -418,7 +455,7 @@ exports.joined_rutins = async (req, res) => {
     const count = await Routine.countDocuments({ members: id });
 
     const routines = await Routine.find({ members: id })
-      .select("name ownerid last_summary")
+      .select(" name ownerid last_summary")
       .populate({ path: 'ownerid', select: 'name image username' })
       .skip((page - 1) * limit)
       .limit(limit);

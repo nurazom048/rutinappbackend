@@ -69,7 +69,7 @@ exports.create_class = async (req, res) => {
     // create and save new weekday
     const newWeekday = new Weekday({
       class_id: newClass._id,
-      rutin_id,
+      routine_id: rutin_id,
       num: num,
       start,
       end,
@@ -157,7 +157,7 @@ exports.addWeakday = async (req, res) => {
     // create and save new weekday
     const newWeekday = new Weekday({
       class_id,
-      rutin_id: routine._id,
+      routine_id: classFind.rutin_id.toString(),
       num,
       start,
       end
@@ -301,13 +301,13 @@ exports.allclass = async (req, res) => {
     const priodes = await Priode.find({ rutin_id: rutin_id });
 
     //.. Get class By Weakday
-    const SundayClass = await Weekday.find({ rutin_id, num: 0 }).populate('class_id');
-    const MondayClass = await Weekday.find({ rutin_id, num: 1 }).populate('class_id');
-    const TuesdayClass = await Weekday.find({ rutin_id, num: 2 }).populate('class_id');
-    const WednesdayClass = await Weekday.find({ rutin_id, num: 3 }).populate('class_id');
-    const ThursdayClass = await Weekday.find({ rutin_id, num: 4 }).populate('class_id');
-    const FridayClass = await Weekday.find({ rutin_id, num: 5 }).populate('class_id');
-    const SaturdayClass = await Weekday.find({ rutin_id, num: 6 }).populate('class_id');
+    const SundayClass = await Weekday.find({ routine_id: rutin_id, num: 0 }).populate('class_id');
+    const MondayClass = await Weekday.find({ routine_id: rutin_id, num: 1 }).populate('class_id');
+    const TuesdayClass = await Weekday.find({ routine_id: rutin_id, num: 2 }).populate('class_id');
+    const WednesdayClass = await Weekday.find({ routine_id: rutin_id, num: 3 }).populate('class_id');
+    const ThursdayClass = await Weekday.find({ routine_id: rutin_id, num: 4 }).populate('class_id');
+    const FridayClass = await Weekday.find({ routine_id: rutin_id, num: 5 }).populate('class_id');
+    const SaturdayClass = await Weekday.find({ routine_id: rutin_id, num: 6 }).populate('class_id');
 
 
     // addd start time and end time with it 

@@ -8,6 +8,7 @@ const weekdaySchema = new mongoose.Schema({
   routine_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Routine',
+    required: true,
 
   },
   class_id: {
