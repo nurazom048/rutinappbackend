@@ -209,35 +209,46 @@ const getNoticePDFs = async (notices) => {
 //
 exports.viewNoticeByUsername = async (req, res) => {
     const { username } = req.params;
-
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+  
     try {
-
-        // step 1 find account id
-        const account = await Account.findOne({ username: username });
-        if (!account) return res.status(404).json({ message: 'Account not found' });
-        //find public 
-        const notices = await Notice.find(
-            { owner: mongoose.Types.ObjectId(account._id), visibility: "public" },
-            { content: 0, pinned_notice: 0, saved_routines: 0, __v: 0 }
-        ).populate({
-            path: 'noticeBoard',
-            select: 'name owner',
-            populate: {
-                path: 'owner',
-                select: 'name username image'
-            }
-        });
-        if (!notices) return res.status(404).json({ message: 'Notices not found' });
-
-        const noticesWithPDFs = await getNoticePDFs(notices);
-
-        res.json({ message: 'All uploaded notices', notices: noticesWithPDFs });
+      // Step 1: Find the account by username
+      const account = await Account.findOne({ username: username });
+      if (!account) return res.status(404).json({ message: 'Account not found' });
+  
+      // Step 2: Find the notices for the account and populate owner details
+      const notices = await Notice.find(
+        { owner: mongoose.Types.ObjectId(account._id), visibility: "public" },
+        { content: 0, pinned_notice: 0, saved_routines: 0, __v: 0 }
+      )
+      .populate({
+        path: 'noticeBoard',
+        select: 'name',
+        populate: {
+          path: 'owner',
+          select: 'name username image'
+        }
+      })
+      .limit(limit)
+      .skip((page - 1) * limit);
+  
+      const count = await Notice.countDocuments({ owner: mongoose.Types.ObjectId(account._id), visibility: "public" });
+  
+      // Step 3: Send the response
+      const noticesWithPDFs = await getNoticePDFs(notices);
+      res.json({
+        message: 'All uploaded notices',
+        notices: noticesWithPDFs,
+        currentPage: page,
+        totalPages: Math.ceil(count / limit)
+      });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: err.message });
+      console.error(err);
+      res.status(500).json({ message: err.message });
     }
-};
-
+  };
+  
 // send join request
 
 
