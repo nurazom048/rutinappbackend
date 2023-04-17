@@ -1,5 +1,4 @@
 const Account = require('../models/Account');
-const Notice = require('../models/notice_models');
 
 
 //? firebase
@@ -12,7 +11,7 @@ initializeApp(firebase_stroage.firebaseConfig);
 
 // Get a reference to the Firebase storage bucket
 const storage = getStorage();
-const pdfRef = ref(storage, 'notice/pdf');
+// const pdfRef = ref(storage, 'notice/pdf');
 
 
 

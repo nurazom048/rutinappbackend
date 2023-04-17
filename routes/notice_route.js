@@ -14,22 +14,26 @@ const upload = multer({
 
 
 //.. create update delete
-router.route("/create/").post(verifyToken, notice.create_notice);//... create notice
-router.route("/delete/:noticeId").delete(verifyToken, notice.deleteNotice);//... delete notice
+router.route("/create/").post(verifyToken, notice.create_notice_board);//... create notice
+//router.route("/delete/:noticeId").delete(verifyToken, notice.deleteNotice);//... delete notice
 router.route("/:username").get(notice.viewNoticeByUsername);//... 
 
-// add content 
-router.route("/add/:noticeId").post(verifyToken, upload.single('pdf_file'), notice.add_content);//... add content
-router.route("/view/content/:contentId").post(notice.viewContent);//... add content
+// add notice 
+router.route("/add/:noticeId").post(verifyToken, upload.single('pdf_file'), notice.addNotice);//... add content
+router.route("/view/content/:noticeId").post(notice.viewNoticeById);//... add content
+
+// //pined notice 
+// router.route("/addTopin/:noticeId").post(verifyToken, notice.addToPin);//... add content
 
 
 
 
-//?... get notice...//
-router.route("/getContent/:noticeId").get(notice.allContent);//... get all notice
-//router.route("/getAll/:username").get(ac.add_content);//... get all notice
+// //?... get notice...//
+// router.route("/getContent/:noticeId").get(notice.allContent);//... get all notice
+// //router.route("/getAll/:username").get(ac.add_content);//... get all notice
 
 
+// router.route("/recent").post(verifyToken, notice.recent_notice);//... get all recent_notice
 
 
 
