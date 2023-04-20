@@ -14,16 +14,29 @@ const upload = multer({
 
 
 //.. create update delete
-router.route("/create/").post(verifyToken, notice.create_notice_board);//... create notice
+router.route("/create/").post(verifyToken, notice.create_notice_board);
 //router.route("/delete/:noticeId").delete(verifyToken, notice.deleteNotice);//... delete notice
-router.route("/:username").get(notice.viewNoticeByUsername);//... 
+router.route("/:username").get(notice.viewNoticeByUsername);
 
 // add notice 
-router.route("/add/:noticeId").post(verifyToken, upload.single('pdf_file'), notice.addNotice);//... add content
-router.route("/view/content/:noticeId").post(notice.viewNoticeById);//... add content
+router.route("/add/:noticeId").post(verifyToken, upload.single('pdf_file'), notice.addNotice);
+router.route("/view/content/:noticeId").post(notice.viewNoticeById);
 
-// //pined notice 
-// router.route("/addTopin/:noticeId").post(verifyToken, notice.addToPin);//... add content
+
+// send request to add notice
+
+router.route("/sendRequest/:noticeBoardId").post(verifyToken, notice.sendRequest);
+router.route("/unSendRequest/:noticeBoardId").post(verifyToken, notice.unsendRequest);
+router.route("/acceptRequest/:noticeBoardId/:userId").post(verifyToken, notice.acceptRequest);
+
+// see all request 
+
+router.route("/viewRequest/:noticeBoardId").get(notice.seeAllRequest);
+// see all joined notice board
+router.route("/allJoinedNoticeBoard/").post(verifyToken, notice.seeAllJoinedNoticeBoard);
+router.route("/all_notice_board/").post(verifyToken, notice.AllNoticeBoard);// owemer by me
+router.route("/recent/").post(verifyToken, notice.seeAllJoinedNoticeBoardNotices);
+
 
 
 
