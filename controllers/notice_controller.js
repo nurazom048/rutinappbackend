@@ -70,6 +70,9 @@ exports.addNotice = async (req, res) => {
     const { content_name, description } = req.body;
     const { id } = req.user;
 
+    console.log(req.body)
+    console.log(req.file)
+
     try {
         // step 1: Find the noticeBoard to check permission
         const noticeBoard = await NoticeBoard.findById(noticeId);
@@ -100,6 +103,8 @@ exports.addNotice = async (req, res) => {
         await uploadBytes(pdfRef, req.file.buffer, metadata); // Upload the file to Firebase Storage
 
         res.status(200).json({ message: 'Notice created and added successfully', notice: savedNotice });
+        console.error(savedNotice);
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: error.message });
@@ -422,9 +427,12 @@ exports.seeAllJoinedNoticeBoardNotices = async (req, res) => {
 
         const notices = noticeBoards.map((board) => board.notices);
 
+    
+        const noticesWithPDFs = await getNoticePDFs(notices[0]);
+
         res.status(200).json({
             message: "success",
-            notices: notices[0],
+            notices: noticesWithPDFs,
             currentPage: page,
             totalPages: totalPages,
             totalCount: count,
