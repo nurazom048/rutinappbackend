@@ -23,12 +23,18 @@ exports.create_notice_board = async (req, res) => {
     const { id } = req.user;
 
     try {
+
+        const allradyExsisName = await NoticeBoard.findOne({ name, owner: id });
+        console.log(allradyExsisName);
+        if (allradyExsisName) return res.status(400).json({ message: "NoticeBoard name is allray exsit" });
+
+
         // Create a new notice board object with the name, description, and owner ID
         const noticeBoard = new NoticeBoard({ name, description, owner: id });
         // Save the new notice board object to the database
         const savedNoticeBoard = await noticeBoard.save();
         // Return a success response with the saved notice board object
-        res.status(201).json({
+        res.status(200).json({
             message: 'Notice board created successfully',
             notice_board: savedNoticeBoard,
         });
@@ -427,7 +433,7 @@ exports.seeAllJoinedNoticeBoardNotices = async (req, res) => {
 
         const notices = noticeBoards.map((board) => board.notices);
 
-    
+
         const noticesWithPDFs = await getNoticePDFs(notices[0]);
 
         res.status(200).json({

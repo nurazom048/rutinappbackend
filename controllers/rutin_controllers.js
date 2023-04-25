@@ -334,7 +334,7 @@ exports.save_rutins = async (req, res) => {
 
     // Find the saved routines for the account and populate owner details
     const savedRoutines = await Routine.find({ _id: { $in: account.Saved_routines } })
-      .select("_id name last_summary ownerid")
+      .select("_id name ownerid")
       .populate({ path: "ownerid", select: "name username image" })
       .limit(limit)
       .skip((page - 1) * limit);
@@ -361,7 +361,7 @@ exports.uploaded_rutins = async (req, res) => {
   const { username } = req.params;
 
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 3;
+  const limit = parseInt(req.query.limit) || 2;
 
   try {
     const findAccount = await Account.findOne({ username: username || req.user.username })
@@ -455,7 +455,7 @@ exports.joined_rutins = async (req, res) => {
     const count = await Routine.countDocuments({ members: id });
 
     const routines = await Routine.find({ members: id })
-      .select(" name ownerid last_summary")
+      .select(" name ownerid")
       .populate({ path: 'ownerid', select: 'name image username' })
       .skip((page - 1) * limit)
       .limit(limit);
