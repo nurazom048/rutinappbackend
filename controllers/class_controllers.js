@@ -301,6 +301,8 @@ exports.allclass = async (req, res) => {
     const priodes = await Priode.find({ rutin_id: rutin_id });
 
     //.. Get class By Weakday
+    const allDay = await Weekday.find({ routine_id: rutin_id }).populate('class_id');
+
     const SundayClass = await Weekday.find({ routine_id: rutin_id, num: 0 }).populate('class_id');
     const MondayClass = await Weekday.find({ routine_id: rutin_id, num: 1 }).populate('class_id');
     const TuesdayClass = await Weekday.find({ routine_id: rutin_id, num: 2 }).populate('class_id');
@@ -311,6 +313,8 @@ exports.allclass = async (req, res) => {
 
 
     // addd start time and end time with it 
+    const allClass = await getClasses(allDay, priodes)
+
     const Sunday = await getClasses(SundayClass, priodes)
     const Monday = await getClasses(MondayClass, priodes);
     const Tuesday = await getClasses(TuesdayClass, priodes);
@@ -320,16 +324,17 @@ exports.allclass = async (req, res) => {
     const Saturday = await getClasses(SaturdayClass, priodes);
 
 
-    console.log(Sunday);
+ 
 
 
     const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
 
-    res.send({ _id: routine._id, rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
+    res.send({ _id: routine._id, rutin_name: routine.name, priodes, Classes: { allClass, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
 
   } catch (error) {
 
     console.error(error);
+
     res.status(500).send('Server Error');
   }
 };
