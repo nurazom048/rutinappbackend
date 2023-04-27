@@ -101,23 +101,14 @@ exports.delete_priode = async (req, res) => {
 exports.all_priode = async (req, res) => {
   const { rutin_id } = req.params;
 
-  console.log(rutin_id);
+  console.log(`rutin_id: ${rutin_id}`);
 
   try {
-    const routine = await Routine.findOne({ _id: rutin_id });
-    //console.log(routine);
-
-    if (!routine) return res.status(404).send('Routine not found');
-
-
-    const priode = await Routine.find({ _id: rutin_id }).select('-_id priode');
-
-
-    console.log(priode);
-    res.send(priode[0]);
+    const priodes = await Priode.find({ rutin_id });
+    res.send({ message: 'All priodes list', priodes });
 
   } catch (error) {
-
-    res.status(400).send({ error });
+    console.error(error);
+    res.status(500).send({ message: 'Internal server error' });
   }
 };

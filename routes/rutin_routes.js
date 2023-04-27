@@ -42,7 +42,7 @@ const { permition_add_priode, permition_remove_priode } = require('../midlewere/
 
 app.post('/priode/add/:rutin_id', verifyToken, permition_add_priode, priode.add_priode);// add priode
 app.delete('/priode/remove/:priodeId', verifyToken, permition_remove_priode, priode.delete_priode);
-app.post('/all_priode/:rutin_id', priode.all_priode);
+app.get('/all_priode/:rutin_id', priode.all_priode);
 
 
 //....... cap 10 .....//
