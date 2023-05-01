@@ -29,7 +29,8 @@ const classscheme = new Schema({
 
     weekday: [{
         type: Schema.Types.ObjectId,
-        ref: 'Weekday'
+        ref: 'Weekday',
+        require: true,
     }],
 
     rutin_id: {

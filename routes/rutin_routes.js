@@ -41,8 +41,13 @@ const { permition_add_priode, permition_remove_priode } = require('../midlewere/
 //... priode add  remove priode ...//
 
 app.post('/priode/add/:rutin_id', verifyToken, permition_add_priode, priode.add_priode);// add priode
-app.delete('/priode/remove/:priodeId', verifyToken, permition_remove_priode, priode.delete_priode);
+app.delete('/priode/remove/:priode_id', priode.delete_priode);
+app.put('/priode/eddit/:priode_id', priode.edit_priode);
+
+
+//
 app.get('/all_priode/:rutin_id', priode.all_priode);
+app.get('/priode/find/:priode_id', priode.find_priode_by_id);
 
 
 //....... cap 10 .....//

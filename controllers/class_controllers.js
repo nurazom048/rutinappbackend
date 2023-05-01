@@ -16,7 +16,8 @@ const Weekday = require('../models/weakdayModel');
 exports.create_class = async (req, res) => {
   const { rutin_id } = req.params;
   const { name, room, subjectcode, instuctor_name } = req.body;
-  const { num, start, end, weekday, start_time, end_time } = req.body;
+  const { num, start, end, start_time, end_time } = req.body;
+  console.log(req.body);
 
 
 
@@ -55,7 +56,15 @@ exports.create_class = async (req, res) => {
     if (mid.includes(start)) return res.status(400).send({ message: `${start} This  period is already booked  all booking upto  ${mid} ` });
     if (mid.includes(end)) return res.status(400).send({ message: `This ${end}  period is already booked all booking up to  ${mid} ` });
 
+
+
+    const sameName = await Class.findOne({ name, rutin_id });
+    if (sameName) return res.status(404).send({ message: `You are allrady created class with this name => ${name} ` });
+
+
+
     //******* main code  */
+
     // create and save new class
     const newClass = new Class({
       name,
@@ -104,6 +113,8 @@ exports.create_class = async (req, res) => {
 exports.addWeakday = async (req, res) => {
   const { class_id } = req.params;
   const { num, start, end } = req.body;
+
+  console.log(req.body);
 
   try {
     const classFind = await Class.findOne({ _id: class_id });
@@ -175,6 +186,28 @@ exports.addWeakday = async (req, res) => {
     }
   }
 };
+
+//******* show all weekday in a class ************** */
+
+exports.allWeekdayInClass = async (req, res) => {
+
+  const { class_id } = req.params;
+
+  try {
+    // 1 cweekdays
+    const weekdays = await Weekday.find({ class_id });
+
+    res.send({ message: "All weekday in the class", weekdays });
+  } catch (error) {
+    return res.status(500).send({ message: error.toString, weekdays: [] });
+
+  }
+
+}
+
+
+
+
 
 
 
@@ -324,7 +357,7 @@ exports.allclass = async (req, res) => {
     const Saturday = await getClasses(SaturdayClass, priodes);
 
 
- 
+
 
 
     const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
@@ -367,10 +400,14 @@ exports.findclass = async (req, res) => {
 
   try {
     // 1 chack clases
-    const classs = await Class.findOne({ _id: class_id });
-    if (!classs) return res.status(404).send('Class not found');
+    const classs = await Class.findOne({ _id: class_id }, { weekday: 0, summary: 0, _v: 0 });
+    if (!classs) return res.status(404).send({ message: 'Class not found' });
 
-    res.status(200).send({ classs });
+    // 2 cweekdays
+    const weekdays = await Weekday.find({ class_id });
+
+
+    res.status(200).send({ classs, weekdays });
 
     //
   } catch (error) {

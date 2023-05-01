@@ -5,7 +5,8 @@ const priodModelSchema = new Schema({
     priode_number: {
         type: Number,
         required: [true, 'Please provide a period number'],
-        default: 0,
+        default: 1,
+        unique: true,
         validate: {
             validator: function (v) {
                 return v > 0;
