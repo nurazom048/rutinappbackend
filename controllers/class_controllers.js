@@ -15,8 +15,11 @@ const Weekday = require('../models/weakdayModel');
 
 exports.create_class = async (req, res) => {
   const { rutin_id } = req.params;
-  const { name, room, subjectcode, instuctor_name } = req.body;
-  const { num, start, end,  start_time, end_time } = req.body;
+  const { name,  subjectcode, instuctor_name } = req.body;
+  const { num, start,room, end,  start_time, end_time } = req.body;
+
+  console.log(req.body);
+  console.log(rutin_id);
 
 
 
@@ -34,16 +37,17 @@ exports.create_class = async (req, res) => {
     if (!findstarpriod) return res.status(404).send({ message: `${start}priode is not created` });
 
     //  validation  2 chack booking
-    const startPriodeAllradyBooking = await Weekday.findOne({ rutin_id, num, start });
+    const startPriodeAllradyBooking = await Weekday.findOne({ routine_id:rutin_id, num, start });
+    console.log(startPriodeAllradyBooking);
     if (startPriodeAllradyBooking) return res.status(404).send({ message: 'Sart priode is allrady booking ' });
-    const endPriodeAllradyBooking = await Weekday.findOne({ rutin_id, num, end });
+    const endPriodeAllradyBooking = await Weekday.findOne({ routine_id:rutin_id, num, end });
     if (endPriodeAllradyBooking) return res.status(404).send({ message: 'end priode is allrady booking' });
 
     // console.log(start);
     // console.log(end);
     const mid = [];
-    const allStart = await Weekday.find({ rutin_id, num }, { start: 1 });
-    const allEnd = await Weekday.find({ rutin_id, num }, { end: 1 });
+    const allStart = await Weekday.find({ routine_id:rutin_id, num }, { start: 1 });
+    const allEnd = await Weekday.find({ routine_id:rutin_id, num }, { end: 1 });
 
     for (let i = 0; i < allStart.length; i++) {
       for (let j = allStart[i].start + 1; j < allEnd[i].end; j++) {
@@ -59,7 +63,6 @@ exports.create_class = async (req, res) => {
     // create and save new class
     const newClass = new Class({
       name,
-      room,
       subjectcode,
       rutin_id,
       instuctor_name
@@ -72,6 +75,7 @@ exports.create_class = async (req, res) => {
       routine_id: rutin_id,
       num: num,
       start,
+      room,
       end,
       start_time,
       end_time

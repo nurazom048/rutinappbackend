@@ -43,26 +43,43 @@ const Weekday = require('../models/weakdayModel');
 //********** createRutin   ************* */
 exports.createRutin = async (req, res) => {
   const { name } = req.body;
-  console.log(req.body)
+  console.log(req.body);
+  
+  // Log the user who is creating the routine
   console.log(req.user);
-  const ownerid = req.user.id;
+
+  const ownerId = req.user.id;
 
   try {
-    // Create a new routine
+    // Check if a routine with the given name already exists for the user
+    const existingRoutine = await Routine.findOne({ name, ownerid: ownerId });
+    if (existingRoutine)return res.status(500).send({ message: "Routine already created with this name" });
 
-    const routine = new Routine({ name, ownerid });
-    const created = await routine.save();
 
-    const user = await Account.findOneAndUpdate({ _id: ownerid }, { $push: { routines: created._id } }, { new: true });
+    // Create a new routine object
+    const routine = new Routine({ name, ownerid: ownerId });
 
-    // Send response
-    res.status(200).json({ message: "Routine created successfully", created, user });
+    // Save the routine object to the database
+    const createdRoutine = await routine.save();
+
+    // Update the user's routines array with the new routine ID
+    const updatedUser = await Account.findOneAndUpdate(
+      { _id: ownerId },
+      { $push: { routines: createdRoutine._id } },
+      { new: true }
+    );
+
+    // Send a success response with the new routine and updated user object
+    res.status(200).json({ message: "Routine created successfully", routine: createdRoutine, user: updatedUser });
   } catch (error) {
     console.error(error);
-    if (!handleValidationError(res, error))
+
+    // Handle validation errors if any
+    if (!handleValidationError(res, error)) {
       return res.status(500).send({ message: error.message });
+    }
   }
-}
+};
 
 
 
