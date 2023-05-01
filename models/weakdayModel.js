@@ -16,10 +16,17 @@ const weekdaySchema = new mongoose.Schema({
     ref: 'Class',
     required: [true, 'Class ID is required']
   },
+
+  room: {
+    type: String,
+    required: [true, 'room is required'],
+    default: ""
+
+},
   num: {
     type: Number,
     required: [true, 'Weekday number is required'],
-    enum: [0, 1, 2, 3, 4, 5, 6]
+    enum: [0, 1, 2, 3, 4, 5, 6,7,8,9,10]
   },
   start: {
     type: Number,

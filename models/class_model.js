@@ -12,12 +12,7 @@ const classscheme = new Schema({
         required: [true, 'instuctor_name is required'],
         default: ""
     },
-    room: {
-        type: String,
-        required: [true, 'room is required'],
-        default: ""
-
-    },
+  
 
     subjectcode: {
         type: String,
