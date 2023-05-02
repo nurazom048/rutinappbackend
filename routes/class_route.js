@@ -22,7 +22,7 @@ app.get('/find/class/:class_id', classs.findclass);
 app.post('/weakday/add/:class_id', classs.addWeakday);
 app.delete('/weakday/delete/:id', classs.deleteWeekdayById);
 // show weekday by class
- app.get('/weakday/show/:class_id', classs.allWeekdayInClass);
+app.get('/weakday/show/:class_id', classs.allWeekdayInClass);
 
 
 
