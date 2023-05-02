@@ -33,25 +33,7 @@ const classscheme = new Schema({
         ref: 'Routine',
         required: true,
     },
-    summary: [
 
-        {
-            text: {
-                type: String,
-                required: [true, 'Summary Text is required']
-            },
-            time: {
-                type: Date,
-                required: true,
-                default: Date.now
-            }
-
-        },
-
-
-
-
-    ]
 });
 
 const classs = mongoose.model('Class', classscheme);

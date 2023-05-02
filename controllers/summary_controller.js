@@ -3,39 +3,78 @@ const app = express()
 const Account = require('../models/Account')
 const Routine = require('../models/rutin_models')
 const Class = require('../models/class_model');
-const { async } = require('@firebase/util');
-const { findOne } = require('../models/rutin_models');
+const Summary = require('../models/summaryModels');
 
 
 
 
-//************   creat summary        *************** */
 
+//! firebase
+const { initializeApp } = require('firebase/app');
+const { getStorage, ref, uploadBytes, getDownloadURL } = require('firebase/storage');
+const firebase_stroage = require("../config/firebase_stroges");
+initializeApp(firebase_stroage.firebaseConfig); // Initialize Firebase
+// Get a reference to the Firebase storage bucket
+const storage = getStorage();
+
+//************   create summary        *************** *//
 exports.create_summary = async (req, res) => {
+  const { message } = req.body;
   const { class_id } = req.params;
-  const { text } = req.body;
+  const { id } = req.user;
+  console.log(req.body);
+  console.log(req.files);
 
   try {
-    //... find rutin by class and chack permision
-    const classInstance = await Class.findOne({ _id: class_id });
-    if (!classInstance) return res.status(404).send({ message: 'Class not found' });
+    // Step 1: find class
+    const findClass = await Class.findOne({ _id: class_id });
+    if (!findClass) return res.status(404).send({ message: 'Class not found' });
 
-    const find_rutin = await Routine.findOne({ _id: classInstance.rutin_id });
-    if (!find_rutin) return res.status(404).json({ message: 'Class not found' });
+    // Step 2: generate unique file names
+    const newImageFileNames = [];
+    const timestamp = Date.now();
 
-    if (req.user.id.toString() !== find_rutin.ownerid.toString())
-      return res.status(401).json({ message: 'You do not have permission to add a summary' });
+    for (let i = 0; i < req.files.length; i++) {
+      const filename = `${timestamp}-${i}-${req.files[i].originalname}`;
+      newImageFileNames.push(filename);
 
-    //.. push the summary and send response 
-    classInstance.summary.push({ text });
-    await classInstance.save();
+      // Step 3: upload file with new name and metadata
+      const fileRef = ref(storage, `summary/files/${filename}`);
+      const metadata = { contentType: req.files[i].mimetype };
+      await uploadBytes(fileRef, req.files[i].buffer, metadata);
+    }
 
-    //.. also push to rutin last summary object ...//
-    const last_summary = await Routine.findOneAndUpdate({ _id: find_rutin._id }, { last_summary: { text: text } }, { new: true });
+    // Step 4: get download URLs for the uploaded files
+    const downloadUrls = [];
+    for (let i = 0; i < newImageFileNames.length; i++) {
+      const fileRef = ref(storage, `summary/files/${newImageFileNames[i]}`);
+      try {
+        const url = await getDownloadURL(fileRef);
+        downloadUrls.push(url);
+      } catch (error) {
+        console.log(error);
+        downloadUrls.push('');
+      }
+    }
+    // Step 5: create instance
+    const summary = new Summary({
+      ownerId: id,
+      text: message,
+      imageLinks: newImageFileNames,
+      routineId: findClass.rutin_id,
+      classId: findClass.id,
+    });
 
-    return res.status(200).send({ message: "Summary created successfully", summary: classInstance.summary[classInstance.summary.length - 1] });
+    // Step 6: save and send response
+    const createdSummary = await summary.save();
+
+    return res.status(201).json({
+      message: 'Summary created successfully',
+      summary: createdSummary,
+      downloadUrls,
+    });
   } catch (error) {
-    return res.status(400).send({ message: error.message });
+    return res.status(400).json({ message: error.message });
   }
 };
 
