@@ -106,24 +106,60 @@ exports.remove_summary = async (req, res) => {
   }
 };
 
-
 //************ Get class summary list *************** */
+const getSummaryPDFUrls = async (summary) => {
+  const urls = [];
+  const storage = getStorage();
+
+  for (let i = 0; i < summary.imageLinks.length; i++) {
+    const imageRef = ref(storage, `summary/files/${summary.imageLinks[i]}`);
+    const url = await getDownloadURL(imageRef);
+    urls.push({ url, _id: summary._id });
+  }
+
+  return urls;
+};
 
 exports.get_class_summary_list = async (req, res) => {
   const { class_id } = req.params;
 
   try {
-    //... find class
     const classInstance = await Class.findOne({ _id: class_id });
-    if (!classInstance) return res.status(404).json({ message: 'Class not found' });
+    if (!classInstance) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
 
-    //.. send response with summary list
-    return res.status(200).json({ summaries: classInstance.summary });
+    const summaries = await Summary.find({ classId: class_id });
+    const summarysWithUrls = await Promise.all(
+      summaries.map(async (summary) => {
+        const pdfUrls = await getSummaryPDFUrls(summary);
+        return { ...summary.toObject(), imageUrls: pdfUrls };
+      })
+    );
 
+    return res.status(200).json({ message: 'All the summaries', summaries: summarysWithUrls });
   } catch (error) {
-    return res.status(400).send(error.message);
+    return res.status(400).json({ message: error });
   }
 };
+
+// exports.get_class_summary_list = async (req, res) => {
+//   const { class_id } = req.params;
+
+//   try {
+//     //... find class
+//     const classInstance = await Class.findOne({ _id: class_id });
+//     if (!classInstance) return res.status(404).json({ message: 'Class not found' });
+
+//     //.. send response with summary list
+//     const summarys = await Summary.find({ classId :class_id });
+   
+//     return res.status(200).json({ message: "All the summarys" , summarys });
+
+//   } catch (error) {
+//     return res.status(400).json({ message: error });
+//   }
+// };
 
 //************ update  summary list *************** */
 
