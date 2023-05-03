@@ -107,6 +107,7 @@ exports.remove_summary = async (req, res) => {
 };
 
 //************ Get class summary list *************** */
+//************ Get class summary list *************** */
 const getSummaryPDFUrls = async (summary) => {
   const urls = [];
   const storage = getStorage();
@@ -114,7 +115,7 @@ const getSummaryPDFUrls = async (summary) => {
   for (let i = 0; i < summary.imageLinks.length; i++) {
     const imageRef = ref(storage, `summary/files/${summary.imageLinks[i]}`);
     const url = await getDownloadURL(imageRef);
-    urls.push({ url, _id: summary._id });
+    urls.push(url);
   }
 
   return urls;
@@ -122,14 +123,25 @@ const getSummaryPDFUrls = async (summary) => {
 
 exports.get_class_summary_list = async (req, res) => {
   const { class_id } = req.params;
+  const { page = 1, limit = 10 } = req.query;
 
   try {
     const classInstance = await Class.findOne({ _id: class_id });
-    if (!classInstance) {
-      return res.status(404).json({ message: 'Class not found' });
+    if (!classInstance) return res.status(404).json({ message: 'Class not found' });
+
+    const count = await Summary.countDocuments({ classId: class_id });
+    const summaries = await Summary.find({ classId: class_id }, { __v: 0 })
+      .populate({
+        path: 'ownerId',
+        select: 'name username image'
+      })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    if (!summaries) {
+      return res.status(404).json({ message: 'Not found' });
     }
 
-    const summaries = await Summary.find({ classId: class_id });
     const summarysWithUrls = await Promise.all(
       summaries.map(async (summary) => {
         const pdfUrls = await getSummaryPDFUrls(summary);
@@ -137,11 +149,18 @@ exports.get_class_summary_list = async (req, res) => {
       })
     );
 
-    return res.status(200).json({ message: 'All the summaries', summaries: summarysWithUrls });
+    return res.status(200).json({
+      message: 'All the summaries',
+      summaries: summarysWithUrls,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(count / limit),
+      totalCount: count
+    });
   } catch (error) {
     return res.status(400).json({ message: error });
   }
 };
+
 
 // exports.get_class_summary_list = async (req, res) => {
 //   const { class_id } = req.params;
@@ -153,7 +172,7 @@ exports.get_class_summary_list = async (req, res) => {
 
 //     //.. send response with summary list
 //     const summarys = await Summary.find({ classId :class_id });
-   
+
 //     return res.status(200).json({ message: "All the summarys" , summarys });
 
 //   } catch (error) {
