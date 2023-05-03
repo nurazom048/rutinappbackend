@@ -22,8 +22,8 @@ exports.create_summary = async (req, res) => {
   const { message } = req.body;
   const { class_id } = req.params;
   const { id } = req.user;
-  console.log(req.body);
-  console.log(req.files);
+  //console.log(req.body);
+  //console.log(req.files);
 
   try {
     // Step 1: find class
@@ -67,7 +67,7 @@ exports.create_summary = async (req, res) => {
 
     // Step 6: save and send response
     const createdSummary = await summary.save();
-
+//console.log(createdSummary);
     return res.status(201).json({
       message: 'Summary created successfully',
       summary: createdSummary,

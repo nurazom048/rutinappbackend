@@ -12,6 +12,12 @@ const accountSchema = new Schema({
 
 
   },
+
+  about: {
+    type: String,
+
+
+  },
   email: {
     type: String,
 

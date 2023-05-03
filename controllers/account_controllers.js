@@ -18,40 +18,54 @@ const storage = getStorage();
 
 // Account controller to update the account with an image
 exports.edit_account = async (req, res) => {
-  const { name } = req.body;
+  const { name,username, about, email  } = req.body;
   // console.log(req.body.name);
   // console.log(req.file);
-  console.log(req.user);
+  console.log(req.body);
+  console.log(req.file);
 
 
   try {
-    //... Chack Account ...//
+    // //... Chack Account ...//
     const account = await Account.findOne({ _id: req.user.id });
     if (!account) return res.status(404).json({ message: 'Account not found' });
 
-    // 1 upload firebsae and get URL
-    const timestamp = Date.now();
-    const filename = `${timestamp}-${req.file.originalname}`;   // Generate a unique filename 
-    const metadata = { contentType: req.file.mimetype, };
-    // Set metadata for the uploaded image
+   if(req.file){
 
-    //... firebase storage 
-    const storage = getStorage();    // Get a reference to the Firebase Storage bucket
-    const imageRef = ref(storage, `images/profile_picture/${filename}`);// Create a reference to the bucket
+ // 1 upload firebsae and get URL
+ const timestamp = Date.now();
+ const filename = `${timestamp}-${req.file.originalname}`;   // Generate a unique filename 
+ const metadata = { contentType: req.file.mimetype, };
+ // Set metadata for the uploaded image
 
-    // Upload the image to the Firebase Storage bucket and get URL
-    await uploadBytes(imageRef, req.file.buffer, metadata);
-    const url = await getDownloadURL(imageRef);
+ //... firebase storage 
+ const storage = getStorage();    // Get a reference to the Firebase Storage bucket
+ const imageRef = ref(storage, `images/profile_picture/${filename}`);// Create a reference to the bucket
+
+ // Upload the image to the Firebase Storage bucket and get URL
+ await uploadBytes(imageRef, req.file.buffer, metadata);
+ const url = await getDownloadURL(imageRef);
+
+
+  // 2 update the URL in MongoDB
+  const update = await Account.findOneAndUpdate(
+    { _id: req.user.id },
+    { name, image: url,username,about, },
+    { new: true })
 
 
 
+   }
 
-    // 2 update the URL in MongoDB
-    const update = await Account.findOneAndUpdate(
-      { _id: req.user.id },
-      { name, image: url },
-      { new: true }
-    );
+
+
+  
+     // update withour file
+  const update = await Account.findOneAndUpdate(
+    { _id: req.user.id },
+    { name, username,about, },
+    { new: true })
+
     console.log(update);
     res.status(200).json({ message: 'Account updated successfully', update });
 
@@ -60,11 +74,13 @@ exports.edit_account = async (req, res) => {
   } catch (err) {
     console.error(err);
     // Delete the image from Firebase if there was an error
-    if (imageRef) {
-      await deleteObject(imageRef);
+    if (req.file){
+      if (imageRef) {
+        await deleteObject(imageRef);
+      }
+      console.log(err);
+      res.status(500).json({ message: err });
     }
-    console.log(err);
-    res.status(500).json({ message: err });
   }
 };
 //........ View my account ...//
@@ -72,22 +88,13 @@ exports.view_my_account = async (req, res) => {
 
 
   try {
-    const user = await Account.findOne({ _id: req.user.id },)
-      .populate({
-        path: 'routines Saved_routines',
-        options: {
-          sort: { createdAt: -1 },
-        },
-        populate: {
-          path: 'ownerid',
-          select: 'name username image',
-        },
-      });
+    const user = await Account.findOne({ _id: req.user.id },).select('-Saved_routines -routines -__v');
+
     console.error(user);
     if (!user) return res.status(404).json({ message: "Account not found" });
 
 
-    return res.status(200).json(user.toObject({ getters: true }));
+    return res.status(200).json(user);
   } catch (error) {
     return res.status(404).json({ message: error.message });
   }
