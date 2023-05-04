@@ -307,23 +307,6 @@ exports.search_rutins = async (req, res) => {
     if (!routine) return res.status(404).send({ message: "Not found" });
 
 
-    //.. if routin found ,,,..//
-
-
-
-
-
-
-    //.. Get class By Weakday
-    // const Sunday = await getClasses(1, routine.id, routine.priode);
-
-
-    //
-    // const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
-
-
-    // res.send({ _id: routine._id, image: routine.image, rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
-
     res.status(200).json({
       routine,
       // Sunday,

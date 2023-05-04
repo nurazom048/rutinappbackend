@@ -490,13 +490,53 @@ exports.AllNoticeBoard = async (req, res) => {
     
         res.status(200).json({
             message: "success",
-            notices: noticeBoards,
-
+            noticeBoards,
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+
+
+//******************** search_notice_boards      **************************** */
+exports.search_notice_boards = async (req, res) => {
+    const { src } = req.query; // get the value of 'src' from the query parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 2;
+    console.log("from Notice search")
+    console.log(src)
+  
+    try {
+      const regex = new RegExp(src, "i");
+      const count = await NoticeBoard.countDocuments({ name: regex });
+   
+    const noticeBoards = await NoticeBoard.find({ name: regex })
+    .populate('owner', 'name username image')
+     .select('name owner')
+    // .limit(limit)
+    // .skip((page - 1) * limit);
+  
+      if (!noticeBoards) return res.status(404).send({ message: "Not found" });
+  
+      res.status(200).json({
+        message: "success",
+        noticeBoards,
+        currentPage: page,
+        totalPages: Math.ceil(count / limit)
+      });
+    } catch (error) {
+      res.send({ message: error.message });
+    }
+  };
+  
+
+
+
+
+
+
+
+
 
 // //!.... all content......//
 // exports.allContent = async (req, res) => {
