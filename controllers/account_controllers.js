@@ -50,11 +50,11 @@ exports.edit_account = async (req, res) => {
   // 2 update the URL in MongoDB
   const update = await Account.findOneAndUpdate(
     { _id: req.user.id },
-    { name, image: url,username,about, },
+    { name, image: url,username, about: about, },
     { new: true })
 
 
-
+    res.status(200).json({ message: 'Account updated successfully', update });
    }
 
 
@@ -63,7 +63,7 @@ exports.edit_account = async (req, res) => {
      // update withour file
   const update = await Account.findOneAndUpdate(
     { _id: req.user.id },
-    { name, username,about, },
+    { name, username, about: about,},
     { new: true })
 
     console.log(update);

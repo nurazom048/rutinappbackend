@@ -484,8 +484,10 @@ exports.AllNoticeBoard = async (req, res) => {
 
 
     try {
-        const noticeBoards = await NoticeBoard.find({ owner: id }).select('name owner')
-
+        const noticeBoards = await NoticeBoard.find({ owner: id })
+        .populate('owner', 'name username image')
+        .select('name owner');
+    
         res.status(200).json({
             message: "success",
             notices: noticeBoards,

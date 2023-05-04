@@ -7,7 +7,6 @@ const cp10 = require('../controllers/cp10');
 const verifyToken = require("../varifitoken")
 const Middleware = require('../midlewere/rutinMidewere');
 const member = require('../controllers/members_controller');
-
 const member_mid = require('../midlewere/member_mid');
 
 
