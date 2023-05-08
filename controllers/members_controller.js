@@ -267,3 +267,67 @@ exports.leave = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
+// notification off
+
+exports.notification_Off = async (req, res) => {
+  const { rutin_id } = req.params;
+  const { id } = req.user;
+
+  try {
+    const routine = await Routine.findById(rutin_id);
+    if (!routine) return res.json({ message: "Routine not found"});
+
+    // // Check if user_id is present in the members array
+    // const isMember = routine.members.includes(id);
+    // if (!isMember) return res.json({ message: "You are not a member of this routine" });
+
+    // Check if the user has already turned off notifications
+    const isNotificationOff = routine.notificationOff.includes(id);
+    if (isNotificationOff) return res.json({ message: "Notifications are already turned off" ,notification_Off :true });
+
+    // Update the routine by pushing the user's ID to the notificationOff array
+    const updatedRoutine = await Routine.findOneAndUpdate(
+      { _id: rutin_id },
+      { $push: { notificationOff: id } },
+      { new: true }
+    );
+
+    res.json({ message: "Notifications turned off",notification_Off :true});
+  } catch (error) {
+    console.error(error);
+    res.json({ message: error.toString() });
+  }
+};
+// notification on
+
+exports.notification_On = async (req, res) => {
+  const { rutin_id } = req.params;
+  const { id } = req.user;
+
+  try {
+    const routine = await Routine.findById(rutin_id);
+    if (!routine) return res.json({ message: "Routine not found" });
+
+    // // Check if user_id is present in the members array
+    // const isMember = routine.members.includes(id);
+    // if (!isMember) return res.json({ message: "You are not a member of this routine" });
+
+    // Check if the user has turned off notifications
+    const isNotificationOff = routine.notificationOff.includes(id);
+    if (!isNotificationOff) return res.json({ message: "Notifications are already turned on",notification_Off :false });
+
+    // Update the routine by pulling the user's ID from the notificationOff array
+    const updatedRoutine = await Routine.findOneAndUpdate(
+      { _id: rutin_id },
+      { $pull: { notificationOff: id } },
+      { new: true }
+    );
+
+    res.json({ message: "Notifications turned on", notification_Off :false  });
+  } catch (error) {
+    console.error(error);
+    res.json({ message: error.toString() });
+  }
+};

@@ -66,6 +66,13 @@ const rutinshema = new Schema({
       ref: 'Account',
     }
   ],
+
+  notificationOff: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Account',
+    }
+  ],
 },
 
   { timestamps: true }

@@ -69,10 +69,11 @@ app.post('/member/acsept_request/:rutin_id', verifyToken, member.acceptRequest);
 app.post('/member/reject_request/:rutin_id', verifyToken, member.rejectMember);
 
 
+//notification on off
+app.post('/notification/off/:rutin_id', verifyToken, member.notification_Off);
+app.post('/notification/on/:rutin_id', verifyToken, member.notification_On);
 
 
-
-//......... for vieew ritins.........//
 
 //... Show save rutin
 
