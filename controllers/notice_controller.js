@@ -324,30 +324,44 @@ exports.unsendRequest = async (req, res) => {
 
 exports.seeAllRequest = async (req, res) => {
     const { noticeBoardId } = req.params;
-
+    const { page = 1, limit = 10 } = req.query;
+    console.log(noticeBoardId);
+  
     try {
-        // find the notice board by id, if not found send not found response
-        const noticeBoard = await NoticeBoard.findOne({ id: noticeBoardId });
-        if (!noticeBoard) return res.status(404).json({ message: 'Notice board not found', });
-
-        // get all the join requests with populated account fields
-        const joinRequests = await NoticeBoard.find({ id: noticeBoardId })
-            .select('joinRequest')
-            .populate({
-                path: 'joinRequest',
-                select: 'name image username',
-                model: 'Account',
-            });
-
-        res.send(joinRequests);
+      // find the notice board by id, if not found send not found response
+      const noticeBoard = await NoticeBoard.findOne({ id: noticeBoardId });
+      if (!noticeBoard) return res.status(404).json({ message: 'Notice board not found' });
+  
+      // get all the join requests with populated account fields
+      const skipCount = (page - 1) * limit;
+      const joinRequests = await NoticeBoard.findOne({ id: noticeBoardId })
+        .select('joinRequest -_id')
+        .slice('joinRequest', [skipCount, limit])
+        .populate({
+          path: 'joinRequest',
+          select: 'name image username',
+          model: 'Account',
+        });
+  
+      if (!joinRequests) {
+        return res.status(404).send({ message: 'Not found' });
+      }
+  
+      res.send({
+        message: "All requested Members",
+        joinRequests: joinRequests.joinRequest,
+        currentPage: page,
+        totalPages: Math.ceil(joinRequests.joinRequest.length / limit),
+        totalCount: joinRequests.joinRequest.length,
+      });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: error.message });
+      console.error(error);
+      res.status(500).json({ message: error.message });
     }
-}
+  };
+  
 
 // Accept request add the user id into members aarry and delete from request array
-
 exports.acceptRequest = async (req, res) => {
     const { noticeBoardId, userId } = req.params;
 
@@ -412,7 +426,9 @@ exports.seeAllJoinedNoticeBoard = async (req, res) => {
 // see all joined notice board ...notices,,,
 
 // recentNotice
-exports.seeAllJoinedNoticeBoardNotices = async (req, res) => {
+
+// here you can see all the recent notice joined notice boader or pending requested noticeboard notice or created notice board notices
+exports.recentNotice = async (req, res) => {
     const { id } = req.user;
     const { page = 1, limit = 20 } = req.query;
 
@@ -420,7 +436,7 @@ exports.seeAllJoinedNoticeBoardNotices = async (req, res) => {
         const count = await NoticeBoard.find({ member: id }).countDocuments();
         const totalPages = Math.ceil(count / limit);
 
-        const noticeBoards = await NoticeBoard.find({ member: id })
+        const noticeBoards = await NoticeBoard.find({ owner:id})
             .populate({
                 path: "notices",
                 select: "content_name pdf description time noticeBoard",
@@ -433,6 +449,17 @@ exports.seeAllJoinedNoticeBoardNotices = async (req, res) => {
 
         const notices = noticeBoards.map((board) => board.notices);
 
+        // Check if the notices array is empty
+        if (!notices || notices.length === 0) {
+            res.status(200).json({
+                message: "success",
+                notices: [],
+                currentPage: page,
+                totalPages: totalPages,
+                totalCount: count,
+            });
+            return;
+        }
 
         const noticesWithPDFs = await getNoticePDFs(notices[0]);
 
@@ -447,6 +474,7 @@ exports.seeAllJoinedNoticeBoardNotices = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 
 // see all joined notice board ...
 exports.seeAllJoinedNoticeBoard = async (req, res) => {
