@@ -16,7 +16,7 @@ app.use(bodyParser.urlencoded());
 app.use(cors());
 
 //..... Connection....//
-mongoose.connect('mongodb+srv://nurapp:rr1234@cluster0.wwfxxwu.mongodb.net/?retryWrites=true&w=majority')
+mongoose.connect("mongodb + srv://nurazom048:1234@cluster0.6r8cwsm.mongodb.net/")
   .then(() => console.log('Connected!'));
 app.use(bodyParser.json());
 
