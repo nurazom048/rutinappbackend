@@ -1,27 +1,30 @@
 {
   "name": "rutinappbackend",
   "version": "1.0.0",
-  "description": "",
   "main": "sarver.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node sarver.js",
-    "dev": "nodemon sarver.js"
+    "dev": "nodemon index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^4.13.0",
     "body-parser": "^1.20.1",
     "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "firebase": "^9.17.1",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^6.9.0",
     "multer": "^1.4.5-lts.1",
+    "prisma": "^4.13.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20",
-    "prisma": "^4.13.0"
-  }
+    "nodemon": "^2.0.20"
+  },
+  "keywords": [],
+  "description": ""
 }

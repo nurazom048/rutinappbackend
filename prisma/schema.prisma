@@ -1,6 +1,9 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// import { PrismaClient } from '@prisma/client'
+// const prisma = new PrismaClient()
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,4 +11,18 @@ generator client {
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
+}
+
+//!  Account
+model accounts {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  username     String  @unique
+  name         String
+  about        String?
+  email        String?
+  image        String?
+  // Saved_routines   Routine[]  @relation("AccountToRoutine")
+  password     String
+  account_type String  @default("user")
+  // routines         Routine[]  @relation("RoutineToAccount")
 }
