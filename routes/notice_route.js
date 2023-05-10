@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require("../varifitoken");
 const multer = require('multer');
-const notice = require("../controllers/notice_controller");
+const notice = require("../controllers/NoticeBoard/notice_controller");
 
 // Set up multer with the storage
 const upload = multer({
@@ -21,6 +21,9 @@ router.route("/:username").get(notice.viewNoticeByUsername);
 // add notice 
 router.route("/add/:noticeId").post(verifyToken, upload.single('pdf_file'), notice.addNotice);
 router.route("/view/content/:noticeId").post(notice.viewNoticeById);
+// view all notice by notice id
+router.route("/:notice_boardId/notices")
+    .get(notice.allNoticesByNoticeBoardId);
 
 
 // send request to add notice

@@ -1,17 +1,19 @@
 
 //! iports
-const NoticeBoard = require('../models/notice models/notice_bord');
-const Notice = require('../models/notice models/notice');
+const NoticeBoard = require('../../models/notice models/notice_bord');
+const Notice = require('../../models/notice models/notice');
 
 
 //! firebase
 const { initializeApp } = require('firebase/app');
 const { getStorage, ref, uploadBytes, getDownloadURL } = require('firebase/storage');
-const firebase_stroage = require("../config/firebase_stroges");
+const firebase_stroage = require("../../config/firebase_stroges");
 initializeApp(firebase_stroage.firebaseConfig);// Initialize Firebase
 // Get a reference to the Firebase storage bucket
 const storage = getStorage();
 
+
+const fb = require("./firebase")
 
 /// makea a add to 
 //?_______________________________________________________________________________________!//
@@ -151,19 +153,6 @@ exports.editNotice = async (req, res) => {
 };
 // //!...view notice by notice id
 // A helper function to get the download URLs for all the PDFs in a notice
-const getNoticePDFUrls = async (notice) => {
-    const urls = [];
-    const storage = getStorage();
-
-    // Loop through all the PDFs in the notice and get their download URLs
-    for (let i = 0; i < notice.pdf.length; i++) {
-        const pdfRef = ref(storage, `notice/pdf/${notice.pdf[i].url}`);
-        const url = await getDownloadURL(pdfRef);
-        urls.push({ url, _id: notice.pdf[i]._id });
-    }
-
-    return urls;
-};
 
 // The endpoint to view a notice by its ID
 exports.viewNoticeById = async (req, res) => {
@@ -175,7 +164,7 @@ exports.viewNoticeById = async (req, res) => {
         if (!notice) return res.status(404).json({ message: 'Notice not found' });
 
         // Step 2: get the download URLs for all the PDFs in the notice
-        const pdfUrls = await getNoticePDFUrls(notice);
+        const pdfUrls = await fb.getNoticePDFUrls(notice);
 
         // Step 3: send the response with the notice object and the PDF URLs
         res.status(200).json({
@@ -192,7 +181,7 @@ exports.viewNoticeById = async (req, res) => {
     }
 };
 
-const Account = require('../models/Account');
+const Account = require('../../models/Account');
 
 const mongoose = require('mongoose');
 
@@ -205,18 +194,7 @@ const mongoose = require('mongoose');
 
 //! view notice bus username 
 
-const getNoticePDFs = async (notices) => {
-    for (let i = 0; i < notices.length; i++) {
-        try {
-            const notice = notices[i];
-            const pdfUrls = await getNoticePDFUrls(notice);
-            notice.pdf = pdfUrls;
-        } catch (err) {
-            console.error(err);
-        }
-    }
-    return notices;
-};
+
 //
 exports.viewNoticeByUsername = async (req, res) => {
     const { username } = req.params;
@@ -247,7 +225,7 @@ exports.viewNoticeByUsername = async (req, res) => {
         const count = await Notice.countDocuments({ owner: mongoose.Types.ObjectId(account._id), visibility: "public" });
 
         // Step 3: Send the response
-        const noticesWithPDFs = await getNoticePDFs(notices);
+        const noticesWithPDFs = await  fb.getNoticePDFs(notices);// from firebase
         res.json({
             message: 'All uploaded notices',
             notices: noticesWithPDFs,
@@ -461,7 +439,7 @@ exports.recentNotice = async (req, res) => {
             return;
         }
 
-        const noticesWithPDFs = await getNoticePDFs(notices[0]);
+        const noticesWithPDFs = await fb.getNoticePDFs(notices[0]);
 
         res.status(200).json({
             message: "success",
@@ -558,10 +536,40 @@ exports.search_notice_boards = async (req, res) => {
   };
   
 
+// view all noties by notice id
 
 
+exports.allNoticesByNoticeBoardId = async (req, res) => {
+    const { notice_boardId } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+  
+    try {
+      const count = await Notice.find({ noticeBoard: notice_boardId }).countDocuments();
+      const totalPages = Math.ceil(count / limit);
+  
+      const notices = await Notice.find({ noticeBoard: notice_boardId })
+      .populate({
+        path: 'noticeBoard',
+        select: 'name',
+       }).skip((page - 1) * limit)
+      .limit(limit);
+  
 
 
+        const noticesWithPDFs = await fb.getNoticePDFs(notices);
+
+      res.status(200).json({
+        message:"All Notices list",
+        notices:noticesWithPDFs,
+        currentPage: parseInt(page),
+        totalPages,
+        totalCount: count,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+  
 
 
 
