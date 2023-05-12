@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const NoticeBordSchema = new mongoose.Schema({
     owner: {
         type: mongoose.Schema.Types.ObjectId,
@@ -24,6 +23,10 @@ const NoticeBordSchema = new mongoose.Schema({
         ref: 'Account',
     }],
     pined_notice: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Account',
+    }],
+    notificationOn: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Account',
     }],

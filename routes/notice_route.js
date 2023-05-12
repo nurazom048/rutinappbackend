@@ -25,12 +25,25 @@ router.route("/view/content/:noticeId").post(notice.viewNoticeById);
 router.route("/:notice_boardId/notices")
     .get(notice.allNoticesByNoticeBoardId);
 
+// chack status
+router.route("/status/:noticeBoardId").post(verifyToken, notice.current_user_status);
+//notification on off
+router.post('/notification/off/:noticeBoardId', verifyToken, notice.notification_Off);
+router.post('/notification/on/:noticeBoardId', verifyToken, notice.notification_on);
+
 
 // send request to add notice
 
 router.route("/sendRequest/:noticeBoardId").post(verifyToken, notice.sendRequest);
 router.route("/unSendRequest/:noticeBoardId").post(verifyToken, notice.unsendRequest);
 router.route("/acceptRequest/:noticeBoardId/:userId").post(verifyToken, notice.acceptRequest);
+router.route("/rejectRequest/:noticeBoardId/:userId").post(verifyToken, notice.rejectRequest);
+
+
+// see all members
+router.route("/members/:noticeBoardId").get(notice.seeAllMebers);
+router.route("/members/leave/:noticeBoardId").delete(verifyToken, notice.leaveNoticeBoard);
+router.route("/members/kickout/:noticeBoardId").delete(verifyToken, notice.kickOut);
 
 // see all request 
 
@@ -39,7 +52,7 @@ router.route("/viewRequest/:noticeBoardId").get(notice.seeAllRequest);
 router.route("/allJoinedNoticeBoard/").post(verifyToken, notice.seeAllJoinedNoticeBoard);
 router.route("/all_notice_board/").post(verifyToken, notice.AllNoticeBoard);// owemer by me
 router.route("/recent/").post(verifyToken, notice.recentNotice);
-router.route("/seacrh/").post( notice.search_notice_boards);
+router.route("/seacrh/").post(notice.search_notice_boards);
 
 
 

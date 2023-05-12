@@ -225,7 +225,7 @@ exports.viewNoticeByUsername = async (req, res) => {
         const count = await Notice.countDocuments({ owner: mongoose.Types.ObjectId(account._id), visibility: "public" });
 
         // Step 3: Send the response
-        const noticesWithPDFs = await  fb.getNoticePDFs(notices);// from firebase
+        const noticesWithPDFs = await fb.getNoticePDFs(notices);// from firebase
         res.json({
             message: 'All uploaded notices',
             notices: noticesWithPDFs,
@@ -297,47 +297,90 @@ exports.unsendRequest = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 }
-//... see all the request ...//
 
 
+
+//**********  see all the request **********//
+exports.seeAllMebers = async (req, res) => {
+    const { noticeBoardId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    console.log(noticeBoardId);
+
+    try {
+        // find the notice board by id, if not found send not found response
+        const noticeBoard = await NoticeBoard.findOne({ id: noticeBoardId });
+        if (!noticeBoard) return res.status(404).json({ message: 'Notice board not found' });
+
+        // get all the join requests with populated account fields
+        const skipCount = (page - 1) * limit;
+        const findnoticeBoard = await NoticeBoard.findOne({ id: noticeBoardId })
+
+
+            .select('member -_id')
+            .slice('member', [skipCount, limit])
+            .populate({
+                path: 'member',
+                select: 'name image username',
+                model: 'Account',
+            });
+
+        if (!findnoticeBoard) {
+            return res.status(404).send({ message: 'Not found' });
+        }
+
+        res.send({
+            message: "All Members",
+            mebers: findnoticeBoard.member,
+            currentPage: page,
+            totalPages: Math.ceil(findnoticeBoard.member.length / limit),
+            totalCount: findnoticeBoard.member.length,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+//**********  see all the request **********//
 exports.seeAllRequest = async (req, res) => {
     const { noticeBoardId } = req.params;
     const { page = 1, limit = 10 } = req.query;
     console.log(noticeBoardId);
-  
+
     try {
-      // find the notice board by id, if not found send not found response
-      const noticeBoard = await NoticeBoard.findOne({ id: noticeBoardId });
-      if (!noticeBoard) return res.status(404).json({ message: 'Notice board not found' });
-  
-      // get all the join requests with populated account fields
-      const skipCount = (page - 1) * limit;
-      const joinRequests = await NoticeBoard.findOne({ id: noticeBoardId })
-        .select('joinRequest -_id')
-        .slice('joinRequest', [skipCount, limit])
-        .populate({
-          path: 'joinRequest',
-          select: 'name image username',
-          model: 'Account',
+        // find the notice board by id, if not found send not found response
+        const noticeBoard = await NoticeBoard.findOne({ id: noticeBoardId });
+        if (!noticeBoard) return res.status(404).json({ message: 'Notice board not found' });
+
+        // get all the join requests with populated account fields
+        const skipCount = (page - 1) * limit;
+        const joinRequests = await NoticeBoard.findOne({ id: noticeBoardId })
+            .select('joinRequest -_id')
+            .slice('joinRequest', [skipCount, limit])
+            .populate({
+                path: 'joinRequest',
+                select: 'name image username',
+                model: 'Account',
+            });
+
+        if (!joinRequests) {
+            return res.status(404).send({ message: 'Not found' });
+        }
+
+        res.send({
+            message: "All requested Members",
+            joinRequests: joinRequests.joinRequest,
+            currentPage: page,
+            totalPages: Math.ceil(joinRequests.joinRequest.length / limit),
+            totalCount: joinRequests.joinRequest.length,
         });
-  
-      if (!joinRequests) {
-        return res.status(404).send({ message: 'Not found' });
-      }
-  
-      res.send({
-        message: "All requested Members",
-        joinRequests: joinRequests.joinRequest,
-        currentPage: page,
-        totalPages: Math.ceil(joinRequests.joinRequest.length / limit),
-        totalCount: joinRequests.joinRequest.length,
-      });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: error.message });
+        console.error(error);
+        res.status(500).json({ message: error.message });
     }
-  };
-  
+};
+
 
 // Accept request add the user id into members aarry and delete from request array
 exports.acceptRequest = async (req, res) => {
@@ -349,7 +392,7 @@ exports.acceptRequest = async (req, res) => {
         if (!noticeBoard) return res.status(404).json({ message: 'Notice board not found' });
 
         // Step 2: find the user by id
-        const user = await Account.findOne({ id: userId });
+        const user = await Account.findOne({ id: userId }).select('name username about image');
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         // Step 3: check if the user is already a member
@@ -360,14 +403,47 @@ exports.acceptRequest = async (req, res) => {
         // Step 4: add user to member array and remove from join request array
         noticeBoard.member.push(userId);
         noticeBoard.joinRequest.pull(userId);
+        await noticeBoard.save()
 
-        // Step 5: save updated notice board document and send success response
-        const updatedNoticeBoard = await NoticeBoard.findByIdAndUpdate(
-            noticeBoard._id,
-            noticeBoard,
-            { new: true }
-        );
-        res.send({ message: 'Request accepted successfully', noticeBoard: updatedNoticeBoard });
+
+
+        res.send({ message: 'Request accepted successfully', account: user });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+
+
+
+
+// Accept request add the user id into members aarry and delete from request array
+exports.rejectRequest = async (req, res) => {
+    const { noticeBoardId, userId } = req.params;
+
+    try {
+        // Step 1: find the notice board by id
+        const noticeBoard = await NoticeBoard.findOne({ id: noticeBoardId });
+        if (!noticeBoard) return res.status(404).json({ message: 'Notice board not found' });
+
+        // Step 2: find the user by id
+        const user = await Account.findOne({ id: userId }).select('name username about image');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Step 3: check if the user is in the jon request or not
+        if (!noticeBoard.joinRequest.includes(userId)) {
+            return res.status(400).json({ message: 'User not found on joind request' });
+        }
+
+        // Step 4: add user to join request array 
+        noticeBoard.joinRequest.pull(userId);
+        await noticeBoard.save()
+
+
+
+        res.send({ message: 'Request rejected successfully', account: user });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: error.message });
@@ -404,17 +480,12 @@ exports.seeAllJoinedNoticeBoard = async (req, res) => {
 // see all joined notice board ...notices,,,
 
 // recentNotice
-
-// here you can see all the recent notice joined notice boader or pending requested noticeboard notice or created notice board notices
 exports.recentNotice = async (req, res) => {
     const { id } = req.user;
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 10 } = req.query;
 
     try {
-        const count = await NoticeBoard.find({ member: id }).countDocuments();
-        const totalPages = Math.ceil(count / limit);
-
-        const noticeBoards = await NoticeBoard.find({ owner:id})
+        const noticeBoards = await NoticeBoard.find({ owner: id })
             .populate({
                 path: "notices",
                 select: "content_name pdf description time noticeBoard",
@@ -423,28 +494,25 @@ exports.recentNotice = async (req, res) => {
                     select: "name",
                 },
                 options: { limit, skip: (page - 1) * limit, sort: { time: -1 } },
-            });
+            })
+            .lean();
 
-        const notices = noticeBoards.map((board) => board.notices);
+        const notices = noticeBoards.reduce((acc, board) => {
+            if (board.notices && board.notices.length > 0) {
+                acc.push(...board.notices);
+            }
+            return acc;
+        }, []);
 
-        // Check if the notices array is empty
-        if (!notices || notices.length === 0) {
-            res.status(200).json({
-                message: "success",
-                notices: [],
-                currentPage: page,
-                totalPages: totalPages,
-                totalCount: count,
-            });
-            return;
-        }
+        const count = notices.length;
+        const totalPages = Math.ceil(count / limit);
 
-        const noticesWithPDFs = await fb.getNoticePDFs(notices[0]);
+        const noticesWithPDFs = await fb.getNoticePDFs(notices);
 
         res.status(200).json({
             message: "success",
             notices: noticesWithPDFs,
-            currentPage: page,
+            currentPage: parseInt(page),
             totalPages: totalPages,
             totalCount: count,
         });
@@ -452,6 +520,7 @@ exports.recentNotice = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 
 
 // see all joined notice board ...
@@ -491,9 +560,9 @@ exports.AllNoticeBoard = async (req, res) => {
 
     try {
         const noticeBoards = await NoticeBoard.find({ owner: id })
-        .populate('owner', 'name username image')
-        .select('name owner');
-    
+            .populate('owner', 'name username image')
+            .select('name owner');
+
         res.status(200).json({
             message: "success",
             noticeBoards,
@@ -511,67 +580,187 @@ exports.search_notice_boards = async (req, res) => {
     const limit = parseInt(req.query.limit) || 2;
     console.log("from Notice search")
     console.log(src)
-  
+
     try {
-      const regex = new RegExp(src, "i");
-      const count = await NoticeBoard.countDocuments({ name: regex });
-   
-    const noticeBoards = await NoticeBoard.find({ name: regex })
-    .populate('owner', 'name username image')
-     .select('name owner')
-    // .limit(limit)
-    // .skip((page - 1) * limit);
-  
-      if (!noticeBoards) return res.status(404).send({ message: "Not found" });
-  
-      res.status(200).json({
-        message: "success",
-        noticeBoards,
-        currentPage: page,
-        totalPages: Math.ceil(count / limit)
-      });
+        const regex = new RegExp(src, "i");
+        const count = await NoticeBoard.countDocuments({ name: regex });
+
+        const noticeBoards = await NoticeBoard.find({ name: regex })
+            .populate('owner', 'name username image')
+            .select('name owner')
+        // .limit(limit)
+        // .skip((page - 1) * limit);
+
+        if (!noticeBoards) return res.status(404).send({ message: "Not found" });
+
+        res.status(200).json({
+            message: "success",
+            noticeBoards,
+            currentPage: page,
+            totalPages: Math.ceil(count / limit)
+        });
     } catch (error) {
-      res.send({ message: error.message });
+        res.send({ message: error.message });
     }
-  };
-  
+};
+
 
 // view all noties by notice id
-
-
 exports.allNoticesByNoticeBoardId = async (req, res) => {
     const { notice_boardId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-  
-    try {
-      const count = await Notice.find({ noticeBoard: notice_boardId }).countDocuments();
-      const totalPages = Math.ceil(count / limit);
-  
-      const notices = await Notice.find({ noticeBoard: notice_boardId })
-      .populate({
-        path: 'noticeBoard',
-        select: 'name',
-       }).skip((page - 1) * limit)
-      .limit(limit);
-  
+    const { page = 1, limit = 4 } = req.query;
 
+    try {
+        const count = await Notice.find({ noticeBoard: notice_boardId }).countDocuments();
+        const totalPages = Math.ceil(count / limit);
+
+        const notices = await Notice.find({ noticeBoard: notice_boardId })
+            .sort({ time: -1 }) // Sort by time in descending order
+            .populate({
+                path: 'noticeBoard',
+                select: 'name',
+            })
+            .skip((page - 1) * limit)
+            .limit(limit);
 
         const noticesWithPDFs = await fb.getNoticePDFs(notices);
 
-      res.status(200).json({
-        message:"All Notices list",
-        notices:noticesWithPDFs,
-        currentPage: parseInt(page),
-        totalPages,
-        totalCount: count,
-      });
+        res.status(200).json({
+            message: "All Notices list",
+            notices: noticesWithPDFs,
+            currentPage: parseInt(page),
+            totalPages,
+            totalCount: count,
+        });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
-  };
-  
+};
+
+//**************  current_user_status     *********** */
+exports.current_user_status = async (req, res) => {
+    try {
+        const { noticeBoardId } = req.params;
+        const { id, username } = req.user;
+
+        let isOwner = false;
+        let activeStatus = "not_joined";
+        let isSave = false;
+        let notificationOn = true;
+
+        // Find the NoticeBoard to check user status
+        const noticeBoard = await NoticeBoard.findOne({ _id: noticeBoardId });
+        if (!noticeBoard) return res.json({ message: "NoticeBoard not found" });
 
 
+
+        // Check if the user has saved the routine
+        const findAccount = await Account.findOne({ username });
+        if (!findAccount) {
+            return res.status(200).json({
+                isOwner,
+                activeStatus,
+                sentRequestCount,
+            });
+        }
+
+        // Check if the user is the owner
+        if (noticeBoard.owner.toString() === req.user.id) {
+            isOwner = true;
+        }
+
+        // Check if the user is an active member
+        const alreadyMember = noticeBoard.member.includes(id);
+        if (alreadyMember) {
+            activeStatus = "joined";
+        }
+
+        // Check if the user has a pending request
+        const pendingRequest = noticeBoard.joinRequest.includes(id);
+        if (pendingRequest) {
+            activeStatus = "request_pending";
+        }
+
+        // Check if notification is enabled
+        const notificationOff = noticeBoard.notificationOn.includes(id);
+        if (!notificationOff) {
+            notificationOn = false;
+        }
+
+        res.status(200).json({
+
+            message: "Chack noticeboard Status",
+            isOwner,
+            activeStatus,
+            isSave,
+            notificationOn,
+        });
+    } catch (error) {
+        res.send({ message: error.message });
+    }
+};
+
+
+
+// unsend join request 
+exports.leaveNoticeBoard = async (req, res) => {
+    const { noticeBoardId } = req.params;
+    const { id } = req.user;
+
+    try {
+        // find account
+        const account = await Account.findOne({ id }).select('name username about image');
+        if (!account) return res.status(404).json({ message: 'Account not found' });
+
+        // find notice board by id, if not found send not found response
+        const noticeBoard = await NoticeBoard.findOne({ id: noticeBoardId });
+        if (!noticeBoard) return res.status(404).json({ message: 'Notice board not found' });
+
+        // check if the request has been sent or not
+        const isMember = noticeBoard.member.includes(id);
+        if (!isMember) return res.status(400).json({ message: 'Allrady leave ' });
+
+        // remove the user's ID from the join request array
+        noticeBoard.joinRequest = noticeBoard.member.pull(id);
+        noticeBoard.save();
+
+        res.send({ message: "Userremove sucsessfull", account });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+}
+
+// unsend join request 
+exports.kickOut = async (req, res) => {
+    const { noticeBoardId } = req.params;
+    const { id } = req.user;
+
+    try {
+        // find account
+        const account = await Account.findOne({ id }).select('name username about image');
+        if (!account) return res.status(404).json({ message: 'Account not found' });
+
+        // find notice board by id, if not found send not found response
+        const noticeBoard = await NoticeBoard.findOne({ id: noticeBoardId });
+        if (!noticeBoard) return res.status(404).json({ message: 'Notice board not found' });
+
+        // check if the request has been sent or not
+        const isMember = noticeBoard.member.includes(id);
+        if (!isMember) return res.status(400).json({ message: 'Allrady leave ' });
+
+        // remove the user's ID from the join request array
+        noticeBoard.joinRequest = noticeBoard.member.pull(id);
+        noticeBoard.save();
+
+        res.send({ message: "Userremove sucsessfull", account });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+}
 
 
 // //!.... all content......//
@@ -747,3 +936,66 @@ exports.allNoticesByNoticeBoardId = async (req, res) => {
 //         res.status(500).json({ message: err.message });
 //     }
 // };
+//************* Notification on /off **************//
+
+exports.notification_Off = async (req, res) => {
+    const { noticeBoardId } = req.params;
+    const { id } = req.user;
+
+    try {
+        // Find notice board
+        const noticeBord = await NoticeBoard.findById(noticeBoardId);
+        if (!noticeBord) return res.json({ message: "NoticeBoard not found" });
+
+        // Check if the user has already turned off notifications
+        const isNotificationOn = noticeBord.notificationOn.includes(id);
+        if (!isNotificationOn)
+            return res.json({
+                message: "Notifications are already turned off",
+                notification_Off: true,
+            });
+
+        // Update the notice board by removing the user's ID from the notificationOn array
+        await NoticeBoard.findOneAndUpdate(
+            { _id: noticeBoardId },
+            { $pull: { notificationOn: id } }
+        );
+
+        res.json({ message: "Notifications turned off", notification_Off: true });
+    } catch (error) {
+        console.error(error);
+        res.json({ message: error.toString() });
+    }
+};
+
+//************* Notification on**************//
+
+exports.notification_on = async (req, res) => {
+    const { noticeBoardId } = req.params;
+    const { id } = req.user;
+
+    try {
+        // Find notice board
+        const noticeBord = await NoticeBoard.findById(noticeBoardId);
+        if (!noticeBord) return res.json({ message: "NoticeBoard not found" });
+
+        // Check if the user has already turned on notifications
+        const isNotificationOn = noticeBord.notificationOn.includes(id);
+        if (isNotificationOn)
+            return res.json({
+                message: "Notifications are already turned on",
+                notification_Off: false,
+            });
+
+        // Update the notice board by pushing the user's ID to the notificationOn array
+        await NoticeBoard.findOneAndUpdate(
+            { _id: noticeBoardId },
+            { $push: { notificationOn: id } }
+        );
+
+        res.json({ message: "Notifications turned on", notification_Off: false });
+    } catch (error) {
+        console.error(error);
+        res.json({ message: error.toString() });
+    }
+};
