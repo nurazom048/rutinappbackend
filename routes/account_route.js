@@ -18,12 +18,13 @@ const upload = multer({
 
 
 //... Eddit account....///
-router.post("/eddit", verifyToken,upload.single('image'), ac.edit_account);
+router.post("/eddit", verifyToken, upload.single('image'), ac.edit_account);
+router.post("/eddit/changepassword/", verifyToken, ac.changePassword);
 
 
 
 
-router.route("/").post(verifyToken,upload.single('image'), ac.view_my_account);
+router.route("/").post(verifyToken, upload.single('image'), ac.view_my_account);
 router.route("/:username").post(ac.view_others_Account);
 
 

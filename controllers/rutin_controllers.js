@@ -44,7 +44,7 @@ const Weekday = require('../models/weakdayModel');
 exports.createRutin = async (req, res) => {
   const { name } = req.body;
   console.log(req.body);
-  
+
   // Log the user who is creating the routine
   console.log(req.user);
 
@@ -53,7 +53,7 @@ exports.createRutin = async (req, res) => {
   try {
     // Check if a routine with the given name already exists for the user
     const existingRoutine = await Routine.findOne({ name, ownerid: ownerId });
-    if (existingRoutine)return res.status(500).send({ message: "Routine already created with this name" });
+    if (existingRoutine) return res.status(500).send({ message: "Routine already created with this name" });
 
 
     // Create a new routine object
@@ -361,7 +361,7 @@ exports.uploaded_rutins = async (req, res) => {
   const { username } = req.params;
 
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 2;
+  const limit = parseInt(req.query.limit) || 3;
 
   try {
     const findAccount = await Account.findOne({ username: username || req.user.username })
@@ -370,7 +370,7 @@ exports.uploaded_rutins = async (req, res) => {
     const count = await Routine.countDocuments({ ownerid: findAccount._id });
 
     const rutins = await Routine.find({ ownerid: findAccount._id })
-      .select("name ownerid last_summary")
+      .select("name ownerid")
       .populate({ path: 'ownerid', select: 'name image username' })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -442,7 +442,7 @@ exports.current_user_status = async (req, res) => {
     const notification_Off = routine.notificationOff.includes(req.user.id);
     if (!notification_Off) { notificationOff = false }
 
-    res.status(200).json({ isOwner, isCapten, activeStatus, isSave, memberCount, sentRequestCount,notificationOff });
+    res.status(200).json({ isOwner, isCapten, activeStatus, isSave, memberCount, sentRequestCount, notificationOff });
   } catch (error) {
     res.send({ message: error.message });
   }

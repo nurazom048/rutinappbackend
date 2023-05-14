@@ -18,7 +18,7 @@ const storage = getStorage();
 
 // Account controller to update the account with an image
 exports.edit_account = async (req, res) => {
-  const { name,username, about, email  } = req.body;
+  const { name, username, about, email } = req.body;
   // console.log(req.body.name);
   // console.log(req.file);
   console.log(req.body);
@@ -30,41 +30,41 @@ exports.edit_account = async (req, res) => {
     const account = await Account.findOne({ _id: req.user.id });
     if (!account) return res.status(404).json({ message: 'Account not found' });
 
-   if(req.file){
+    if (req.file) {
 
- // 1 upload firebsae and get URL
- const timestamp = Date.now();
- const filename = `${timestamp}-${req.file.originalname}`;   // Generate a unique filename 
- const metadata = { contentType: req.file.mimetype, };
- // Set metadata for the uploaded image
+      // 1 upload firebsae and get URL
+      const timestamp = Date.now();
+      const filename = `${timestamp}-${req.file.originalname}`;   // Generate a unique filename 
+      const metadata = { contentType: req.file.mimetype, };
+      // Set metadata for the uploaded image
 
- //... firebase storage 
- const storage = getStorage();    // Get a reference to the Firebase Storage bucket
- const imageRef = ref(storage, `images/profile_picture/${filename}`);// Create a reference to the bucket
+      //... firebase storage 
+      const storage = getStorage();    // Get a reference to the Firebase Storage bucket
+      const imageRef = ref(storage, `images/profile_picture/${filename}`);// Create a reference to the bucket
 
- // Upload the image to the Firebase Storage bucket and get URL
- await uploadBytes(imageRef, req.file.buffer, metadata);
- const url = await getDownloadURL(imageRef);
-
-
-  // 2 update the URL in MongoDB
-  const update = await Account.findOneAndUpdate(
-    { _id: req.user.id },
-    { name, image: url,username, about: about, },
-    { new: true })
+      // Upload the image to the Firebase Storage bucket and get URL
+      await uploadBytes(imageRef, req.file.buffer, metadata);
+      const url = await getDownloadURL(imageRef);
 
 
-    res.status(200).json({ message: 'Account updated successfully', update });
-   }
+      // 2 update the URL in MongoDB
+      const update = await Account.findOneAndUpdate(
+        { _id: req.user.id },
+        { name, image: url, username, about: about, },
+        { new: true })
+
+
+      res.status(200).json({ message: 'Account updated successfully', update });
+    }
 
 
 
-  
-     // update withour file
-  const update = await Account.findOneAndUpdate(
-    { _id: req.user.id },
-    { name, username, about: about,},
-    { new: true })
+
+    // update withour file
+    const update = await Account.findOneAndUpdate(
+      { _id: req.user.id },
+      { name, username, about: about, },
+      { new: true })
 
     console.log(update);
     res.status(200).json({ message: 'Account updated successfully', update });
@@ -74,7 +74,7 @@ exports.edit_account = async (req, res) => {
   } catch (err) {
     console.error(err);
     // Delete the image from Firebase if there was an error
-    if (req.file){
+    if (req.file) {
       if (imageRef) {
         await deleteObject(imageRef);
       }
@@ -177,5 +177,33 @@ exports.searchAccounts = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// *****************     changePassword      *******************************/
+exports.changePassword = async (req, res) => {
+  const { id } = req.user;
+  const { oldPassword, newPassword } = req.body;
+
+  try {
+    // Find the account by ID
+    const account = await Account.findById(id);
+    if (!account) return res.status(400).json({ message: "Account not found" });
+
+
+    // Compare old password
+    if (oldPassword !== account.password) {
+      return res.status(400).json({ message: "Old password is incorrect" });
+    }
+
+    // Update the password
+    account.password = newPassword;
+    await account.save();
+
+    // Send response
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error changing password" });
   }
 };
