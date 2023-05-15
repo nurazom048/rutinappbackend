@@ -15,14 +15,49 @@ datasource db {
 
 //!  Account
 model accounts {
-  id           String  @id @default(auto()) @map("_id") @db.ObjectId
-  username     String  @unique
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  username     String        @unique
   name         String
   about        String?
   email        String?
   image        String?
   // Saved_routines   Routine[]  @relation("AccountToRoutine")
   password     String
-  account_type String  @default("user")
+  account_type String        @default("user")
   // routines         Routine[]  @relation("RoutineToAccount")
+  routines     noticeBords[]
+}
+
+//! NoticeBoard
+model noticeBords {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  name        String
+  description String?
+  notices     notices[]
+  ownerID     String    @db.ObjectId
+  ac          accounts  @relation(fields: [ownerID], references: [id], onDelete: Cascade)
+}
+
+model notices {
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  pdf           noticePdfFile[]
+  description   String?
+  time          DateTime        @default(now()) @db.Date
+  visibility    Visibility      @default(public)
+  noticeBoardID String          @db.ObjectId
+  noticeBoardre noticeBords     @relation(fields: [noticeBoardID], references: [id], onDelete: Cascade)
+}
+
+model noticePdfFile {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  url       String
+  noticesId String?  @db.ObjectId
+  notices   notices? @relation(fields: [noticesId], references: [id])
+}
+
+enum Visibility {
+  public
+  members
 }

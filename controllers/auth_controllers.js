@@ -13,9 +13,10 @@ const prisma = require('../prisma/index')
 exports.login = async (req, res) => {
   const { username, password } = req.body;
 
+
   try {
     if (!username) {
-      return res.status(400).json({ message: "Username is required" });
+      return res.status(400).json({ message: "Username is required ".username });
     }
 
     // Find user by username
@@ -39,9 +40,8 @@ exports.login = async (req, res) => {
       // },
     });
 
-    if (!user) {
-      return res.status(400).json({ message: "User not found" });
-    }
+    if (!user) return res.status(400).json({ message: "User not found" });
+
 
     // Compare passwords
     if (password !== user.password) {

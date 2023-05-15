@@ -9,7 +9,7 @@ const summary = require('./routes/summary_route');
 const account = require('./routes/account_route');
 const notice = require('./routes/notice_route');
 const cors = require("cors");
-require('dotenv').config();
+
 
 
 

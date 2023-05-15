@@ -17,9 +17,10 @@ const upload = multer({
 router.route("/create/").post(verifyToken, notice.create_notice_board);
 //router.route("/delete/:noticeId").delete(verifyToken, notice.deleteNotice);//... delete notice
 router.route("/:username").get(notice.viewNoticeByUsername);
+const noticeBpard = require("../controllers/NoticeBoard/controller");
 
 // add notice 
-router.route("/add/:noticeId").post(verifyToken, upload.single('pdf_file'), notice.addNotice);
+router.route("/add/:noticeBoardID").post(verifyToken, upload.single('pdf_file'), noticeBpard.addNotice);
 router.route("/view/content/:noticeId").post(notice.viewNoticeById);
 
 
@@ -36,7 +37,7 @@ router.route("/viewRequest/:noticeBoardId").get(notice.seeAllRequest);
 router.route("/allJoinedNoticeBoard/").post(verifyToken, notice.seeAllJoinedNoticeBoard);
 router.route("/all_notice_board/").post(verifyToken, notice.AllNoticeBoard);// owemer by me
 router.route("/recent/").post(verifyToken, notice.recentNotice);
-router.route("/seacrh/").post( notice.search_notice_boards);
+router.route("/seacrh/").post(notice.search_notice_boards);
 
 
 

@@ -11,7 +11,7 @@ exports.createAccount = async (req, res) => {
 
 
         // Check if the username is already taken
-        const existingAccount = await prisma.account.findFirst({
+        const existingAccount = await prisma.accounts.findFirst({
             where: {
                 username: username,
             },
@@ -21,7 +21,7 @@ exports.createAccount = async (req, res) => {
 
 
         // Create the new account
-        const createdAccount = await prisma.account.create({
+        const createdAccount = await prisma.accounts.create({
             data: {
                 name,
                 username,
