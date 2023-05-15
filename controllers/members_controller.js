@@ -277,7 +277,7 @@ exports.notification_Off = async (req, res) => {
 
   try {
     const routine = await Routine.findById(rutin_id);
-    if (!routine) return res.json({ message: "Routine not found"});
+    if (!routine) return res.json({ message: "Routine not found" });
 
     // // Check if user_id is present in the members array
     // const isMember = routine.members.includes(id);
@@ -285,7 +285,7 @@ exports.notification_Off = async (req, res) => {
 
     // Check if the user has already turned off notifications
     const isNotificationOff = routine.notificationOff.includes(id);
-    if (isNotificationOff) return res.json({ message: "Notifications are already turned off" ,notification_Off :true });
+    if (isNotificationOff) return res.json({ message: "Notifications are already turned off", notification_Off: true });
 
     // Update the routine by pushing the user's ID to the notificationOff array
     const updatedRoutine = await Routine.findOneAndUpdate(
@@ -294,7 +294,7 @@ exports.notification_Off = async (req, res) => {
       { new: true }
     );
 
-    res.json({ message: "Notifications turned off",notification_Off :true});
+    res.json({ message: "Notifications turned off", notification_Off: true });
   } catch (error) {
     console.error(error);
     res.json({ message: error.toString() });
@@ -316,7 +316,7 @@ exports.notification_On = async (req, res) => {
 
     // Check if the user has turned off notifications
     const isNotificationOff = routine.notificationOff.includes(id);
-    if (!isNotificationOff) return res.json({ message: "Notifications are already turned on",notification_Off :false });
+    if (!isNotificationOff) return res.json({ message: "Notifications are already turned on", notification_Off: false });
 
     // Update the routine by pulling the user's ID from the notificationOff array
     const updatedRoutine = await Routine.findOneAndUpdate(
@@ -325,7 +325,7 @@ exports.notification_On = async (req, res) => {
       { new: true }
     );
 
-    res.json({ message: "Notifications turned on", notification_Off :false  });
+    res.json({ message: "Notifications turned on", notification_Off: false });
   } catch (error) {
     console.error(error);
     res.json({ message: error.toString() });

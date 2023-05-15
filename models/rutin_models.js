@@ -15,20 +15,6 @@ const rutinshema = new Schema({
     required: true,
   },
 
-  last_summary: {
-    text: {
-      type: String,
-      required: true,
-      default: "not resent Summay",
-    },
-    time: {
-      type: Date,
-      required: true,
-      default: Date.now
-    },
-
-  },
-
 
 
   class: [{
@@ -40,17 +26,8 @@ const rutinshema = new Schema({
 
   cap10s: [
     {
-
-      cap10Ac: {
-        type: Schema.Types.ObjectId,
-        ref: 'Account',
-      },
-      position: {
-        type: String,
-        default: "cap10",
-
-      },
-
+      type: Schema.Types.ObjectId,
+      ref: 'Account',
     }
   ],
 
