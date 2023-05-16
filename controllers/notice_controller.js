@@ -540,22 +540,32 @@ exports.seeAllJoinedNoticeBoard = async (req, res) => {
     }
 };
 
-// see all joined notice board ...notices,,,
-
-// all notive borard owener by me
+//******************** AllNoticeBoard     **************************** */
 exports.AllNoticeBoard = async (req, res) => {
-    const { id } = req.user;
-
+    const { id } = req.user; // To see my uploaded noticeBoards
+    const { ownerID } = req.params; // To see others' uploaded noticeBoards
 
     try {
-        const noticeBoards = await NoticeBoard.find({ owner: id })
-            .populate('owner', 'name username image')
-            .select('name owner');
-
-        res.status(200).json({
-            message: "success",
-            noticeBoards,
+        const noticeBoards = await prisma.noticeBords.findMany({
+            where: { ownerID: ownerID || id },
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                ownerID: true,
+                ac: {
+                    select: {
+                        id: true,
+                        username: true,
+                        name: true,
+                        image: true,
+                        account_type: true,
+                    },
+                },
+            },
         });
+
+        res.status(500).json({ message: "success", noticeBoards });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
