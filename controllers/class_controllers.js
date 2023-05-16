@@ -15,8 +15,8 @@ const Weekday = require('../models/weakdayModel');
 
 exports.create_class = async (req, res) => {
   const { rutin_id } = req.params;
-  const { name,  subjectcode, instuctor_name } = req.body;
-  const { num, start,room, end,  start_time, end_time } = req.body;
+  const { name, subjectcode, instuctor_name } = req.body;
+  const { num, start, room, end, start_time, end_time } = req.body;
 
   console.log(req.body);
   console.log(rutin_id);
@@ -37,17 +37,17 @@ exports.create_class = async (req, res) => {
     if (!findstarpriod) return res.status(404).send({ message: `${start}priode is not created` });
 
     //  validation  2 chack booking
-    const startPriodeAllradyBooking = await Weekday.findOne({ routine_id:rutin_id, num, start });
+    const startPriodeAllradyBooking = await Weekday.findOne({ routine_id: rutin_id, num, start });
     console.log(startPriodeAllradyBooking);
     if (startPriodeAllradyBooking) return res.status(404).send({ message: 'Sart priode is allrady booking ' });
-    const endPriodeAllradyBooking = await Weekday.findOne({ routine_id:rutin_id, num, end });
+    const endPriodeAllradyBooking = await Weekday.findOne({ routine_id: rutin_id, num, end });
     if (endPriodeAllradyBooking) return res.status(404).send({ message: 'end priode is allrady booking' });
 
     // console.log(start);
     // console.log(end);
     const mid = [];
-    const allStart = await Weekday.find({ routine_id:rutin_id, num }, { start: 1 });
-    const allEnd = await Weekday.find({ routine_id:rutin_id, num }, { end: 1 });
+    const allStart = await Weekday.find({ routine_id: rutin_id, num }, { start: 1 });
+    const allEnd = await Weekday.find({ routine_id: rutin_id, num }, { end: 1 });
 
     for (let i = 0; i < allStart.length; i++) {
       for (let j = allStart[i].start + 1; j < allEnd[i].end; j++) {
@@ -163,7 +163,7 @@ exports.addWeakday = async (req, res) => {
       class_id,
       routine_id: classFind.rutin_id.toString(),
       num,
-      room:room,
+      room: room,
       start,
       end
     });
@@ -189,19 +189,20 @@ exports.deleteWeekdayById = async (req, res) => {
 
   try {
 
-    const weekday = await Weekday.findOne({  _id:id });
+    const weekday = await Weekday.findOne({ _id: id });
     if (!weekday) return res.status(404).send('Weekday not found');
-    
+
     await Weekday.deleteOne({ _id: id });
 
-    const weekdays = await Weekday.find({ class_id :weekday.class_id });
+    const weekdays = await Weekday.find({ class_id: weekday.class_id });
 
-    res.send({ message: 'Weekday deleted successfully' , weekdays });
+    res.send({ message: 'Weekday deleted successfully', weekdays });
   } catch (error) {
-    res.status(500).send({ message: error.message,weekdays:[] });
+    res.status(500).send({ message: error.message, weekdays: [] });
   }
 };
 
+const mongoose = require('mongoose');
 
 //******* show all weekday in a class ************** */
 
@@ -210,11 +211,14 @@ exports.allWeekdayInClass = async (req, res) => {
   const { class_id } = req.params;
 
   try {
+
+    if (!class_id) return res.status(500).send({ message: "CllassId not found", weekdays: [] });
     // 1 cweekdays
-    const weekdays = await Weekday.find({ class_id });
+    const weekdays = await Weekday.find({ class_id: mongoose.Types.ObjectId(class_id) });
 
     res.send({ message: "All weekday in the class", weekdays });
   } catch (error) {
+    console.log(error)
     return res.status(500).send({ message: error.toString, weekdays: [] });
 
   }
@@ -275,6 +279,7 @@ exports.edit_class = async (req, res) => {
 exports.delete_class = async (req, res) => {
   const { class_id } = req.params;
   console.log(req.user);
+  console.log(class_id);
 
 
 
@@ -367,7 +372,7 @@ exports.allclass = async (req, res) => {
     const Saturday = await getClasses(SaturdayClass, priodes);
 
 
- 
+
 
 
     const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
@@ -410,7 +415,7 @@ exports.findclass = async (req, res) => {
     //
   } catch (error) {
     console.error(error);
-    res.status(500).send({ message: 'Error updating class',weekdays:[] });
+    res.status(500).send({ message: 'Error updating class', weekdays: [] });
   }
 };
 
