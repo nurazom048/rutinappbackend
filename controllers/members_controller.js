@@ -113,6 +113,8 @@ exports.sendMemberRequest = async (req, res) => {
 //**********  see all member in rutin    ************* */
 exports.allMembers = async (req, res) => {
   const { rutin_id } = req.params;
+  console.log("allmembers");
+  console.log(rutin_id);
 
   try {
     // Find the routine and its members 
@@ -141,6 +143,8 @@ exports.allMembers = async (req, res) => {
 //**********  see all member in rutin    ************* */
 exports.allRequest = async (req, res) => {
   const { rutin_id } = req.params;
+
+  console.log(rutin_id);
 
   try {
     // Find the routine and  member 
@@ -267,6 +271,52 @@ exports.leave = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+//... kickout members....//
+const mongoose = require('mongoose');
+
+
+exports.kickOut = async (req, res) => {
+  const { rutin_id, memberid } = req.params;
+  const { id } = req.user;
+  console.log(rutin_id);
+  console.log(memberid);
+
+
+  try {
+    // Step 1: Find the Routine and check permission
+    const routine = await Routine.findById(rutin_id);
+    if (!routine) {
+      return res.status(404).json({ error: "Routine not found" });
+    }
+
+    // Check if the logged-in user is the owner or a captain
+    if (req.user.id === routine.ownerid.toString() || routine.cap10s.includes(id)) {
+      // Check if the member is in the routine
+      if (!mongoose.Types.ObjectId.isValid(memberid)) {
+        return res.status(400).json({ message: "Invalid member ID" });
+      }
+
+      const isMember = await Routine.findOne({ _id: rutin_id, members: { $in: mongoose.Types.ObjectId(memberid) } });
+      if (!isMember) {
+        return res.status(400).json({ message: "User already removed" });
+      }
+
+      // Remove the member and send a message
+      routine.members.pull(memberid);
+      routine.notificationOff.pull(memberid);
+
+      const updatedRoutine = await routine.save();
+
+      res.json({ message: "The member is kicked out", updatedRoutine });
+    } else {
+      return res.json({ message: "Only owners and captains can remove members" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.json({ message: error.toString() });
+  }
+};
+
 
 
 // notification off
@@ -280,8 +330,8 @@ exports.notification_Off = async (req, res) => {
     if (!routine) return res.json({ message: "Routine not found" });
 
     // // Check if user_id is present in the members array
-    // const isMember = routine.members.includes(id);
-    // if (!isMember) return res.json({ message: "You are not a member of this routine" });
+    const isMember = routine.members.includes(id);
+    if (!isMember) return res.json({ message: "You are not a member of this routine" });
 
     // Check if the user has already turned off notifications
     const isNotificationOff = routine.notificationOff.includes(id);
@@ -310,9 +360,9 @@ exports.notification_On = async (req, res) => {
     const routine = await Routine.findById(rutin_id);
     if (!routine) return res.json({ message: "Routine not found" });
 
-    // // Check if user_id is present in the members array
-    // const isMember = routine.members.includes(id);
-    // if (!isMember) return res.json({ message: "You are not a member of this routine" });
+    // Check if user_id is present in the members array
+    const isMember = routine.members.includes(id);
+    if (!isMember) return res.json({ message: "You are not a member of this routine" });
 
     // Check if the user has turned off notifications
     const isNotificationOff = routine.notificationOff.includes(id);

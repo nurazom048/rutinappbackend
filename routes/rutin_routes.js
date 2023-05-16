@@ -61,6 +61,7 @@ app.post('/member/add/:rutin_id/:username', verifyToken, member_mid.permition_ad
 app.post('/member/remove/:rutin_id/:username', verifyToken, member_mid.permition_add_member, member.removeMember);
 app.post('/member/:rutin_id/', member.allMembers);
 app.post('/member/leave/:rutin_id', verifyToken, member.leave);
+app.delete('/member/kickout/:rutin_id/:memberid', verifyToken, member.kickOut);
 
 //
 app.post('/member/send_request/:rutin_id', verifyToken, member.sendMemberRequest);
