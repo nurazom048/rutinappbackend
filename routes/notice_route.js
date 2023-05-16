@@ -36,7 +36,7 @@ router.route("/viewRequest/:noticeBoardId").get(notice.seeAllRequest);
 // see all joined notice board
 router.route("/allJoinedNoticeBoard/").post(verifyToken, notice.seeAllJoinedNoticeBoard);
 router.route("/all_notice_board/").post(notice.AllNoticeBoard);// owemer by me
-router.route("/recent/").post(verifyToken, notice.recentNotice);
+router.route("/recent/").post(verifyToken, noticeBpard.recentNotices);
 router.route("/seacrh/").post(notice.search_notice_boards);
 
 

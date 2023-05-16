@@ -431,35 +431,8 @@ exports.acceptRequest = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-// see all joined notice board ...
-exports.seeAllJoinedNoticeBoard = async (req, res) => {
-    const { id } = req.user;
-    const { page = 1, limit = 20 } = req.query;
-    try {
-        const count = await NoticeBoard.countDocuments({ member: id });
-        const noticeBoards = await NoticeBoard.find({ member: id })
-            .select('name')
-            .populate({
-                path: 'owner',
-                select: 'name image username',
-            })
-            .limit(limit)
-            .skip((page - 1) * limit);
-        if (!noticeBoards) {
-            return res.status(404).send({ message: 'Not found' });
-        }
-        res.status(200).json({
-            noticeBoards,
-            currentPage: parseInt(page),
-            totalPages: Math.ceil(count / limit),
-            totalCount: count,
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
 
-// see all joined notice board ...notices,,,
+
 
 // recentNotice
 

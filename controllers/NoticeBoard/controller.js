@@ -86,3 +86,70 @@ exports.addNotice = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+//******************** AllNoticeBoard     **************************** */
+exports.AllNoticeBoard = async (req, res) => {
+    const { id } = req.user; // To see my uploaded noticeBoards
+    const { ownerID } = req.params; // To see others' uploaded noticeBoards
+
+    try {
+        const noticeBoards = await prisma.noticeBords.findMany({
+            where: { ownerID: ownerID || id },
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                ownerID: true,
+                ac: {
+                    select: {
+                        id: true,
+                        username: true,
+                        name: true,
+                        image: true,
+                        account_type: true,
+                    },
+                },
+            },
+        });
+
+        res.status(500).json({ message: "success", noticeBoards });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+//*************** recent notice *******************//
+exports.recentNotices = async (req, res) => {
+    const { id } = req.user;
+
+    try {
+        const noticeBoards = await prisma.noticeBords.findMany({
+            include: {
+                notices: {
+                    orderBy: { time: 'desc' },
+                    include: { pdf: true },
+                },
+            },
+        });
+
+        const notices = noticeBoards.map((board) => board.notices).flat();
+
+        res.status(500).json({ message: "Prisma recent notice", notices });
+
+
+
+
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+
+
+
+
+
+
+
+
+}
