@@ -9,6 +9,7 @@ const account = require("../controllers/Account/controllers")
 
 // 1
 app.post("/login", auth.login);
+app.post("/login/phone", auth.login);
 
 //
 app.delete("/delete/:id", account.deleteAccount);
