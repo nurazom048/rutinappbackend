@@ -1,5 +1,9 @@
 const Account = require('../models/Account')
 const Routine = require('../models/rutin_models')
+const RoutineMember = require('../models/rutineMembersModel')
+const Summary = require('../models/summaryModels')
+const Priode = require('../models/priodeModels')
+const Classes = require('../models/class_model')
 const { getClasses } = require('../methode/get_class_methode');
 
 const Class = require('../models/class_model');
@@ -55,9 +59,9 @@ exports.createRutin = async (req, res) => {
     const existingRoutine = await Routine.findOne({ name, ownerid: ownerId });
     if (existingRoutine) return res.status(500).send({ message: "Routine already created with this name" });
 
-
     // Create a new routine object
     const routine = new Routine({ name, ownerid: ownerId });
+    const routineMember = new RoutineMember({ RutineID: routine._id, memberID: ownerId, owner: true }); // Create a new RoutineMember instance
 
     // Save the routine object to the database
     const createdRoutine = await routine.save();
@@ -69,15 +73,14 @@ exports.createRutin = async (req, res) => {
       { new: true }
     );
 
+    await routineMember.save(); // Wait for the routineMember instance to be saved
+
     // Send a success response with the new routine and updated user object
-    res.status(200).json({ message: "Routine created successfully", routine: createdRoutine, user: updatedUser });
+    res.status(200).json({ message: "Routine created successfully", routine: createdRoutine, user: updatedUser, routineMember });
   } catch (error) {
     console.error(error);
-
-    // Handle validation errors if any
-    if (!handleValidationError(res, error)) {
-      return res.status(500).send({ message: error.message });
-    }
+    // Handle the error and send an appropriate response
+    res.status(500).json({ message: "Failed to create routine", error: error.message });
   }
 };
 
@@ -89,6 +92,11 @@ exports.delete = async (req, res) => {
 
 
   try {
+
+    await RoutineMember.deleteMany({ RutineID: id });
+    await Summary.deleteMany({ routineId: id });
+    await Classes.deleteMany({ rutin_id: id });
+    await Priode.deleteMany({ rutin_id: id });
 
     // Delete the routine
     await Routine.findByIdAndRemove(id);
@@ -422,20 +430,21 @@ exports.current_user_status = async (req, res) => {
     }
 
     // Check if the user is the owner
-    if (routine.ownerid.toString() === req.user.id) {
+
+    const isowener = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id, owner: true })
+    if (isowener) {
       isOwner = true;
     }
 
     // Check if the user is a captain
-    if (routine.cap10s && routine.cap10s.includes(findAccount._id)) {
-      isCapten = true;
-    }
+    const isCaptenFind = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id, captain: true })
+    if (isCaptenFind) { isCapten = true; }
+
+
 
     // Check if the user is an active member
-    const alreadyMember = routine.members.includes(req.user.id);
-    if (alreadyMember) {
-      activeStatus = "joined";
-    }
+    const alreadyMember = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id, });
+    if (alreadyMember) { activeStatus = "joined"; }
 
     // Check if the user has a pending request
     const pendingRequest = routine.send_request.includes(req.user.id);
@@ -444,10 +453,8 @@ exports.current_user_status = async (req, res) => {
     }
 
     // Check notification status
-    const notification_Off = routine.notificationOff.includes(req.user.id);
-    if (!notification_Off) {
-      notificationOff = false;
-    }
+    const isNotificationOffFound = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id, notificationOn: false });
+    if (!isNotificationOffFound) { notificationOff = false; }
 
     res.status(200).json({
       isOwner,
@@ -563,3 +570,51 @@ exports.rutinDetails = async (req, res) => {
     res.send({ message: error.message });
   }
 };
+
+
+//************** user can see all routines where owner or joined ***********
+exports.homeFeed = async (req, res) => {
+  const { id } = req.user;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 3;
+
+  try {
+    // Find routines where the user is the owner or a member
+    const query = {
+      $or: [
+        { ownerid: id },
+        { members: id }
+      ]
+    };
+
+    // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    // Find the matching routines with pagination
+    const routines = await RoutineMember.find(query, '-_id -__v')
+      .populate({
+        path: 'RutineID',
+        select: 'name'
+
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    // Get the total count of matching routines
+    const totalCount = await RoutineMember.countDocuments(query);
+
+    res.status(200).json({
+
+      message: 'sucsess',
+      homeRutines: routines,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalItems: totalCount
+    });
+
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}

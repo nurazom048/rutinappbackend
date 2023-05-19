@@ -26,11 +26,10 @@ exports.addCap10 = async (req, res) => {
         rutin.cap10s.push(req_account._id);
 
         const newCap10 = await rutin.save();
-        res.json({ message: "Cap10 added successfully", newCap10 });
-        console.error(res.json({ message: "Cap10 added successfully", newCap10 }));
+        res.send({ message: "Cap10 added successfully", newCap10 });
     } catch (error) {
         console.error(error);
-        res.json({ message: error.toString() });
+        res.send({ message: error.toString() });
     }
 };
 

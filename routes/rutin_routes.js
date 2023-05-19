@@ -19,6 +19,8 @@ app.route("/:id")
 
 //... grt full rutine
 app.post("/allrutins", verifyToken, rutin.allRutin);
+app.post("/home", verifyToken, rutin.homeFeed);/// feed
+
 
 
 // 2 

@@ -6,64 +6,123 @@ var jwt = require('jsonwebtoken');
 
 
 
-//..... creat 
-
+//***********   createAccount       **********/
 exports.createAccount = async (req, res) => {
-  const { name, username, password } = req.body
-
-
+  const { name, username, password, phone, email } = req.body;
 
   try {
+    // validation
+    if (!email && !phone)
+      return res.status(400).json({ message: "Must have eamile or phone number" });
+    if (!name || !username || !password) {
+      return res.status(400).json({ message: "Please fill the form" });
+    }
+    // Check if email is already taken
+    const emailAlreadyUsed = await Account.findOne({ email });
+    if (emailAlreadyUsed) {
+      return res.status(400).json({ message: "Email already taken" });
+    }
 
+    // Check if username is already taken
+    const usernameAlreadyTaken = await Account.findOne({ username });
+    if (usernameAlreadyTaken) {
+      return res.status(400).json({ message: "Username already taken" });
+    }
 
-    const existingUser = await Account.findOne({ username });
-    if (existingUser) return res.status(400).json({ message: "Username already exists" });
+    // Check if phone number is already used
+    if (phone) {
+      const phoneNumberExists = await Account.findOne({ phone });
+      if (phoneNumberExists) {
+        return res.status(400).json({ message: "Phone number already exists" });
+      }
+    }
 
     // Create a new account
-    const account = new Account({ name, username, password });
-    const created = await account.save();
+    const account = new Account({ name, username, password, phone, email });
+    const createdAccount = await account.save();
+
     // Send response
-    res.status(200).json({ message: "Account created successfully", created });
+    res.status(200).json({ message: "Account created successfully", createdAccount });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error creating account" });
   }
-
-}
-
+};
 
 
 
 
 
-// login 
+//***********   loginAccount       **********/
+
 exports.login = async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, phone, email } = req.body;
   console.log(req.body.password);
   try {
 
-    if (!username) return res.status(400).json({ message: "req send error usernamw", username, password });
 
-    // Find user by username
-    const user = await Account.findOne({ username }).populate({
-      path: 'routines',
-      select: 'name ownerid class',
-      populate: {
-        path: 'class',
-        model: 'Class'
-      }
-    });
-    if (!user) return res.status(400).json({ message: "user id not found", username, password });
+
+    let account;
+
+
+    if (username) {
+
+      // Find user by username
+      account = await Account.findOne({ username }).populate({
+        path: 'routines',
+        select: 'name ownerid class',
+        populate: {
+          path: 'class',
+          model: 'Class'
+        }
+      });
+
+    }
+
+
+
+    if (phone) {
+
+      // Find user by phone
+      account = await Account.findOne({ phone }).populate({
+        path: 'routines',
+        select: 'name ownerid class',
+        populate: {
+          path: 'class',
+          model: 'Class'
+        }
+      });
+
+    }
+    if (email) {
+
+      // Find user by phone
+      account = await Account.findOne({ email }).populate({
+        path: 'routines',
+        select: 'name ownerid class',
+        populate: {
+          path: 'class',
+          model: 'Class'
+        }
+      });
+
+    }
+
+
+    if (!account)
+      return res.status(400).json({ message: "user  not found" });
+
 
     // Compare passwords
-    if (password != user.password) return res.status(400).json({ message: "password incurrect" });
+    if (password != account.password)
+      return res.status(400).json({ message: "password incurrect" });
 
     // Create a JWT token
 
-    const token = jwt.sign({ id: user._id, username: user.username }, "secret", { expiresIn: "1d" });
+    const token = jwt.sign({ id: account._id, username: account.username }, "secret", { expiresIn: "1d" });
 
     // Send response with token
-    res.status(200).json({ message: "Login successful", token, user });
+    res.status(200).json({ message: "Login successful", token, account });
 
 
   } catch (error) {
@@ -73,6 +132,12 @@ exports.login = async (req, res) => {
 }
 
 
+
+
+
+
+
+//***********   deleteAccount       **********/
 exports.deleteAccount = async (req, res) => {
   const { id } = req.params;
 

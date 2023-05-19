@@ -22,6 +22,10 @@ const accountSchema = new Schema({
     type: String,
 
   },
+  phone: {
+    type: String,
+
+  },
   image: {
     type: String
   },
