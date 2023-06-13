@@ -10,15 +10,14 @@ const account = require('./routes/account_route');
 const notice = require('./routes/notice_route');
 const cors = require("cors");
 
-app.use(bodyParser.urlencoded());
-
-
+//mid
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
 //..... Connection....//
 mongoose.connect('mongodb+srv://nurapp:rr1234@cluster0.wwfxxwu.mongodb.net/?retryWrites=true&w=majority')
   .then(() => console.log('Connected!'));
-app.use(bodyParser.json());
 
 
 // ------- Routes ------------------------//

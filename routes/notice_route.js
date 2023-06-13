@@ -14,67 +14,28 @@ const upload = multer({
 
 
 //.. create update delete
-router.route("/create/").post(verifyToken, notice.create_notice_board);
-//router.route("/delete/:noticeId").delete(verifyToken, notice.deleteNotice);//... delete notice
-router.route("/:username").get(notice.viewNoticeByUsername);
+router.route("/add/").post(verifyToken, upload.single('pdf_file'), notice.addNotice);// add notice 
+router.route("/:id").delete(verifyToken, notice.deleteNotice);//... delete notice
 
-// add notice 
-router.route("/add/:noticeId").post(verifyToken, upload.single('pdf_file'), notice.addNotice);
-router.route("/view/content/:noticeId").post(notice.viewNoticeById);
-// view all notice by notice id
-router.route("/:notice_boardId/notices")
-    .get(notice.allNoticesByNoticeBoardId);
+// get notice
 
-// chack status
-router.route("/status/:noticeBoardId").post(verifyToken, notice.current_user_status);
+
+//******     chack status   ********/ 
+router.route("/status/:academyID").post(verifyToken, notice.current_user_status);
+
+// join and leave notice boaed
+router.route("/join/:academyID").post(verifyToken, notice.joinNoticeboard);
+router.route("/leave/:academyID").delete(verifyToken, notice.leaveMember);
+// status
 //notification on off
-router.post('/notification/off/:noticeBoardId', verifyToken, notice.notification_Off);
-router.post('/notification/on/:noticeBoardId', verifyToken, notice.notification_on);
+router.post('/notification/off/:academyID', verifyToken, notice.notification_Off);
+router.post('/notification/on/:academyID', verifyToken, notice.notification_On);
 
 
-// send request to add notice
 
-router.route("/sendRequest/:noticeBoardId").post(verifyToken, notice.sendRequest);
-router.route("/unSendRequest/:noticeBoardId").post(verifyToken, notice.unsendRequest);
-router.route("/acceptRequest/:noticeBoardId/:userId").post(verifyToken, notice.acceptRequest);
-router.route("/rejectRequest/:noticeBoardId/:userId").post(verifyToken, notice.rejectRequest);
-
-
-// see all members
-router.route("/members/:noticeBoardId").get(notice.seeAllMebers);
-router.route("/members/leave/:noticeBoardId").delete(verifyToken, notice.leaveNoticeBoard);
-router.route("/members/kickout/:noticeBoardId").delete(verifyToken, notice.kickOut);
-
-// see all request 
-
-router.route("/viewRequest/:noticeBoardId").get(notice.seeAllRequest);
-// see all joined notice board
-router.route("/allJoinedNoticeBoard/").post(verifyToken, notice.seeAllJoinedNoticeBoard);
-router.route("/all_notice_board/").post(verifyToken, notice.AllNoticeBoard);// owemer by me
+//******     recent notice   ********/ 
 router.route("/recent/").post(verifyToken, notice.recentNotice);
-router.route("/seacrh/").post(notice.search_notice_boards);
-
-
-
-
-
-// //?... get notice...//
-// router.route("/getContent/:noticeId").get(notice.allContent);//... get all notice
-// //router.route("/getAll/:username").get(ac.add_content);//... get all notice
-
-
-// router.route("/recent").post(verifyToken, notice.recent_notice);//... get all recent_notice
-
-
-
-// router.route("/").post(verifyToken, ac.view_my_account);//... view notice
-// router.route("/:username").post(ac.view_others_Account);//... view notice others account
-
-
-// router.route("/find").get(ac.searchAccounts);//find notice
-
-
-
+router.route("/recent/:academyID").post(verifyToken, notice.recentNoticeByAcademeID);
 
 
 module.exports = router;       

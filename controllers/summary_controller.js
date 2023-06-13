@@ -4,14 +4,15 @@ const Account = require('../models/Account')
 const Routine = require('../models/rutin_models')
 const Class = require('../models/class_model');
 const Summary = require('../models/summaryModels');
-
+const RoutineMember = require('../models/rutineMembersModel')
+const SaveSummary = require('../models/save_summary,mode')
 
 
 
 
 //! firebase
 const { initializeApp } = require('firebase/app');
-const { getStorage, ref, uploadBytes, getDownloadURL } = require('firebase/storage');
+const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = require('firebase/storage');
 const firebase_stroage = require("../config/firebase_stroges");
 initializeApp(firebase_stroage.firebaseConfig); // Initialize Firebase
 // Get a reference to the Firebase storage bucket
@@ -39,7 +40,7 @@ exports.create_summary = async (req, res) => {
       newImageFileNames.push(filename);
 
       // Step 3: upload file with new name and metadata
-      const fileRef = ref(storage, `summary/files/${filename}`);
+      const fileRef = ref(storage, `summary/classID-${class_id}/files/${filename}`);
       const metadata = { contentType: req.files[i].mimetype };
       await uploadBytes(fileRef, req.files[i].buffer, metadata);
     }
@@ -47,7 +48,7 @@ exports.create_summary = async (req, res) => {
     // Step 4: get download URLs for the uploaded files
     const downloadUrls = [];
     for (let i = 0; i < newImageFileNames.length; i++) {
-      const fileRef = ref(storage, `summary/files/${newImageFileNames[i]}`);
+      const fileRef = ref(storage, `summary/classID-${class_id}/files/${newImageFileNames[i]}`);
       try {
         const url = await getDownloadURL(fileRef);
         downloadUrls.push(url);
@@ -67,7 +68,7 @@ exports.create_summary = async (req, res) => {
 
     // Step 6: save and send response
     const createdSummary = await summary.save();
-//console.log(createdSummary);
+    //console.log(createdSummary);
     return res.status(201).json({
       message: 'Summary created successfully',
       summary: createdSummary,
@@ -78,42 +79,66 @@ exports.create_summary = async (req, res) => {
   }
 };
 
-
-//************ remove summary *************** */
-
+// Remove Summary
 exports.remove_summary = async (req, res) => {
   const { summary_id } = req.params;
+  const { id } = req.user;
 
   try {
-    // find the class that contains the summary
-    const classInstance = await Class.findOne({ 'summary._id': summary_id });
-    if (!classInstance) return res.status(404).json({ message: 'Summary not found' });
+    let isCaptain = false;
 
-    // find the routine that contains the class and check if the current user has permission to edit
-    const routineInstance = await Routine.findOne({ _id: classInstance.rutin_id });
-    if (!routineInstance) return res.status(404).json({ message: 'Routine not found' });
-    if (req.user.id.toString() !== routineInstance.ownerid.toString())
-      return res.status(401).json({ message: 'You do not have permission to edit a summary' });
+    // Find the summary to be removed
+    const findSummary = await Summary.findOne({ id: summary_id });
+    if (!findSummary) {
+      return res.status(404).json({ message: 'Summary not found' });
+    }
 
+    // Find the routine to check permission
+    const routine = await Routine.findOne({ _id: findSummary.routineId });
+    if (!routine) {
+      return res.status(404).json({ message: "Routine not found" });
+    }
 
-    //.. remove the summary and send response
-    classInstance.summary.pull({ _id: summary_id });
-    await classInstance.save();
-    return res.status(200).send(classInstance);
-    ///
+    // Check if the user is a captain
+    const isCaptainFind = await RoutineMember.findOne({ memberID: req.user.id, RutineID: findSummary.routineId, captain: true });
+    if (isCaptainFind) {
+      isCaptain = true;
+    }
+
+    // Only summary owner, routine owner, or captains can delete
+    const deletePermission = findSummary.ownerId !== id || routine.ownerid == id || isCaptain;
+    if (!deletePermission) {
+      return res.status(403).json({ message: "You don't have permission to delete" });
+    }
+    const class_id = findSummary.classId;
+
+    // Delete files from Firebase Storage
+    for (let i = 0; i < findSummary.imageLinks.length; i++) {
+      const fileRef = ref(storage, `summary/classID-${class_id}/files/${findSummary.imageLinks[i]}`);
+      await deleteObject(fileRef);
+    }
+    // Delete the summary from MongoDB
+    const deleteed = await Summary.findOneAndDelete({ id: summary_id }, { new: true });
+
+    return res.status(200).json({ message: "Summary deleted successfully", deleteed });
   } catch (error) {
-    return res.status(400).send(error.message);
+    return res.status(400).json({ message: error.message });
   }
 };
 
+
+
+
+
+
+
 //************ Get class summary list *************** */
-//************ Get class summary list *************** */
-const getSummaryPDFUrls = async (summary) => {
+const getSummaryPDFUrls = async (summary, class_id) => {
   const urls = [];
   const storage = getStorage();
 
   for (let i = 0; i < summary.imageLinks.length; i++) {
-    const imageRef = ref(storage, `summary/files/${summary.imageLinks[i]}`);
+    const imageRef = ref(storage, `summary/classID-${class_id}/files/${summary.imageLinks[i]}`);
     const url = await getDownloadURL(imageRef);
     urls.push(url);
   }
@@ -144,7 +169,7 @@ exports.get_class_summary_list = async (req, res) => {
 
     const summarysWithUrls = await Promise.all(
       summaries.map(async (summary) => {
-        const pdfUrls = await getSummaryPDFUrls(summary);
+        const pdfUrls = await getSummaryPDFUrls(summary, class_id);
         return { ...summary.toObject(), imageUrls: pdfUrls };
       })
     );
@@ -226,3 +251,130 @@ exports.get_last_updated_summary = async (req, res) => {
 
 
 }
+
+
+//************* SUMMARY STATUS ********************/
+exports.sunnary_status = async (req, res) => {
+  try {
+    const { sunnary_id } = req.params;
+    const { id } = req.user;
+
+    console.log("sunnary_id");
+    console.log(sunnary_id);
+
+
+    let summaryOwner = false;
+    let isOwner = false;
+    let isCaptain = false;
+    let isSummarySaved = false;
+
+    // Find the Summary to check user status
+    const foundSummary = await Summary.findOne({ id: sunnary_id });
+    if (!foundSummary) {
+      return res.status(500).json({ message: 'Summary Not Found' });
+    }
+
+    // Update summary owner status
+    if (foundSummary.ownerId == id) {
+      summaryOwner = true;
+    }
+
+    // Find the routine to check user status
+    const routine = await Routine.findOne({ _id: foundSummary.routineId });
+    console.log(routine)
+    if (!routine) {
+      return res.status(404).json({ message: "Routine not found" });
+    }
+
+    // Check if the user is the owner
+    const isOwnerFind = await RoutineMember.findOne({ memberID: req.user.id, RutineID: foundSummary.routineId, owner: true });
+    if (isOwnerFind) {
+      isOwner = true;
+    }
+
+    // Check if the user is a captain
+    const isCaptainFind = await RoutineMember.findOne({ memberID: req.user.id, RutineID: foundSummary.routineId, captain: true });
+    if (isCaptainFind) {
+      isCaptain = true;
+    }
+
+    // TODO: Add logic to check if the summary is saved
+
+    const query = { summaryId: sunnary_id, routineId: foundSummary.routineId, savedByAccountId: req.user.id };
+    const ifsvaed = await SaveSummary.findOne(query);
+    if (ifsvaed) {
+      isSummarySaved = true
+    }
+
+    res.status(200).json({
+      summaryOwner,
+      isOwner,
+      isCaptain,
+      isSummarySaved,
+    });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({ message: error.message });
+  }
+};
+//**************** save unsave summary***************** */
+exports.saveUnsaveSummary = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+    const { save, summaryId } = req.body;
+
+    // Find the summary by ID
+    const foundSummary = await Summary.findById(summaryId);
+    if (!foundSummary) {
+      return res.status(404).json({ message: 'Summary not found' });
+    }
+
+    const query = {
+      summaryId,
+      routineId: foundSummary.routineId,
+      savedByAccountId: userId
+    };
+
+    switch (save) {
+      case 'true':
+        // Check if the summary is already saved
+        const isSaved = await SaveSummary.findOne(query);
+        if (isSaved) {
+          return res.status(409).json({ message: 'Summary already saved' });
+        }
+
+        // Create a new SaveSummary document
+        const saveSummary = new SaveSummary(query);
+
+        // Save the summary
+        const savedSummary = await saveSummary.save();
+
+        return res.status(200).json({
+          message: 'Summary saved successfully',
+          save: true,
+          savedSummary
+        });
+
+      case 'false':
+        // Find the saved summary by summary ID and user ID
+        const ifsvaed = await SaveSummary.findOne(query);
+        if (!ifsvaed) {
+          return res.status(404).json({ message: 'Saved summary not found' });
+        }
+
+        // Remove the saved summary
+        await SaveSummary.findOneAndDelete(query);
+
+        return res.status(200).json({
+          message: 'Summary unsaved successfully',
+          save: false,
+        });
+
+      default:
+        return res.status(400).json({ message: 'Save condition is required' });
+    }
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};

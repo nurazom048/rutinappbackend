@@ -580,12 +580,45 @@ exports.homeFeed = async (req, res) => {
 
   try {
     // Find routines where the user is the owner or a member
-    const query = {
-      $or: [
-        { ownerid: id },
-        { members: id }
-      ]
-    };
+    const query = { members: id };
+
+    // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    // Aggregate to eliminate duplicate routines based on RutineID
+    const uniqueRoutines = await RoutineMember.aggregate(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    // Get the total count of matching routines
+    const totalCount = await RoutineMember.countDocuments(query);
+
+    res.status(200).json({
+      message: 'success',
+      homeRoutines: uniqueRoutines,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalItems: totalCount
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+//************** user can see all routines where owner or joined ***********
+exports.homeFeed = async (req, res) => {
+  const { id } = req.user;
+  const { userID } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 3;
+
+  try {
+    // Find routines where the user is the owner or a member
+    var query = { memberID: id };
+
+    if (userID) {
+      query = { memberID: userID, owner: true };
+    }
 
     // Calculate the number of documents to skip
     const skip = (page - 1) * limit;

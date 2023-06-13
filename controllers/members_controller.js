@@ -132,7 +132,7 @@ exports.allMembers = async (req, res) => {
 
     // Find the members and populate the memberID field
     const members = await RoutineMember.find({ RutineID: rutin_id })
-      .select('memberID boolean')
+      .select('-__v -blocklist -_id')
       .populate({
         path: 'memberID',
         select: '_id username name image',
@@ -142,15 +142,35 @@ exports.allMembers = async (req, res) => {
       });
 
     // Format the response by extracting the member objects
-    const formattedMembers = members.map((member) => member.memberID);
+    const formattedMembers = members.map(({ memberID, notificationOn, captain, owner }) => {
+      const { _id, username, name, image } = memberID;
+      return {
+        _id,
+        username,
+        name,
+        image,
+        notificationOn,
+        captain,
+        owner
+      };
+    });
+
     const count = formattedMembers.length;
 
-    res.json({ message: "All Members", count, members: formattedMembers });
+    res.json({
+      message: "All Members",
+      count,
+      members: formattedMembers
+    });
   } catch (error) {
     console.error(error);
     res.json({ message: error.toString() });
   }
 };
+
+
+
+
 
 
 

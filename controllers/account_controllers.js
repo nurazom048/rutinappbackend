@@ -207,3 +207,28 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: "Error changing password" });
   }
 };
+// *****************     forgetPassword      *******************************/
+exports.forgetPassword = async (req, res) => {
+  const { email, phone, newPassword } = req.body;
+
+  try {
+    if (!email || !newPassword) return res.status(400).json({ message: "Please fill the form" });
+
+    // Find the account by ID
+    const account = await Account.findOne({ $or: [{ email: email }, { phone: phone }] });
+    if (!account) return res.status(400).json({ message: "Account not found" });
+
+
+
+    // Update the password
+    account.password = newPassword;
+    await account.save();
+
+    // Send response
+    res.status(200).json({ message: "Password changed successfully" });
+    console.error({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error changing password" });
+  }
+};

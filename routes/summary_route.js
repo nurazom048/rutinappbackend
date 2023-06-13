@@ -13,8 +13,14 @@ const upload = multer({
 
 // 1 add sumary 
 app.post("/add/:class_id", upload.array('imageLinks', 12), verifyToken, summary.create_summary);
-app.delete("/delete/:summary_id", verifyToken, summary.remove_summary);
+app.delete("/:summary_id", verifyToken, summary.remove_summary);
+
+// save 
+app.post("/save", verifyToken, summary.saveUnsaveSummary);
 app.post("/eddit/:summary_id", verifyToken, summary.update_summary);
+app.post("/status/:sunnary_id", verifyToken, summary.sunnary_status);
+
+
 
 // 2 sumary
 app.get("/:class_id", verifyToken, summary.get_class_summary_list);

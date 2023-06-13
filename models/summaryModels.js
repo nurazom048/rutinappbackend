@@ -23,7 +23,12 @@ const SummarySchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Class',
         required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
+
 });
 
 const Summary = mongoose.model('Summary', SummarySchema);
