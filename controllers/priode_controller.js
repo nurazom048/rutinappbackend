@@ -17,25 +17,62 @@ exports.add_priode = async (req, res) => {
 
     // Count the number of existing priodes for the routine
     const priodeCount = await Priode.countDocuments({ rutin_id });
+    console.log(priodeCount)
+
 
     // Create a new priode instance with the next priode number
     const priode = new Priode({
-      priode_number: priodeCount === 0 ? 1 : priodeCount + 1,
+      priode_number: !priodeCount || priodeCount === 0 ? 1 : priodeCount + 1,
       start_time,
       end_time,
       rutin_id,
     });
+    console.log(priode)
 
     // Save the priode to the database
     const added = await priode.save();
 
     res.status(200).send({ message: 'Priode added to routine', added });
   } catch (error) {
+    console.log(error)
     if (!handleValidationError(res, error)) {
       return res.status(500).send({ message: error.message });
     }
   }
 };
+
+
+
+
+// const findPriodes = await Priode.find({ rutin_id });
+// console.log(findPriodes)
+
+// const allMidProdesNumber = [];
+// const getMidpriodeNumber(findPriodes){
+
+//   if (findPriodes.lenght !== 0) {
+//     for (i = 0, findPriodes.lenght = i, i++) {
+//       if (
+//         findPriodes[i].end_time - findPriodes[i].start > 1) {
+
+//         for (j, j = findPriodes[i].end_time, j++ ) {
+//           allMidProdesNumber.add(j)
+//         }
+//       }
+
+//       //get mid priode number and add to allMidProdesNumber[] list 
+
+//     }
+//   }
+// }
+
+// const thisMidPriodeIsnNot_free = await Routine.findOne({
+//   _id: rutin_id, $or: [
+//     { start: { $in: [priode.priode_number] } },
+//     { end: { $in: [priode.priode_number] } }
+//   ]
+// });
+// if (thisMidPriodeIsnNot_free) return res.status(404).send({ message: 'Ths start : ${start} or end priode is allrady using ' });
 //************  delete Priode *************** */
 exports.delete_priode = async (req, res) => {
   const { priode_id } = req.params;

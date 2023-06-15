@@ -3,7 +3,7 @@ const Account = require('../models/Account');
 
 //? firebase
 const { initializeApp } = require('firebase/app');
-const { getStorage, ref, uploadBytes, getDownloadURL } = require('firebase/storage');
+const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = require('firebase/storage');
 const firebase_stroage = require("../config/firebase_stroges");
 
 // Initialize Firebase
@@ -13,76 +13,112 @@ initializeApp(firebase_stroage.firebaseConfig);
 const storage = getStorage();
 // const pdfRef = ref(storage, 'notice/pdf');
 
+// Firebase auth
+const admin = require('firebase-admin');
+const { auth } = require("firebase-admin");
 
 
+let imageRef;
 
 // Account controller to update the account with an image
 exports.edit_account = async (req, res) => {
+  console.log(req.body)
+  console.log(req.file)
   const { name, username, about, email } = req.body;
-  // console.log(req.body.name);
-  // console.log(req.file);
-  console.log(req.body);
-  console.log(req.file);
-
 
   try {
-    // //... Chack Account ...//
     const account = await Account.findOne({ _id: req.user.id });
-    if (!account) return res.status(404).json({ message: 'Account not found' });
+    if (!account) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+    const oldImageURL = account.image;
+    const oldImagePATH = oldImageURL.split('/').pop().split('?')[0].replaceAll('%', '/').replaceAll('/2F', '/');
+    console.log("oldImagePATH")
+
+    console.log(oldImagePATH)
+    const oldImageRef = ref(storage, oldImagePATH);
+    // console.log(oldImageRef);
+
 
     if (req.file) {
-
-      // 1 upload firebsae and get URL
       const timestamp = Date.now();
-      const filename = `${timestamp}-${req.file.originalname}`;   // Generate a unique filename 
-      const metadata = { contentType: req.file.mimetype, };
-      // Set metadata for the uploaded image
+      const filename = `${account.username}-${account.name}-${timestamp}-${req.file.originalname}`;
+      const metadata = { contentType: req.file.mimetype };
 
-      //... firebase storage 
-      const storage = getStorage();    // Get a reference to the Firebase Storage bucket
-      const imageRef = ref(storage, `images/profile_picture/${filename}`);// Create a reference to the bucket
+      const time = Date.now();
+      imageRef = ref(storage, `images/profile_picture/ID-${account.id}/-${filename}`);
 
-      // Upload the image to the Firebase Storage bucket and get URL
       await uploadBytes(imageRef, req.file.buffer, metadata);
       const url = await getDownloadURL(imageRef);
+      //DELETE: old image from firebade
+
+      if (account.image) {
+        await deleteObject(oldImageRef);
+      }
 
 
-      // 2 update the URL in MongoDB
       const update = await Account.findOneAndUpdate(
         { _id: req.user.id },
-        { name, image: url, username, about: about, },
-        { new: true })
+        { name, image: url, username, about: about },
+        { new: true }
+      );
+      console.log('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
 
-
-      res.status(200).json({ message: 'Account updated successfully', update });
+      console.log(update)
+      return res.status(200).json({ message: 'Account updated successfully', update });
     }
 
-
-
-
-    // update withour file
     const update = await Account.findOneAndUpdate(
       { _id: req.user.id },
-      { name, username, about: about, },
-      { new: true })
+      { name, username, about: about },
+      { new: true }
+    );
 
-    console.log(update);
-    res.status(200).json({ message: 'Account updated successfully', update });
-
-
-    //
+    return res.status(200).json({ message: 'Account updated successfully', update });
   } catch (err) {
     console.error(err);
-    // Delete the image from Firebase if there was an error
+
     if (req.file) {
       if (imageRef) {
         await deleteObject(imageRef);
       }
-      console.log(err);
-      res.status(500).json({ message: err });
     }
+
+    return res.status(500).json({ message: 'Failed to update account', error: err });
   }
 };
+
+//.......... Search Account ....//
+
+exports.searchAccounts = async (req, res) => {
+  const { q: searchQuery = '', page = 1, limit = 10 } = req.query;
+  console.log("search ac");
+  console.log(req.query);
+
+  try {
+    const regex = new RegExp(searchQuery, 'i');
+    const count = await Account.countDocuments({ username: { $regex: regex } });
+    const accounts = await Account.find({ username: { $regex: regex } })
+      .select('_id username name image')
+      .limit(limit)
+      .skip((page - 1) * limit);
+
+    if (!accounts) {
+      return res.status(404).send({ message: 'Not found' });
+    }
+
+    res.status(200).json({
+      accounts,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(count / limit),
+      totalCount: count
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 //........ View my account ...//
 exports.view_my_account = async (req, res) => {
 
@@ -99,22 +135,7 @@ exports.view_my_account = async (req, res) => {
     return res.status(404).json({ message: error.message });
   }
 
-
-
-
-
-
-
-
-
-
-
 }
-
-
-
-
-
 
 
 //....view others Account...//
@@ -149,37 +170,6 @@ exports.view_others_Account = async (req, res) => {
 
 
 
-
-//.......... Search Account ....//
-
-exports.searchAccounts = async (req, res) => {
-  const { q: searchQuery = '', page = 1, limit = 10 } = req.query;
-  console.log("search ac");
-  console.log(req.query);
-
-  try {
-    const regex = new RegExp(searchQuery, 'i');
-    const count = await Account.countDocuments({ username: { $regex: regex } });
-    const accounts = await Account.find({ username: { $regex: regex } })
-      .select('_id username name image')
-      .limit(limit)
-      .skip((page - 1) * limit);
-
-    if (!accounts) {
-      return res.status(404).send({ message: 'Not found' });
-    }
-
-    res.status(200).json({
-      accounts,
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(count / limit),
-      totalCount: count
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 // *****************     changePassword      *******************************/
 exports.changePassword = async (req, res) => {
   const { id } = req.user;
@@ -188,15 +178,21 @@ exports.changePassword = async (req, res) => {
   try {
     // Find the account by ID
     const account = await Account.findById(id);
-    if (!account) return res.status(400).json({ message: "Account not found" });
-
+    if (!account) {
+      return res.status(400).json({ message: "Account not found" });
+    }
 
     // Compare old password
     if (oldPassword !== account.password) {
       return res.status(400).json({ message: "Old password is incorrect" });
     }
 
-    // Update the password
+    // Update the password on Firebase
+    await auth().updateUser(account.id, {
+      password: newPassword
+    });
+
+    // Update the password in MongoDB
     account.password = newPassword;
     await account.save();
 
@@ -207,6 +203,11 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: "Error changing password" });
   }
 };
+
+
+
+
+
 // *****************     forgetPassword      *******************************/
 exports.forgetPassword = async (req, res) => {
   const { email, phone, newPassword } = req.body;
@@ -222,6 +223,11 @@ exports.forgetPassword = async (req, res) => {
 
     // Update the password
     account.password = newPassword;
+    // // Update the password on Firebase
+    await auth().updateUser(account.id, {
+      password: newPassword
+    });
+
     await account.save();
 
     // Send response
