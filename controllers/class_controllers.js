@@ -351,7 +351,12 @@ exports.allclass = async (req, res) => {
     //.. Get class By Weakday
     const allDay = await Weekday.find({ routine_id: rutin_id }).populate('class_id');
 
+    console.log(allDay)
+
     const SundayClass = await Weekday.find({ routine_id: rutin_id, num: 0 }).populate('class_id');
+    console.log('SundayClass')
+
+    // console.log(SundayClass)
     const MondayClass = await Weekday.find({ routine_id: rutin_id, num: 1 }).populate('class_id');
     const TuesdayClass = await Weekday.find({ routine_id: rutin_id, num: 2 }).populate('class_id');
     const WednesdayClass = await Weekday.find({ routine_id: rutin_id, num: 3 }).populate('class_id');
@@ -371,13 +376,16 @@ exports.allclass = async (req, res) => {
     const Friday = await getClasses(FridayClass, priodes);
     const Saturday = await getClasses(SaturdayClass, priodes);
 
+    //
+    const uniqClass = await Class.find({ rutin_id: rutin_id });
+
 
 
 
 
     const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
 
-    res.send({ _id: routine._id, rutin_name: routine.name, priodes, Classes: { allClass, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
+    res.send({ _id: routine._id, rutin_name: routine.name, priodes, uniqClass: uniqClass, Classes: { allClass, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
 
   } catch (error) {
 

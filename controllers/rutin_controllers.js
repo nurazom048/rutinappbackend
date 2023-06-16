@@ -605,18 +605,15 @@ exports.rutinDetails = async (req, res) => {
 //   }
 // };
 //************** user can see all routines where owner or joined ***********
-
-//************** user can see all routines where owner or joined ***********
 exports.homeFeed = async (req, res) => {
   const { id } = req.user;
   const { userID } = req.params;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 3;
   console.log(req.user);
-
   try {
-    // Find routines where the user is the owner or a member
-    var query = { memberID: userID || id };
+    // Find routines where the user is the owner or a member and Routine ID exists and is not null
+    let query = { memberID: userID || id };
 
     if (userID) {
       query = { memberID: userID, owner: true };
@@ -625,31 +622,41 @@ exports.homeFeed = async (req, res) => {
     // Calculate the number of documents to skip
     const skip = (page - 1) * limit;
 
-    // Find the matching routines with pagination
+    // Find all matching routines
     const routines = await RoutineMember.find(query, '-_id -__v')
       .populate({
         path: 'RutineID',
         select: 'name'
-
       })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
+    console.log(routines);
+
+    // Get the IDs of routines with null RutineID
+    const nullRutineIDIds = routines
+      .filter(routine => routine.RutineID === null || routine.RutineID === undefined || routine.RutineID === '')
+      .map(routine => routine._id);
+    console.log(nullRutineIDIds);
+
+    // Remove the objects with null RutineID from MongoDB
+    await RoutineMember.deleteMany({ _id: { $in: nullRutineIDIds } });
+
+    // Filter out the objects with null RutineID from the response
+    const filteredRoutines = routines.filter(routine => routine.RutineID !== null);
+
     // Get the total count of matching routines
     const totalCount = await RoutineMember.countDocuments(query);
 
     res.status(200).json({
-
-      message: 'sucsess',
-      homeRutines: routines,
+      message: 'success',
+      homeRoutines: filteredRoutines,
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit),
-      totalItems: totalCount
+      totalItems: totalCount,
     });
-
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-}
+};

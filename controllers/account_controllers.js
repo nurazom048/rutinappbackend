@@ -52,20 +52,27 @@ exports.edit_account = async (req, res) => {
       const url = await getDownloadURL(imageRef);
       //DELETE: old image from firebade
 
-      if (account.image) {
+
+
+
+      try {
         await deleteObject(oldImageRef);
+
+      } catch (error) {
+
+        const update = await Account.findOneAndUpdate(
+          { _id: req.user.id },
+          { name, image: url, username, about: about },
+          { new: true }
+        );
+        console.log('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+
+        console.log({ message: 'Account updated successfully', error, update })
+        return res.status(200).json({ message: 'Account updated successfully', error, update });
       }
 
 
-      const update = await Account.findOneAndUpdate(
-        { _id: req.user.id },
-        { name, image: url, username, about: about },
-        { new: true }
-      );
-      console.log('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
 
-      console.log(update)
-      return res.status(200).json({ message: 'Account updated successfully', update });
     }
 
     const update = await Account.findOneAndUpdate(

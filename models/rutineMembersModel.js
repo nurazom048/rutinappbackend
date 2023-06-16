@@ -12,7 +12,7 @@ const routineMemberSchema = new mongoose.Schema({
     RutineID: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Routine',
-        require: true
+        default: null,
 
     },
     notificationOn: {
