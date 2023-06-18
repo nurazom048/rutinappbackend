@@ -148,20 +148,42 @@ const getSummaryPDFUrls = async (summary, class_id) => {
 
 exports.get_class_summary_list = async (req, res) => {
   const { class_id } = req.params;
+  const { id } = req.user;
   const { page = 1, limit = 10 } = req.query;
-
+  console.log(class_id)
+  console.log(page)
   try {
-    const classInstance = await Class.findOne({ _id: class_id });
-    if (!classInstance) return res.status(404).json({ message: 'Class not found' });
+    let query = { classId: class_id };
 
-    const count = await Summary.countDocuments({ classId: class_id });
-    const summaries = await Summary.find({ classId: class_id }, { __v: 0 })
+    if (!class_id) {
+      // Step 1: find class
+      const findAccount = await Account.findOne({ _id: id });
+      if (!findAccount) return res.status(404).send({ message: 'Class not found' });
+
+      // Find saved summaries
+      const savedSummary = await SaveSummary.find({ savedByAccountId: id });
+
+      // Create an array with _id values
+      const summaryIdArray = savedSummary.map(summary => summary.summaryId);
+      console.log(summaryIdArray);
+
+      // Update the query to include the saved summaries
+      query = { _id: { $in: summaryIdArray } };
+    } else {
+      const classInstance = await Class.findOne({ _id: class_id });
+      if (!classInstance) return res.status(404).json({ message: 'Class not found' });
+    }
+
+    const count = await Summary.countDocuments(query);
+    const summaries = await Summary.find(query, { __v: 0 })
       .populate({
         path: 'ownerId',
         select: 'name username image'
       })
+      .sort({ createdAt: -1 }) // Sort by createdAt field in descending order
       .skip((page - 1) * limit)
       .limit(limit);
+
 
     if (!summaries) {
       return res.status(404).json({ message: 'Not found' });
@@ -175,16 +197,18 @@ exports.get_class_summary_list = async (req, res) => {
     );
 
     return res.status(200).json({
-      message: 'All the summaries',
-      summaries: summarysWithUrls,
       currentPage: parseInt(page),
       totalPages: Math.ceil(count / limit),
-      totalCount: count
+      totalCount: count,
+      message: 'All the summaries',
+      summaries: summarysWithUrls,
+
     });
   } catch (error) {
     return res.status(400).json({ message: error });
   }
 };
+
 
 
 // exports.get_class_summary_list = async (req, res) => {
@@ -333,7 +357,10 @@ exports.saveUnsaveSummary = async (req, res) => {
     const query = {
       summaryId,
       routineId: foundSummary.routineId,
-      savedByAccountId: userId
+      savedByAccountId: userId,
+      classId: foundSummary.classId,
+
+
     };
 
     switch (save) {

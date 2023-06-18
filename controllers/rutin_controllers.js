@@ -567,7 +567,7 @@ exports.rutinDetails = async (req, res) => {
 
     res.status(200).json({ current_userstatus: { isOwner, isCapten, activeStatus, isSave, memberCount, sentRequestCount }, members, })
   } catch (error) {
-    res.send({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 

@@ -24,6 +24,8 @@ app.post("/status/:sunnary_id", verifyToken, summary.sunnary_status);
 
 // 2 sumary
 app.get("/:class_id", verifyToken, summary.get_class_summary_list);
+app.get("/", verifyToken, summary.get_class_summary_list);
+
 
 
 

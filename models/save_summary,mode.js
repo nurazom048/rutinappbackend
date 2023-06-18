@@ -10,6 +10,10 @@ const saveSummarySchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Routine',
     },
+    classID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Class',
+    },
     savedByAccountId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Account',

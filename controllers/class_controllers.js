@@ -7,7 +7,9 @@ const { getClasses } = require('../methode/get_class_methode');
 const Priode = require('../models/priodeModels');
 const Weekday = require('../models/weakdayModel');
 
-
+const RoutineMember = require('../models/rutineMembersModel')
+const Summary = require('../models/summaryModels')
+const SaveSummary = require('../models/save_summary,mode')
 
 
 //************   creat class       *************** */
@@ -301,6 +303,11 @@ exports.delete_class = async (req, res) => {
       return res.status(401).send('You can only delete classes from your own routine');
 
 
+    // delete other propart
+    await Weekday.deleteMany({ class_id: class_id })
+    await SaveSummary.deleteMany({ routineId: classs.rutin_id });
+    await Summary.deleteMany({ classId: class_id });
+
 
 
     // 4 remove
@@ -309,7 +316,7 @@ exports.delete_class = async (req, res) => {
 
 
   } catch (error) {
-    res.status(500).send(error);
+    res.status(500).send({ message: error.message });
 
   }
 }
@@ -349,20 +356,31 @@ exports.allclass = async (req, res) => {
     const priodes = await Priode.find({ rutin_id: rutin_id });
 
     //.. Get class By Weakday
-    const allDay = await Weekday.find({ routine_id: rutin_id }).populate('class_id');
+    const allDayWithNull = await Weekday.find({ routine_id: rutin_id }).populate('class_id');
+    const allDay = allDayWithNull.filter(weekday => weekday.class_id !== null);
+
 
     console.log(allDay)
 
-    const SundayClass = await Weekday.find({ routine_id: rutin_id, num: 0 }).populate('class_id');
     console.log('SundayClass')
 
-    // console.log(SundayClass)
-    const MondayClass = await Weekday.find({ routine_id: rutin_id, num: 1 }).populate('class_id');
-    const TuesdayClass = await Weekday.find({ routine_id: rutin_id, num: 2 }).populate('class_id');
-    const WednesdayClass = await Weekday.find({ routine_id: rutin_id, num: 3 }).populate('class_id');
-    const ThursdayClass = await Weekday.find({ routine_id: rutin_id, num: 4 }).populate('class_id');
-    const FridayClass = await Weekday.find({ routine_id: rutin_id, num: 5 }).populate('class_id');
-    const SaturdayClass = await Weekday.find({ routine_id: rutin_id, num: 6 }).populate('class_id');
+    // with null class id valu 
+    const SundayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 0 }).populate('class_id');
+    const MondayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 1 }).populate('class_id');
+    const TuesdayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 2 }).populate('class_id');
+    const WednesdayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 3 }).populate('class_id');
+    const ThursdayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 4 }).populate('class_id');
+    const FridayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 5 }).populate('class_id');
+    const SaturdayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 6 }).populate('class_id');
+    // with out null valu
+    const SundayClass = SundayClassWithNull.filter(weekday => weekday.class_id !== null);
+    const MondayClass = MondayClassWithNull.filter(weekday => weekday.class_id !== null);
+    const TuesdayClass = TuesdayClassWithNull.filter(weekday => weekday.class_id !== null);
+    const WednesdayClass = WednesdayClassWithNull.filter(weekday => weekday.class_id !== null);
+    const ThursdayClass = ThursdayClassWithNull.filter(weekday => weekday.class_id !== null);
+    const FridayClass = FridayClassWithNull.filter(weekday => weekday.class_id !== null);
+    const SaturdayClass = SaturdayClassWithNull.filter(weekday => weekday.class_id !== null);
+
 
 
     // addd start time and end time with it 
