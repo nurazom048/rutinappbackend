@@ -1,17 +1,31 @@
 const Account = require('../models/Account');
 const jwt = require('jsonwebtoken');
 
-// Firebase auth
+
+// Firebase admin sdk from  Firebase config
 const admin = require('firebase-admin');
 const serviceAccount = require('../rutinapp-cadc1-firebase-adminsdk-lwvsk-a3adebf91e.json');
+admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+//
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+
+// Firebase auth from  Firebase config
+const firebaseApp = require('../config/firebase.config');
+const { getAuth, signInWithEmailAndPassword } = require("firebase/auth");
+const auth = getAuth(firebaseApp);
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+dotenv.config(); // Load environment variables from .env file
+const bcrypt = require('bcrypt');
+require('dotenv').config();
 
 //*********** loginAccount **********/
+
+
+
 exports.loginAccount = async (req, res) => {
   const { username, password, phone, email } = req.body;
+  console.log(req.body);
 
   try {
     let account;
@@ -32,24 +46,31 @@ exports.loginAccount = async (req, res) => {
     }
 
     // Compare passwords
-    if (password !== account.password) {
-      return res.status(400).json({ message: "Incorrect password" });
+    // const passwordMatch = await bcrypt.compare(password, account.password);
+    // if (!passwordMatch) {
+    //   return res.status(400).json({ message: "Incorrect password" });
+    // }
+
+    // Sign in with email and password on firebase
+    const userCredential = await signInWithEmailAndPassword(auth, account.email, password);
+
+    // Check if email is verified
+    const user = userCredential.user;
+    if (!user.emailVerified) {
+      return res.status(401).json({ message: "Email is not verified", email: email, password: user, account });
     }
 
     // Create a JWT token
-    const token = jwt.sign({ id: account._id, username: account.username }, "secret", { expiresIn: "1d" });
-    const claim = {
-      jwt: token,
-    }
-    // Verify the user's email and password with Firebase
-    const user = await admin.auth().getUserByEmail(account.email);
-    // const user = await admin.auth().signInWithEmailAndPassword(account.email, password);
-    const firebaselogin = await admin.auth().createCustomToken(account.id, claim);
+    const token = jwt.sign({ id: account._id, username: account.username }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
 
+    // Encrypt the new password
+    //   const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Find user and update password
+    const updated = await Account.findByIdAndUpdate(account._id, { password: password }, { new: true });
 
     // Send response with token and account details
-    res.status(200).json({ message: "Login successful", firebaselogin, token, account });
+    res.status(200).json({ message: "Login successful", updated, token, account });
   } catch (error) {
     console.error(error);
     if (error.code === "auth/invalid-email") {
@@ -61,6 +82,7 @@ exports.loginAccount = async (req, res) => {
     }
   }
 };
+
 
 
 
@@ -79,10 +101,10 @@ exports.createAccount = async (req, res) => {
     }
 
     // Check if email is already taken
-    const emailAlreadyUsed = await Account.findOne({ email });
-    if (emailAlreadyUsed) {
-      return res.status(400).json({ message: "Email already taken" });
-    }
+    // const emailAlreadyUsed = await Account.findOne({ email });
+    // if (emailAlreadyUsed) {
+    //   return res.status(400).json({ message: "Email already taken" });
+    // }
 
     // Check if username is already taken
     const usernameAlreadyTaken = await Account.findOne({ username });
@@ -97,15 +119,26 @@ exports.createAccount = async (req, res) => {
         return res.status(400).json({ message: "Phone number already exists" });
       }
     }
-
-    // Create a new account
     const account = new Account({ name, username, password, phone, email });
+
+    // chack email is taken or not 
+    try {
+      // Check if email is taken or not
+      await admin.auth().getUserByEmail(account.email.toString());
+      return res.status(401).json({ message: "Email is already taken", account });
+    } catch (error) {
+      // If the error code is 'auth/user-not-found', continue creating the account
+      if (error.code !== 'auth/user-not-found') {
+        return res.status(500).json({ message: "Error checking email availability", error });
+      }
+    }
+    //
     const firebaseAuthCreate = await admin.auth().createUser({
       displayName: account.name,
       uid: account.id,
       email: email,
       password: password,
-      emailVerified: true,
+      emailVerified: false,
     });
 
     const createdAccount = await account.save();

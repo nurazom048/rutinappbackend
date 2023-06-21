@@ -40,7 +40,6 @@ exports.create_class = async (req, res) => {
 
     //  validation  2 chack booking
     const startPriodeAllradyBooking = await Weekday.findOne({ routine_id: rutin_id, num, start });
-    console.log(startPriodeAllradyBooking);
     if (startPriodeAllradyBooking) return res.status(404).send({ message: 'Sart priode is allrady booking ' });
     const endPriodeAllradyBooking = await Weekday.findOne({ routine_id: rutin_id, num, end });
     if (endPriodeAllradyBooking) return res.status(404).send({ message: 'end priode is allrady booking' });
@@ -89,7 +88,7 @@ exports.create_class = async (req, res) => {
     await rutin.save();
 
     const updatedRoutine = await Routine.findOne({ _id: rutin_id }).populate('class');
-    res.send({ class: newClass, message: 'Class added successfully', routine: updatedRoutine, newWeekday });
+    res.send({ _id: newClass.id, class: newClass, message: 'Class added successfully', routine: updatedRoutine, newWeekday });
 
     //
   } catch (error) {
@@ -110,6 +109,7 @@ exports.create_class = async (req, res) => {
 exports.addWeakday = async (req, res) => {
   const { class_id } = req.params;
   const { num, room, start, end } = req.body;
+  console.log(req.body)
 
   try {
     const classFind = await Class.findOne({ _id: class_id });
@@ -131,15 +131,14 @@ exports.addWeakday = async (req, res) => {
 
 
     //  validation  2 chack booking
-
-    const startPriodeAllradyBooking = await Weekday.findOne({ class_id, num, start });
+    const startPriodeAllradyBooking = await Weekday.findOne({ routine_id: classFind.rutin_id, num, start });
     if (startPriodeAllradyBooking) return res.status(404).send({ message: 'Sart priode is allrady booking ' });
 
-    const endPriodeAllradyBooking = await Weekday.findOne({ class_id, num, end });
+    const endPriodeAllradyBooking = await Weekday.findOne({ routine_id: classFind.rutin_id, num, end });
     if (endPriodeAllradyBooking) return res.status(404).send({ message: 'end priode is allrady booking' });
 
-    // console.log(start);
-    // console.log(end);
+
+
 
 
     const mid = [];
@@ -151,14 +150,16 @@ exports.addWeakday = async (req, res) => {
         mid.push(j);
       }
     }
-    console.log(mid);
+
 
     if (mid.includes(start)) return res.status(400).send({ message: `${start} This  period is already booked  all booking upto  ${mid} ` });
     if (mid.includes(end)) return res.status(400).send({ message: `This ${end}  period is already booked all booking up to  ${mid} ` });
 
 
 
+    console.log('mid');
 
+    console.log(mid);
 
     // create and save new weekday
     const newWeekday = new Weekday({
@@ -183,26 +184,31 @@ exports.addWeakday = async (req, res) => {
   }
 };
 //******* deleteWeekdayById ************** */
-
 exports.deleteWeekdayById = async (req, res) => {
-  const { id } = req.params;
-
-  console.log(id);
+  const { id, classID } = req.params;
 
   try {
+    // Check if the class has at least 1 weekday
+    const weekdaysCount = await Weekday.countDocuments({ class_id: classID });
+    if (weekdaysCount === 1) {
+      return res.status(404).send({ message: 'Class must have at least 1 weekday, cannot delete it' });
+    }
 
-    const weekday = await Weekday.findOne({ _id: id });
-    if (!weekday) return res.status(404).send('Weekday not found');
+    // Find and delete the weekday
+    const weekday = await Weekday.findOneAndDelete({ _id: id });
+    if (!weekday) {
+      return res.status(404).send('Weekday not found');
+    }
 
-    await Weekday.deleteOne({ _id: id });
-
-    const weekdays = await Weekday.find({ class_id: weekday.class_id });
-
+    // Find the remaining weekdays for the class
+    const weekdays = await Weekday.find({ class_id: classID });
+    console.log({ message: 'Weekday deleted successfully', weekdays })
     res.send({ message: 'Weekday deleted successfully', weekdays });
   } catch (error) {
     res.status(500).send({ message: error.message, weekdays: [] });
   }
 };
+
 
 const mongoose = require('mongoose');
 
@@ -213,7 +219,6 @@ exports.allWeekdayInClass = async (req, res) => {
   const { class_id } = req.params;
 
   try {
-
     if (!class_id) return res.status(500).send({ message: "CllassId not found", weekdays: [] });
     // 1 cweekdays
     const weekdays = await Weekday.find({ class_id: mongoose.Types.ObjectId(class_id) });

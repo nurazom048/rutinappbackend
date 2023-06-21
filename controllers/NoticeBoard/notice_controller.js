@@ -216,7 +216,7 @@ exports.recentNotice = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
 
     try {
-        const allJoinedNoticeBaord = await NoticeBoardMember.find().select('-_id academyID');
+        const allJoinedNoticeBaord = await NoticeBoardMember.find({ memberID: id }).select('-_id academyID');
         const academyIDs = allJoinedNoticeBaord.map(item => item.academyID);
 
         const count = await Notice.countDocuments({ academyID: { $in: academyIDs } });
@@ -231,9 +231,10 @@ exports.recentNotice = async (req, res) => {
             })
             .sort({ time: -1 });
 
+        //notices
 
-
-        const noticesWithPDFs = await fb.getNoticePDFs(notices);
+        const final_notice_with_no_null_academtid = notices.filter(notice => notice.academyID !== null);
+        const noticesWithPDFs = await fb.getNoticePDFs(final_notice_with_no_null_academtid);
 
         res.status(200).json({
             message: "success All recent mnotice",

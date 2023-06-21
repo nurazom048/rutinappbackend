@@ -12,10 +12,12 @@
   "license": "ISC",
   "dependencies": {
     "@angular/fire": "^7.6.1",
+    "bcrypt": "^5.1.0",
     "body-parser": "^1.20.1",
     "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "firebase": "^9.17.1",
+    "firebase": "^9.22.2",
     "firebase-admin": "^11.9.0",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^6.9.0",

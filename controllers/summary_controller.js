@@ -23,7 +23,7 @@ exports.create_summary = async (req, res) => {
   const { message } = req.body;
   const { class_id } = req.params;
   const { id } = req.user;
-  //console.log(req.body);
+  console.log(req.body);
   //console.log(req.files);
 
   try {
@@ -68,7 +68,8 @@ exports.create_summary = async (req, res) => {
 
     // Step 6: save and send response
     const createdSummary = await summary.save();
-    //console.log(createdSummary);
+    console.log(createdSummary);
+    console.log(id);
     return res.status(201).json({
       message: 'Summary created successfully',
       summary: createdSummary,
@@ -83,7 +84,8 @@ exports.create_summary = async (req, res) => {
 exports.remove_summary = async (req, res) => {
   const { summary_id } = req.params;
   const { id } = req.user;
-
+  console.log('request for delte summary')
+  console.log(req.body)
   try {
     let isCaptain = false;
 
@@ -110,18 +112,24 @@ exports.remove_summary = async (req, res) => {
     if (!deletePermission) {
       return res.status(403).json({ message: "You don't have permission to delete" });
     }
-    const class_id = findSummary.classId;
 
+    // delete from save
+
+    const deleteTheSAve = await SaveSummary.deleteMany({ summaryId: summary_id })
+    const class_id = findSummary.classId;
     // Delete files from Firebase Storage
     for (let i = 0; i < findSummary.imageLinks.length; i++) {
       const fileRef = ref(storage, `summary/classID-${class_id}/files/${findSummary.imageLinks[i]}`);
       await deleteObject(fileRef);
     }
-    // Delete the summary from MongoDB
-    const deleteed = await Summary.findOneAndDelete({ id: summary_id }, { new: true });
+    // Delete the summary from MongoDb
+    const deleteed = await Summary.findByIdAndDelete(summary_id);
 
-    return res.status(200).json({ message: "Summary deleted successfully", deleteed });
+    return res.status(200).json({ message: "Summary deleted successfully", deleteed, deleteTheSAve });
   } catch (error) {
+    console.log('From delte dummary')
+
+    console.log(error)
     return res.status(400).json({ message: error.message });
   }
 };
@@ -191,7 +199,7 @@ exports.get_class_summary_list = async (req, res) => {
 
     const summarysWithUrls = await Promise.all(
       summaries.map(async (summary) => {
-        const pdfUrls = await getSummaryPDFUrls(summary, class_id);
+        const pdfUrls = await getSummaryPDFUrls(summary, summary.classId);
         return { ...summary.toObject(), imageUrls: pdfUrls };
       })
     );
@@ -278,13 +286,16 @@ exports.get_last_updated_summary = async (req, res) => {
 
 
 //************* SUMMARY STATUS ********************/
+
+
+
 exports.sunnary_status = async (req, res) => {
   try {
-    const { sunnary_id } = req.params;
+    const { summary_id } = req.params;
     const { id } = req.user;
 
     console.log("sunnary_id");
-    console.log(sunnary_id);
+    console.log(summary_id);
 
 
     let summaryOwner = false;
@@ -293,12 +304,16 @@ exports.sunnary_status = async (req, res) => {
     let isSummarySaved = false;
 
     // Find the Summary to check user status
-    const foundSummary = await Summary.findOne({ id: sunnary_id });
+    const foundSummary = await Summary.findById(summary_id);
     if (!foundSummary) {
       return res.status(500).json({ message: 'Summary Not Found' });
     }
 
     // Update summary owner status
+    console.log('owener')
+
+    console.log(foundSummary.ownerId)
+    console.log(id)
     if (foundSummary.ownerId == id) {
       summaryOwner = true;
     }
@@ -311,7 +326,7 @@ exports.sunnary_status = async (req, res) => {
     }
 
     // Check if the user is the owner
-    const isOwnerFind = await RoutineMember.findOne({ memberID: req.user.id, RutineID: foundSummary.routineId, owner: true });
+    const isOwnerFind = await RoutineMember.findOne({ memberID: id, RutineID: foundSummary.routineId, owner: true });
     if (isOwnerFind) {
       isOwner = true;
     }
@@ -322,10 +337,8 @@ exports.sunnary_status = async (req, res) => {
       isCaptain = true;
     }
 
-    // TODO: Add logic to check if the summary is saved
 
-    const query = { summaryId: sunnary_id, routineId: foundSummary.routineId, savedByAccountId: req.user.id };
-    const ifsvaed = await SaveSummary.findOne(query);
+    const ifsvaed = await SaveSummary.findOne({ summaryId: foundSummary.id, savedByAccountId: id });
     if (ifsvaed) {
       isSummarySaved = true
     }
@@ -335,6 +348,7 @@ exports.sunnary_status = async (req, res) => {
       isOwner,
       isCaptain,
       isSummarySaved,
+
     });
   } catch (error) {
     console.log(error);

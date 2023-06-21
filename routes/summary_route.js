@@ -18,7 +18,7 @@ app.delete("/:summary_id", verifyToken, summary.remove_summary);
 // save 
 app.post("/save", verifyToken, summary.saveUnsaveSummary);
 app.post("/eddit/:summary_id", verifyToken, summary.update_summary);
-app.post("/status/:sunnary_id", verifyToken, summary.sunnary_status);
+app.post("/status/:summary_id", verifyToken, summary.sunnary_status);
 
 
 
