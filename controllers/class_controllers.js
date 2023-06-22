@@ -11,10 +11,10 @@ const RoutineMember = require('../models/rutineMembersModel')
 const Summary = require('../models/summaryModels')
 const SaveSummary = require('../models/save_summary,mode')
 
+// routine firebse
+const { deleteSummariesFromFirebase } = require('../controllers/Routines/routines.frebase');
 
 //************   creat class       *************** */
-
-
 exports.create_class = async (req, res) => {
   const { rutin_id } = req.params;
   const { name, subjectcode, instuctor_name } = req.body;
@@ -98,10 +98,6 @@ exports.create_class = async (req, res) => {
       return res.status(500).send({ message: error.message });
   }
 };
-
-
-
-
 
 
 
@@ -282,50 +278,41 @@ exports.edit_class = async (req, res) => {
   }
 };
 
-//************ delete_class *************** */
+//************ delete_class ***************
 exports.delete_class = async (req, res) => {
   const { class_id } = req.params;
-  console.log(req.user);
-  console.log(class_id);
-
+  console.log('request to delte class')
 
 
   try {
 
-
-    // 1 chack clases
+    // Step: 1 check Permiton 
     const classs = await Class.findOne({ _id: class_id });
     if (!classs) return res.status(404).send('Class not found');
 
-    //..2 chack rutin 
+    // Check if routine exists
     const routine = await Routine.findOne({ _id: classs.rutin_id });
-    console.log(routine.ownerid.toString());
     if (!routine) return res.status(404).send('Routine not found');
-
-
-    // 3 chack premition
+    // Check permission
     if (routine.ownerid.toString() !== req.user.id)
       return res.status(401).send('You can only delete classes from your own routine');
 
-
-    // delete other propart
-    await Weekday.deleteMany({ class_id: class_id })
+    // step 2 : delete 
+    // Delete other related entities
     await SaveSummary.deleteMany({ routineId: classs.rutin_id });
-    await Summary.deleteMany({ classId: class_id });
-
-
-
-    // 4 remove
-    await classs.remove();
+    // Delete summaries from MongoDB and Firebase Storage
+    const summariesToDelete = await Summary.find({ classId: class_id });
+    await deleteSummariesFromFirebase(summariesToDelete);
+    await Weekday.deleteMany({ class_id: class_id });
+    // Delete the class
+    await Class.findByIdAndDelete(class_id);
+    // step 3: Send responce
+    console.log({ message: 'Class deleted successfully' })
     res.send({ message: 'Class deleted successfully' });
-
-
   } catch (error) {
     res.status(500).send({ message: error.message });
-
   }
-}
-
+};
 
 
 //************ show_weekday_classes *************** */
@@ -401,11 +388,6 @@ exports.allclass = async (req, res) => {
 
     //
     const uniqClass = await Class.find({ rutin_id: rutin_id });
-
-
-
-
-
     const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
 
     res.send({ _id: routine._id, rutin_name: routine.name, priodes, uniqClass: uniqClass, Classes: { allClass, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
@@ -417,13 +399,6 @@ exports.allclass = async (req, res) => {
     res.status(500).send('Server Error');
   }
 };
-
-
-
-
-
-
-
 
 
 

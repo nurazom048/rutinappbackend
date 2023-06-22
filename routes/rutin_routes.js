@@ -15,7 +15,7 @@ const member_mid = require('../midlewere/member_mid');
 // 1 
 app.post("/create", verifyToken, rutin.createRutin);
 app.route("/:id")
-    .delete(verifyToken, Middleware.Routine_Owner, rutin.delete);// delete rutin
+    .delete(verifyToken, Middleware.Routine_Owner, rutin.deleteRoutine);// delete rutin
 
 //... grt full rutine
 app.post("/allrutins", verifyToken, rutin.allRutin);

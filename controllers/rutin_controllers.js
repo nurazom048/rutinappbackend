@@ -2,11 +2,29 @@ const Account = require('../models/Account')
 const Routine = require('../models/rutin_models')
 const RoutineMember = require('../models/rutineMembersModel')
 const Summary = require('../models/summaryModels')
+const SaveSummarys = require('../models/save_summary,mode')
 const Priode = require('../models/priodeModels')
 const Classes = require('../models/class_model')
+const DeletedClass = require('../models/deleted/deleted_routines')
 const { getClasses } = require('../methode/get_class_methode');
+const Weekday = require('../models/weakdayModel');
 
 const Class = require('../models/class_model');
+
+//
+
+//! firebase
+const { initializeApp } = require('firebase/app');
+const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = require('firebase/storage');
+const firebase_stroage = require("../config/firebase_stroges");
+initializeApp(firebase_stroage.firebaseConfig); // Initialize Firebase
+// Get a reference to the Firebase storage bucket
+const storage = getStorage();
+
+
+// routine firebse
+const { deleteSummariesFromFirebase } = require('../controllers/Routines/routines.frebase');
+
 
 const getRoutineData = async (rutin_id) => {
   try {
@@ -41,7 +59,6 @@ const getRoutineData = async (rutin_id) => {
 
 
 
-const Weekday = require('../models/weakdayModel');
 
 
 //********** createRutin   ************* */
@@ -86,31 +103,47 @@ exports.createRutin = async (req, res) => {
 
 
 
-//*******      delete   ***** */
-exports.delete = async (req, res) => {
-  const { id } = req.params;
+//*******   deleteRoutine   ***** */
 
+exports.deleteRoutine = async (req, res) => {
+  const { id } = req.params;
 
   try {
 
-    await RoutineMember.deleteMany({ RutineID: id });
-    await Summary.deleteMany({ routineId: id });
-    await Classes.deleteMany({ rutin_id: id });
-    await Priode.deleteMany({ rutin_id: id });
+    await SaveSummarys.deleteMany({ routineId: id });
 
-    // Delete the routine
-    await Routine.findByIdAndRemove(id);
+    // Delete summaries from MongoDB and firebse
+    const summariesToDelete = await Summary.find({ routineId: id });
+    await deleteSummariesFromFirebase(summariesToDelete);
+
+    // // Delete the classes and save their IDs
+    // const findClassesWhichShouldBeDeleted = await Classes.find({ rutin_id: id });
+    // const deletedClassIDList = findClassesWhichShouldBeDeleted.map((item) => item._id);
+
+    // // Saving the deleted classes
+    // for (let i = 0; i < deletedClassIDList.length; i++) {
+    //   const classId = deletedClassIDList[i];
+    //   const deletedClass = new DeletedClass({ classId });
+    //   await deletedClass.save();
+    //   // Delete the class
+    //   await Classes.findByIdAndRemove(findClassesWhichShouldBeDeleted[i].id);
+    // }
+
+    // await Weekday.deleteMany({ routine_id: id });
+    // await Priode.deleteMany({ rutin_id: id });
+    // await RoutineMember.deleteMany({ RutineID: id });
+
+    // // Delete the routine
+    // await Routine.findByIdAndRemove(id);
 
     res.status(200).json({ message: "Routine deleted successfully" });
-
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error deleting routine" });
   }
-}
+};
 
-
+//*******      allRutin   ***** */
 
 exports.allRutin = async (req, res) => {
   console.log(req.user);
