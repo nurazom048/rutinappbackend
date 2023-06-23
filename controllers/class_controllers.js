@@ -103,59 +103,15 @@ exports.create_class = async (req, res) => {
 
 //,, Add waakday to class
 exports.addWeakday = async (req, res) => {
+  // Come after midelwere
   const { class_id } = req.params;
   const { num, room, start, end } = req.body;
   console.log(req.body)
 
   try {
+    //
     const classFind = await Class.findOne({ _id: class_id });
     if (!classFind) return res.status(404).send('Class not found');
-
-    const routine = await Routine.findOne({ _id: classFind.rutin_id });
-    if (!routine) return res.status(404).send('Routine not found');
-    console.log(routine._id);
-
-
-
-    // priode not created validations
-    const findEnd = await Priode.findOne({ rutin_id: classFind.rutin_id, priode_number: start });
-    const findstarpriod = await Priode.findOne({ rutin_id: classFind.rutin_id, priode_number: end });
-    if (!findEnd) return res.status(404).send({ message: `${end} priode is not created` });
-    if (!findstarpriod) return res.status(404).send({ message: `${start}priode is not created` });
-
-
-
-
-    //  validation  2 chack booking
-    const startPriodeAllradyBooking = await Weekday.findOne({ routine_id: classFind.rutin_id, num, start });
-    if (startPriodeAllradyBooking) return res.status(404).send({ message: 'Sart priode is allrady booking ' });
-
-    const endPriodeAllradyBooking = await Weekday.findOne({ routine_id: classFind.rutin_id, num, end });
-    if (endPriodeAllradyBooking) return res.status(404).send({ message: 'end priode is allrady booking' });
-
-
-
-
-
-    const mid = [];
-    const allStart = await Weekday.find({ num });
-    const allEnd = await Weekday.find({ num }, { end: 1 });
-
-    for (let i = 0; i < allStart.length; i++) {
-      for (let j = allStart[i].start + 1; j < allEnd[i].end; j++) {
-        mid.push(j);
-      }
-    }
-
-
-    if (mid.includes(start)) return res.status(400).send({ message: `${start} This  period is already booked  all booking upto  ${mid} ` });
-    if (mid.includes(end)) return res.status(400).send({ message: `This ${end}  period is already booked all booking up to  ${mid} ` });
-
-
-
-    console.log('mid');
-
-    console.log(mid);
 
     // create and save new weekday
     const newWeekday = new Weekday({

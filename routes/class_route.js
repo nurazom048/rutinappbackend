@@ -18,8 +18,12 @@ app.post('/:rutin_id/all/class', verifyToken, classs.allclass);
 app.get('/find/class/:class_id', classs.findclass);
 
 
+
+
+//
+const { validateWeekdayMiddleware } = require("../controllers/Routines/routines.midelweres")
 // weakday 
-app.post('/weakday/add/:class_id', classs.addWeakday);
+app.post('/weakday/add/:class_id', validateWeekdayMiddleware, classs.addWeakday);
 app.delete('/weakday/delete/:id/:classID', classs.deleteWeekdayById);
 // show weekday by class
 app.get('/weakday/show/:class_id', classs.allWeekdayInClass);

@@ -116,25 +116,25 @@ exports.deleteRoutine = async (req, res) => {
     const summariesToDelete = await Summary.find({ routineId: id });
     await deleteSummariesFromFirebase(summariesToDelete);
 
-    // // Delete the classes and save their IDs
-    // const findClassesWhichShouldBeDeleted = await Classes.find({ rutin_id: id });
-    // const deletedClassIDList = findClassesWhichShouldBeDeleted.map((item) => item._id);
+    // Delete the classes and save their IDs
+    const findClassesWhichShouldBeDeleted = await Classes.find({ rutin_id: id });
+    const deletedClassIDList = findClassesWhichShouldBeDeleted.map((item) => item._id);
 
-    // // Saving the deleted classes
-    // for (let i = 0; i < deletedClassIDList.length; i++) {
-    //   const classId = deletedClassIDList[i];
-    //   const deletedClass = new DeletedClass({ classId });
-    //   await deletedClass.save();
-    //   // Delete the class
-    //   await Classes.findByIdAndRemove(findClassesWhichShouldBeDeleted[i].id);
-    // }
+    // Saving the deleted classes
+    for (let i = 0; i < deletedClassIDList.length; i++) {
+      const classId = deletedClassIDList[i];
+      const deletedClass = new DeletedClass({ classId });
+      await deletedClass.save();
+      // Delete the class
+      await Classes.findByIdAndRemove(findClassesWhichShouldBeDeleted[i].id);
+    }
 
-    // await Weekday.deleteMany({ routine_id: id });
-    // await Priode.deleteMany({ rutin_id: id });
-    // await RoutineMember.deleteMany({ RutineID: id });
+    await Weekday.deleteMany({ routine_id: id });
+    await Priode.deleteMany({ rutin_id: id });
+    await RoutineMember.deleteMany({ RutineID: id });
 
-    // // Delete the routine
-    // await Routine.findByIdAndRemove(id);
+    // Delete the routine
+    await Routine.findByIdAndRemove(id);
 
     res.status(200).json({ message: "Routine deleted successfully" });
   } catch (error) {
@@ -434,50 +434,46 @@ exports.uploaded_rutins = async (req, res) => {
 exports.current_user_status = async (req, res) => {
   const { rutin_id } = req.params;
   const { username } = req.user;
-
-  //
-  let isOwner = false;
-  let isCapten = false;
-  let activeStatus = "not_joined";
-  let isSave = false;
-  let notificationOff = true;
-  let sentRequestCount = 0;
-
+  console.log('call chack status');
   try {
+    let isOwner = false;
+    let isCaptain = false;
+    let activeStatus = "not_joined";
+    let isSaved = false;
+    let notificationOff = true;
+    let sentRequestCount = 0;
+
     // Find the routine to check user status
     const routine = await Routine.findOne({ _id: rutin_id });
-    if (!routine) return res.json({ message: "Routine not found" });
+    if (!routine) {
+      return res.status(404).json({ message: "Routine not found" });
+    }
 
     // Get the member count
     const memberCount = routine.members.length;
 
     // Get the count of sent member requests
-    const sentRequests = routine.send_request;
-    sentRequestCount = sentRequests.length;
+    sentRequestCount = routine.send_request.length;
 
     // Check if the user has saved the routine
     const findAccount = await Account.findOne({ username });
-    if (!findAccount) return res.status(200).json({ isOwner, isCapten, activeStatus, memberCount, sentRequestCount });
-    if (findAccount.Saved_routines.includes(rutin_id)) {
-      isSave = true;
+    if (findAccount && findAccount.Saved_routines.includes(rutin_id)) {
+      isSaved = true;
     }
-
-    // Check if the user is the owner
-
-    const isowener = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id, owner: true })
-    if (isowener) {
-      isOwner = true;
-    }
-
-    // Check if the user is a captain
-    const isCaptenFind = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id, captain: true })
-    if (isCaptenFind) { isCapten = true; }
-
-
 
     // Check if the user is an active member
-    const alreadyMember = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id, });
-    if (alreadyMember) { activeStatus = "joined"; }
+    const alreadyMember = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id });
+    if (alreadyMember) {
+      activeStatus = "joined";
+
+      // Check if the user is the owner or a captain
+      if (alreadyMember.owner) {
+        isOwner = true;
+      }
+      if (alreadyMember.captain) {
+        isCaptain = true;
+      }
+    }
 
     // Check if the user has a pending request
     const pendingRequest = routine.send_request.includes(req.user.id);
@@ -486,20 +482,34 @@ exports.current_user_status = async (req, res) => {
     }
 
     // Check notification status
-    const isNotificationOffFound = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id, notificationOn: false });
-    if (!isNotificationOffFound) { notificationOff = false; }
-
-    res.status(200).json({
+    const isNotificationOffFound = await RoutineMember.findOne({
+      memberID: req.user.id,
+      RutineID: rutin_id,
+      notificationOn: false
+    });
+    if (isNotificationOffFound) {
+      notificationOff = false;
+    }
+    console.log({
       isOwner,
-      isCapten,
+      isCaptain,
       activeStatus,
-      isSave,
+      isSaved,
       memberCount,
       sentRequestCount,
-      notificationOff,
+      notificationOff
+    });
+    res.status(200).json({
+      isOwner,
+      isCaptain,
+      activeStatus,
+      isSaved,
+      memberCount,
+      sentRequestCount,
+      notificationOff
     });
   } catch (error) {
-    res.send({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 

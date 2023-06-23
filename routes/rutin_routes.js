@@ -52,10 +52,9 @@ app.get('/all_priode/:rutin_id', priode.all_priode);
 app.get('/priode/find/:priode_id', priode.find_priode_by_id);
 
 
-//....... cap 10 .....//
-app.post('/cap10/add/', verifyToken, cp10.addCap10);
-app.delete('/cap10/remove', verifyToken, cp10.removeCap10);
-app.post('/cap10/:rutin_id', cp10.getAllCaptains);
+//....... Captain .....//
+app.post('/cap10/add/', verifyToken, cp10.addCaptain);
+app.delete('/cap10/remove', verifyToken, cp10.removeCaptain);
 
 
 
