@@ -29,9 +29,15 @@ exports.create_class = async (req, res) => {
 
     // find  Rutine to chack owener
     const rutin = await Routine.findOne({ _id: rutin_id });
-    if (!rutin) return res.status(404).send('Routine not found');
-    if (rutin.ownerid.toString() !== req.user.id) return res.status(401).send('You can only add classes to your own routine');
-    /////////////
+    if (!rutin) return res.status(401).json({ message: "routine not found" });
+
+
+    // Check permission: owner or captain
+    const routineMember = await RoutineMember.findOne({ RutineID: rutin_id, memberID: req.user.id });
+    if (!routineMember || (!routineMember.owner && !routineMember.captain)) {
+      return res.status(401).json({ message: "Only captains and owners can add classes" });
+    }
+
     // validation 1 chack priod is created or not  
     const findEnd = await Priode.findOne({ rutin_id, priode_number: start });
     const findstarpriod = await Priode.findOne({ rutin_id, priode_number: end });
@@ -197,15 +203,18 @@ exports.edit_class = async (req, res) => {
   try {
     // 1 chack clases
     const classs = await Class.findOne({ _id: class_id });
-    if (!classs) return res.status(404).send('Class not found');
+    if (!classs) return res.status(404).send({ message: 'Class not found' });
 
     /// 2 chack rutin
     const rutin = await Routine.findOne({ _id: classs.rutin_id });
-    if (!rutin) return res.status(404).send('Routine not found');
+    if (!rutin) return res.status(404).send({ message: 'Routine not found' });
 
-    // 3 chack permition 
-    if (rutin.ownerid.toString() !== req.user.id)
-      return res.status(401).send('You can only edit classes in your own routine');
+    // Check permission: owner or captain
+    const routineMember = await RoutineMember.findOne({ RutineID: rutin_id, memberID: req.user.id });
+    if (!routineMember || (!routineMember.owner && !routineMember.captain)) {
+      return res.status(401).json({ message: "Only captains and owners can update classes" });
+    }
+
 
     // 2  chack booking
     // const isAllradyBooking = await Class.findOne({ weekday, start, rutin_id: rutin._id });
@@ -220,7 +229,7 @@ exports.edit_class = async (req, res) => {
       { name, room, subjectcode, start, end, weekday, start_time, end_time },
       { new: true }
     );
-    if (!updatedClass) return res.status(404).send('Class not found');
+    if (!updatedClass) return res.status(404).send({ message: 'Class not found' });
     console.log(updatedClass);
     res.send({ class: updatedClass, message: 'Class updated successfully' });
 
@@ -229,6 +238,7 @@ exports.edit_class = async (req, res) => {
 
 
   } catch (error) {
+    console.log(error)
     if (!handleValidationError(res, error))
       return res.status(500).send({ message: error.message });
   }
@@ -308,9 +318,9 @@ exports.allclass = async (req, res) => {
     const allDay = allDayWithNull.filter(weekday => weekday.class_id !== null);
 
 
-    console.log(allDay)
+    // console.log(allDay)
 
-    console.log('SundayClass')
+    // console.log('SundayClass')
 
     // with null class id valu 
     const SundayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 0 }).populate('class_id');
@@ -381,3 +391,43 @@ exports.findclass = async (req, res) => {
   }
 };
 
+//************ all class *************** */
+exports.classNotification = async (req, res) => {
+  const { id } = req.user;
+
+  try {
+
+    // find all the routines where notification is on
+    const findRoutines = await RoutineMember.find({ memberID: id });
+    if (!findRoutines) {
+      return res.status(404).send(findRoutines);
+    }
+    const filteredRoutineIds = [];
+    findRoutines.forEach(routine => {
+      if (routine.RutineID) {
+        filteredRoutineIds.push(routine.RutineID);
+      }
+    });
+
+    const routines = await Routine.find({ _id: { $in: filteredRoutineIds } });
+    if (!routines) return res.status(404).send({ message: 'Routines not found' });
+
+
+    // Find priodes
+    const priodes = await Priode.find({ rutin_id: { $in: filteredRoutineIds } });
+    // Get class by Weekday
+    const allDayWithNull = await Weekday.find({ routine_id: { $in: filteredRoutineIds } }).populate('class_id');
+    const allDay = allDayWithNull.filter(weekday => weekday.class_id !== null);
+
+
+    // addd start time and end time with it 
+    const allClass = await getClasses(allDay, priodes)
+    res.send({ notificationOnClasses: allClass });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).send({ message: 'Server Error' });
+  }
+};

@@ -16,6 +16,8 @@ app.get('/:rutin_id/:weekday', classs.show_weekday_classes);
 app.get('/:rutin_id/all/class', classs.allclass);
 app.post('/:rutin_id/all/class', verifyToken, classs.allclass);
 app.get('/find/class/:class_id', classs.findclass);
+// notification
+app.post('/notification', verifyToken, classs.classNotification);
 
 
 
