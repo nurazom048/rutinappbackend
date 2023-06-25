@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
@@ -9,7 +11,6 @@ const summary = require('./routes/summary_route');
 const account = require('./routes/account_route');
 const notice = require('./routes/notice_route');
 const cors = require("cors");
-require('dotenv').config()
 
 //mid
 app.use(bodyParser.json());
@@ -41,8 +42,8 @@ app.get("/", (req, res) => {
 
 
 
+const port = process.env.PORT || 3000
 
-
-app.listen(3000, function () {
+app.listen(port, function () {
   console.log(" ****server started ********");
 });

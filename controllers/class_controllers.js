@@ -71,7 +71,7 @@ exports.create_class = async (req, res) => {
     const newClass = new Class({
       name,
       subjectcode,
-      rutin_id,
+      rutin_id: rutin_id,
       instuctor_name
     });
     await newClass.save();
@@ -210,7 +210,7 @@ exports.edit_class = async (req, res) => {
     if (!rutin) return res.status(404).send({ message: 'Routine not found' });
 
     // Check permission: owner or captain
-    const routineMember = await RoutineMember.findOne({ RutineID: rutin_id, memberID: req.user.id });
+    const routineMember = await RoutineMember.findOne({ RutineID: classs.rutin_id, memberID: req.user.id });
     if (!routineMember || (!routineMember.owner && !routineMember.captain)) {
       return res.status(401).json({ message: "Only captains and owners can update classes" });
     }

@@ -432,86 +432,66 @@ exports.uploaded_rutins = async (req, res) => {
 
 //**************  current_user_status     *********** */
 exports.current_user_status = async (req, res) => {
-  const { rutin_id } = req.params;
-  const { username } = req.user;
-  console.log('call chack status');
   try {
-    let isOwner = false;
-    let isCaptain = false;
-    let activeStatus = "not_joined";
-    let isSaved = false;
-    let notificationOff = true;
-    let sentRequestCount = 0;
+    const { rutin_id } = req.params;
+    const { username } = req.user;
+    console.log(req.user.id)
 
-    // Find the routine to check user status
+    console.log('Checking user status');
+
     const routine = await Routine.findOne({ _id: rutin_id });
     if (!routine) {
       return res.status(404).json({ message: "Routine not found" });
     }
 
-    // Get the member count
     const memberCount = routine.members.length;
 
-    // Get the count of sent member requests
-    sentRequestCount = routine.send_request.length;
+    let isOwner = false;
+    let isCaptain = false;
+    let activeStatus = "not_joined";
+    let isSaved = false;
+    let notificationOn = false;
 
-    // Check if the user has saved the routine
     const findAccount = await Account.findOne({ username });
     if (findAccount && findAccount.Saved_routines.includes(rutin_id)) {
       isSaved = true;
     }
 
-    // Check if the user is an active member
     const alreadyMember = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id });
     if (alreadyMember) {
       activeStatus = "joined";
-
-      // Check if the user is the owner or a captain
-      if (alreadyMember.owner) {
-        isOwner = true;
-      }
-      if (alreadyMember.captain) {
-        isCaptain = true;
-      }
+      isOwner = alreadyMember.owner;
+      isCaptain = alreadyMember.captain;
+      notificationOn = alreadyMember.notificationOn;
     }
 
-    // Check if the user has a pending request
     const pendingRequest = routine.send_request.includes(req.user.id);
     if (pendingRequest) {
       activeStatus = "request_pending";
     }
 
-    // Check notification status
-    const isNotificationOffFound = await RoutineMember.findOne({
-      memberID: req.user.id,
-      RutineID: rutin_id,
-      notificationOn: false
-    });
-    if (isNotificationOffFound) {
-      notificationOff = false;
-    }
     console.log({
       isOwner,
       isCaptain,
       activeStatus,
       isSaved,
       memberCount,
-      sentRequestCount,
-      notificationOff
+      notificationOn
     });
+
     res.status(200).json({
       isOwner,
       isCaptain,
       activeStatus,
       isSaved,
       memberCount,
-      sentRequestCount,
-      notificationOff
+      notificationOn
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 ///.... joined rutins ......///

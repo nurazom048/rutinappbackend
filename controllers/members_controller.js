@@ -404,15 +404,15 @@ exports.notification_Off = async (req, res) => {
     }
 
     // Check if the user has already turned on notifications
-    const isNotificationAllrayOff = await RoutineMember.findOne({ RutineID: rutin_id, memberID: id, notificationOn: true });
+    const isNotificationAllrayOff = await RoutineMember.findOne({ RutineID: rutin_id, memberID: id, notificationOn: false });
     if (isNotificationAllrayOff) {
-      return res.json({ message: "Notifications are already turned off", notification_Off: true });
+      return res.json({ message: "Notifications are already turned off", notificationOn: false });
     }
 
     // Update the notificationOn field to false for the user in the routine
     await RoutineMember.findOneAndUpdate({ RutineID: rutin_id, memberID: id }, { notificationOn: false });
 
-    res.json({ message: "Notifications turned off", notification_Off: true });
+    res.json({ message: "Notifications turned off", notificationOn: false });
   } catch (error) {
     console.error(error);
     res.json({ message: error.toString() });
@@ -440,13 +440,13 @@ exports.notification_On = async (req, res) => {
     // Check if the user has already turned off notifications
     const isNotificationOAllradyOn = await RoutineMember.findOne({ RutineID: rutin_id, memberID: id, notificationOn: false });
     if (isNotificationOAllradyOn) {
-      return res.json({ message: "Notifications are already turned on", notification_Off: true });
+      return res.json({ message: "Notifications are already turned on", notificationOn: true });
     }
 
     // Update the notificationOn 
     await RoutineMember.findOneAndUpdate({ RutineID: rutin_id, memberID: id }, { notificationOn: true });
 
-    res.json({ message: "Notifications turned on", notification_Off: true });
+    res.json({ message: "Notifications turned on", notificationOn: true });
   } catch (error) {
     console.error(error);
     res.json({ message: error.toString() });
