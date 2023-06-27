@@ -18,12 +18,13 @@ const admin = require('firebase-admin');
 const { auth } = require("firebase-admin");
 
 
-let imageRef;
 
-// Account controller to update the account with an image
+
+// Account controller to update the account with images
 exports.edit_account = async (req, res) => {
-  console.log(req.body)
-  console.log(req.file)
+  console.log(req.body);
+  console.log(req.files);
+
   const { name, username, about, email } = req.body;
 
   try {
@@ -31,63 +32,79 @@ exports.edit_account = async (req, res) => {
     if (!account) {
       return res.status(404).json({ message: 'Account not found' });
     }
-    const oldImageURL = account.image;
-    const oldImagePATH = oldImageURL.split('/').pop().split('?')[0].replaceAll('%', '/').replaceAll('/2F', '/');
-    console.log("oldImagePATH")
 
-    console.log(oldImagePATH)
-    const oldImageRef = ref(storage, oldImagePATH);
-    // console.log(oldImageRef);
+    // Handle the cover image
+    const coverImage = req.files['cover'] ? req.files['cover'][0] : null;
+    let coverImageURL = account.coverImage; // Existing cover image URL
 
-
-    if (req.file) {
+    if (coverImage) {
+      // Upload the cover image
       const timestamp = Date.now();
-      const filename = `${account.username}-${account.name}-${timestamp}-${req.file.originalname}`;
-      const metadata = { contentType: req.file.mimetype };
+      const filename = `${account.username}-${account.name}-${timestamp}-${coverImage.originalname}`;
+      const metadata = { contentType: coverImage.mimetype };
 
-      const time = Date.now();
-      imageRef = ref(storage, `images/profile_picture/ID-${account.id}/-${filename}`);
+      const coverImageRef = ref(storage, `images/profile/ID-${account.id}/cover/-${filename}`);
 
-      await uploadBytes(imageRef, req.file.buffer, metadata);
-      const url = await getDownloadURL(imageRef);
-      //DELETE: old image from firebade
+      await uploadBytes(coverImageRef, coverImage.buffer, metadata);
+      coverImageURL = await getDownloadURL(coverImageRef);
 
-
-
-
-      try {
-        await deleteObject(oldImageRef);
-
-      } catch (error) {
-
-        const update = await Account.findOneAndUpdate(
-          { _id: req.user.id },
-          { name, image: url, username, about: about },
-          { new: true }
-        );
-        console.log('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
-
-        console.log({ message: 'Account updated successfully', error, update })
-        return res.status(200).json({ message: 'Account updated successfully', error, update });
+      // Delete the old cover image if it exists
+      if (account.coverImage) {
+        const oldCoverImageRef = ref(storage, account.coverImage);
+        await deleteObject(oldCoverImageRef);
       }
-
-
-
     }
 
-    const update = await Account.findOneAndUpdate(
+    // Handle the profile image
+    const profileImage = req.files['image'] ? req.files['image'][0] : null;
+    let profileImageURL = account.image; // Existing profile image URL
+
+    if (profileImage) {
+      // Upload the profile image
+      const timestamp = Date.now();
+      const filename = `${account.username}-${account.name}-${timestamp}-${profileImage.originalname}`;
+      const metadata = { contentType: profileImage.mimetype };
+
+      const profileImageRef = ref(storage, `images/profile/ID-${account.id}/profile/-${filename}`);
+
+      await uploadBytes(profileImageRef, profileImage.buffer, metadata);
+      profileImageURL = await getDownloadURL(profileImageRef);
+
+      // Delete the old profile image if it exists
+      if (account.image) {
+        const oldProfileImageRef = ref(storage, account.image);
+        await deleteObject(oldProfileImageRef);
+      }
+    }
+
+    // Update the account with the new image URLs and other fields
+    const update = await Account.updateOne(
       { _id: req.user.id },
-      { name, username, about: about },
-      { new: true }
+      {
+        name,
+        username,
+        about,
+        email,
+        coverImage: coverImageURL,
+        image: profileImageURL,
+      }
     );
 
     return res.status(200).json({ message: 'Account updated successfully', update });
+
   } catch (err) {
     console.error(err);
 
-    if (req.file) {
-      if (imageRef) {
-        await deleteObject(imageRef);
+    // Delete the uploaded images if an error occurs
+    if (req.files) {
+      const bucket = storage.bucket('your-bucket-name');
+      if (req.files['cover']) {
+        const coverImage = bucket.file(`images/cover/${getFilenameFromURL(req.files['cover'][0].originalname)}`);
+        await coverImage.delete();
+      }
+      if (req.files['image']) {
+        const profileImage = bucket.file(`images/profile/${getFilenameFromURL(req.files['image'][0].originalname)}`);
+        await profileImage.delete();
       }
     }
 
@@ -96,7 +113,6 @@ exports.edit_account = async (req, res) => {
 };
 
 //.......... Search Account ....//
-
 exports.searchAccounts = async (req, res) => {
   const { q: searchQuery = '', page = 1, limit = 10 } = req.query;
   console.log("search ac");
@@ -104,8 +120,21 @@ exports.searchAccounts = async (req, res) => {
 
   try {
     const regex = new RegExp(searchQuery, 'i');
-    const count = await Account.countDocuments({ username: { $regex: regex } });
-    const accounts = await Account.find({ username: { $regex: regex } })
+    const count = await Account.countDocuments({
+      $or: [
+        { username: { $regex: regex } },
+        { name: { $regex: regex } },
+        // Add more fields to search here
+      ]
+    });
+
+    const accounts = await Account.find({
+      $or: [
+        { username: { $regex: regex } },
+        { name: { $regex: regex } },
+        // Add more fields to search here
+      ]
+    })
       .select('_id username name image')
       .limit(limit)
       .skip((page - 1) * limit);
@@ -124,7 +153,6 @@ exports.searchAccounts = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 //........ View my account ...//
 exports.view_my_account = async (req, res) => {
@@ -160,7 +188,7 @@ exports.view_others_Account = async (req, res) => {
         },
         populate: {
           path: 'ownerid',
-          select: 'name username image',
+          select: 'name username image coverImage',
         },
       });
 

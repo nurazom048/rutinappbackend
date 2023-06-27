@@ -29,6 +29,9 @@ const accountSchema = new Schema({
   image: {
     type: String
   },
+  coverImage: {
+    type: String
+  },
   Saved_routines: [{
     type: Schema.Types.ObjectId,
     ref: 'Routine'

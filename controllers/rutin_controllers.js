@@ -331,7 +331,7 @@ exports.save_checkout = async (req, res) => {
 exports.search_rutins = async (req, res) => {
   const { src } = req.query; // get the value of 'src' from the query parameters
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 2;
+  const limit = parseInt(req.query.limit) || 1;
 
   try {
     const regex = new RegExp(src, "i");
