@@ -11,6 +11,9 @@ const notificationSchema = new mongoose.Schema({
     body: {
         type: String,
     },
+    imageUrl: {
+        type: String,
+    },
     rutineID: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Routine',
@@ -24,6 +27,10 @@ const notificationSchema = new mongoose.Schema({
         enum: ['public', 'private'],
         required: true,
         default: 'public',
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
     },
 });
 

@@ -35,38 +35,41 @@ exports.addNotice = async (req, res) => {
     console.log(req.file);
 
     try {
+        if (!req.file) return res.status(404).json({ message: 'rdf is required' });
+
         // Step 1: Find Account and check permission
         const findAccount = await Account.findById(id);
         if (!findAccount) return res.status(404).json({ message: 'Account not found' });
-        // if (findAccount.account_type !== 'user')
-        //     return res.status(404).json({ message: 'You do not have permission to add notice' });
+        const accountID = findAccount.id;
 
         // Step 2: Upload to Firebase Storage
         const uuid = uuidv4();
+        const filename = `${accountID}-${uuid}-${req.file.originalname}`;
         const metadata = { contentType: req.file.mimetype };
         const storage = getStorage(); // Get a reference to the Firebase Storage bucket
-        const pdfRef = ref(storage, `notice/pdf/${uuid}`); // Create a reference to the bucket
+        const pdfRef = ref(storage, `notice/academyId-${accountID}/pdf/${filename}`); // Create a reference to the bucket
+        await uploadBytes(pdfRef, req.file.buffer, metadata);
+        const pdfUrl = await getDownloadURL(pdfRef);
 
-        // Step 3: Save to MongoDB with PDF filename
+        // Step 3: Save to MongoDB with PDF URL
         const notice = new Notice({
-            _id: uuid, // Generate a unique UUID as _id
+            _id: uuid,
             content_name,
-            pdf: uuid.toString(),
+            pdf: pdfUrl,
             description,
             academyID: findAccount.id,
         });
         const savedNotice = await notice.save();
-        await uploadBytes(pdfRef, req.file.buffer, metadata); // Upload the file to Firebase Storage
 
-        // Step 4: Create a notification
-        const newNotification = new Notification({
-            title: `A New Notice Added By ${findAccount.name}`,
-            noticeId: notice._id, // Use the _id field of the notice
-        });
+        // Step 4: Create a notification with Firebase
+        // TODO
+        // const newNotification = new Notification({
+        //     title: `A New Notice Added By ${findAccount.name}`,
+        //     noticeId: notice._id,
+        // });
+        // await newNotification.save();
 
-        await newNotification.save();
-
-        res.status(200).json({ message: 'Notice created and added successfully', notice: savedNotice, notice });
+        res.status(200).json({ message: 'Notice created and added successfully', notice: savedNotice });
         console.log(savedNotice);
     } catch (error) {
         console.error(error);
@@ -74,43 +77,32 @@ exports.addNotice = async (req, res) => {
     }
 };
 
-
-//************  Delete Notice ***************************/
+// //************  Delete Notice ***************************/
 exports.deleteNotice = async (req, res) => {
-    const { id } = req.params;
+    const { noticeId } = req.params;
+    const { id } = req.user;
 
     try {
-        // Step 1: Find the notice by its ID
-        if (!id) res.status(404).json({ message: 'Id is requide' });
-        const notice = await Notice.findOne({ id: id });
-        if (!notice) {
-            // Step 2: Delete the notice file from Firebase Storage if it exists
-            try {
-                const storage = getStorage(); // Get a reference to the Firebase Storage bucket
-                const pdfRef = ref(storage, `notice/pdf/${id}`);
-                await deleteObject(pdfRef);
+        // Step 1: Find Account and check permission
+        const findAccount = await Account.findById(id);
+        if (!findAccount) return res.status(404).json({ message: 'Account not found' });
 
-                // Step 3: Delete the corresponding notification
-                await Notification.deleteOne({ noticeId: id });
+        // Step 2: Find the notice
+        const notice = await Notice.findById(noticeId);
+        if (!notice) return res.status(404).json({ message: 'Notice not found' });
 
-                return res.status(200).json({ message: 'Notice deleted successfully' });
-            } catch (error) {
-                console.error(error);
-                return res.status(404).json({ message: 'Notice file not found', error: error.message });
-            }
+        // Step 3: Check if the notice belongs to the user
+        if (notice.academyID.toString() !== findAccount.id.toString()) {
+            return res.status(403).json({ message: 'You do not have permission to delete this notice' });
         }
-        console.log(id)
-        console.log(notice.pdf)
 
-        // Step 3: Delete the notice file from Firebase Storage
-        const storage = getStorage(); // Get a reference to the Firebase Storage bucket
-        const pdfRef = ref(storage, `notice/pdf/${id}`);
+        // Step 4: Delete notice from MongoDB
+        await Notice.findByIdAndDelete(noticeId);
+
+        // Step 5: Delete notice file from Firebase Storage
+        const storage = getStorage();
+        const pdfRef = ref(storage, notice.pdf);
         await deleteObject(pdfRef);
-
-        // Step 4: Delete the corresponding notification
-        await Notification.deleteOne({ noticeId: id });
-        // Step 2: Delete the notice from MongoDB
-        await notice.remove();
 
         res.status(200).json({ message: 'Notice deleted successfully' });
     } catch (error) {
@@ -118,9 +110,6 @@ exports.deleteNotice = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
-
-
 
 
 
@@ -234,11 +223,11 @@ exports.recentNotice = async (req, res) => {
         //notices
 
         const final_notice_with_no_null_academtid = notices.filter(notice => notice.academyID !== null);
-        const noticesWithPDFs = await fb.getNoticePDFs(final_notice_with_no_null_academtid);
+        // const noticesWithPDFs = await fb.getNoticePDFs(final_notice_with_no_null_academtid);
 
         res.status(200).json({
             message: "success All recent mnotice",
-            notices: noticesWithPDFs,
+            notices: final_notice_with_no_null_academtid,
             currentPage: parseInt(page),
             totalPages,
             totalCount: count,
@@ -275,12 +264,13 @@ exports.recentNoticeByAcademeID = async (req, res) => {
             .sort({ time: -1 });
 
 
+        const final_notice_with_no_null_academtid = notices.filter(notice => notice.academyID !== null);
 
-        const noticesWithPDFs = await fb.getNoticePDFs(notices);
+        // const noticesWithPDFs = await fb.getNoticePDFs(notices);
 
         res.status(200).json({
             message: "success",
-            notices: noticesWithPDFs,
+            notices: final_notice_with_no_null_academtid,
             currentPage: parseInt(page),
             totalPages,
             totalCount: count,

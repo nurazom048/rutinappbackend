@@ -15,7 +15,7 @@ const upload = multer({
 
 //.. create update delete
 router.route("/add/").post(verifyToken, upload.single('pdf_file'), notice.addNotice);// add notice 
-router.route("/:id").delete(verifyToken, notice.deleteNotice);//... delete notice
+router.route("/:noticeId").delete(verifyToken, notice.deleteNotice);//... delete notice
 
 // get notice
 

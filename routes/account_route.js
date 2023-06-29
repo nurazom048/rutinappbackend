@@ -18,7 +18,6 @@ const upload = multer({
 
 
 //... Eddit account....///
-//router.post("/eddit", verifyToken, upload.single('cover'), upload.single('image'), ac.edit_account);
 router.post("/eddit", verifyToken, upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'image', maxCount: 1 }]), ac.edit_account);
 
 
