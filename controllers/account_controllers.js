@@ -16,6 +16,7 @@ const storage = getStorage();
 // Firebase auth
 const admin = require('firebase-admin');
 const { auth } = require("firebase-admin");
+const { use } = require('../routes/account_route');
 
 
 
@@ -245,29 +246,27 @@ exports.changePassword = async (req, res) => {
 
 // *****************     forgetPassword      *******************************/
 exports.forgetPassword = async (req, res) => {
-  const { email, phone, newPassword } = req.body;
+  const { email, phone, username } = req.body;
 
   try {
-    if (!email || !newPassword) return res.status(400).json({ message: "Please fill the form" });
+    if (!email && !username) return res.status(400).json({ message: "Please fill the form" });
 
     // Find the account by ID
-    const account = await Account.findOne({ $or: [{ email: email }, { phone: phone }] });
-    if (!account) return res.status(400).json({ message: "Account not found" });
+    const account = await Account.findOne({ $or: [{ email: email }, { phone: phone }, { username: username }] });
+    if (!account) return res.status(400).json({ message: "username or email is not valid" });
 
 
 
     // Update the password
-    account.password = newPassword;
     // // Update the password on Firebase
-    await auth().updateUser(account.id, {
-      password: newPassword
-    });
+    // const User =   await auth().
+    // User.
 
-    await account.save();
+    // await account.save();
 
     // Send response
-    res.status(200).json({ message: "Password changed successfully" });
-    console.error({ message: "Password changed successfully" });
+    res.status(200).json({ message: "Password changed successfully", email: account.email });
+    //console.error({ message: "Password changed successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error changing password" });

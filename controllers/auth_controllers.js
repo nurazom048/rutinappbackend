@@ -73,7 +73,12 @@ exports.loginAccount = async (req, res) => {
     res.status(200).json({ message: "Login successful", updated, token, account });
   } catch (error) {
     console.error(error);
-    if (error.code === "auth/invalid-email") {
+    if (error.code === "auth/wrong-password") {
+      // Handle invalid email error
+      res.status(400).json({ message: "wrong password" });
+    }
+
+    else if (error.code === "auth/invalid-email") {
       // Handle invalid email error
       res.status(400).json({ message: "Invalid email" });
     } else {
