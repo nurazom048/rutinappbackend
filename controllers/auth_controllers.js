@@ -31,17 +31,30 @@ exports.loginAccount = async (req, res) => {
 
   try {
     let account;
+    let pendigAccount;
     //.. check is pending or not 
-    const pendigAccount = await PendigAccount.findOne({ $or: [{ username }, { email }] });
-    const pendigAccountCredential = await signInWithEmailAndPassword(auth, pendigAccount.email, password);
-    // Check if email is verified
-    const pendigAccountCredentialuser = pendigAccountCredential.user;
-    if (pendigAccountCredentialuser.emailVerified) {
-      return res.status(401).json({ message: "Email is not verified", email: email, pendigAccount });
+    if (username) {
+      pendigAccount = await PendigAccount.findOne({ username });
+
+    }
+    if (email) {
+      pendigAccount = await PendigAccount.findOne({ email });
     }
 
-    if (!pendigAccount.isAccept) {
-      return res.status(402).json({ message: "Academy request is pending", pendigAccount });
+
+    if (pendigAccount) {
+      const pendigAccountCredential = await admin.auth().getUserByEmail(pendigAccount.email)
+      console.log('pendigAccountCredential')
+      console.log(pendigAccountCredential)
+      // Check if email is verified
+
+      if (!pendigAccountCredential.emailVerified) {
+        return res.status(401).json({ message: "Email is not verified", account: { email: pendigAccount.email }, pendigAccount });
+      }
+
+      if (!pendigAccount.isAccept) {
+        return res.status(402).json({ message: "Academy request is pending", account: { email: pendigAccount.email }, pendigAccount });
+      }
     }
 
 
@@ -107,6 +120,7 @@ exports.loginAccount = async (req, res) => {
 
 
 exports.createAccount = async (req, res) => {
+  console.log(req.body)
   const { name, username, password, phone, email, account_type, EIIN, contractInfo } = req.body;
 
   try {
@@ -164,7 +178,7 @@ exports.createAccount = async (req, res) => {
         emailVerified: false,
       });
 
-      const createdAccount = await account.save();
+      // const createdAccount = await account.save();
 
       // Send response
       res.status(200).json({ message: "Account created successfully", createdAccount, firebaseAuthCreate });

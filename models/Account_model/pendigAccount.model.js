@@ -8,6 +8,11 @@ const pendingAccount = new Schema({
     default: false,
 
   },
+
+  email: {
+    type: String,
+    required: true,
+  },
   username: {
     type: String,
     required: true,
