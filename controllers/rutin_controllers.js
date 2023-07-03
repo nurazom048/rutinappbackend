@@ -458,6 +458,8 @@ exports.current_user_status = async (req, res) => {
     }
 
     const alreadyMember = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id });
+
+
     if (alreadyMember) {
       activeStatus = "joined";
       isOwner = alreadyMember.owner;

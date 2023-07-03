@@ -438,14 +438,15 @@ exports.notification_On = async (req, res) => {
     }
 
     // Check if the user has already turned off notifications
-    const isNotificationOAllradyOn = await RoutineMember.findOne({ RutineID: rutin_id, memberID: id, notificationOn: false });
+    const isNotificationOAllradyOn = await RoutineMember.findOne({ RutineID: rutin_id, memberID: id, notificationOn: true });
     if (isNotificationOAllradyOn) {
       return res.json({ message: "Notifications are already turned on", notificationOn: true });
     }
 
     // Update the notificationOn 
-    await RoutineMember.findOneAndUpdate({ RutineID: rutin_id, memberID: id }, { notificationOn: true });
 
+    isMember.notificationOn = true;
+    isMember.save()
     res.json({ message: "Notifications turned on", notificationOn: true });
   } catch (error) {
     console.error(error);

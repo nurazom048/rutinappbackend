@@ -60,7 +60,7 @@ async function sendNotification(tokenIdList, contents, heading) {
 }
 
 // Call the function to send the notification
-// sendNotification(["8b3890f8-6d71-4938-945a-93c0e8182845"], "Notification content", "Notification heading")
+// sendNotification(["b0cd8458-ca8c-44ba-b76a-6a3c72c85e64"], "Notification content", "Notification heading")
 //     .then(json => console.log(json))
 //     .catch(err => console.error('error:' + err));
 //******* Expoexport*****/
