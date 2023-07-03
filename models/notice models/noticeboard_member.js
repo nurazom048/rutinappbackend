@@ -14,7 +14,7 @@ const NoticeBoardMemberSchema = new Schema({
     },
     memberID: {
         type: Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'Account',
         required: true,
     },
 });

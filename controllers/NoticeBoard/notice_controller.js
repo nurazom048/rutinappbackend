@@ -5,6 +5,9 @@ const NoticeBoardMember = require('../../models/notice models/noticeboard_member
 
 const Notice = require('../../models/notice models/notice');
 const Notification = require('../../models/notification.model');
+const { sendNotificationMethode } = require('../../controllers/notification/oneSignalNotification.controller');
+
+
 
 
 const Account = require('../../models/Account');
@@ -61,13 +64,21 @@ exports.addNotice = async (req, res) => {
         });
         const savedNotice = await notice.save();
 
+
+        const NotificationMember = await NoticeBoardMember.find({ notificationOn: true })
+            .populate('memberID', 'osUserID')
+            .exec();
+
+        console.log(NotificationMember);
+
+        const oneSignalUserId = NotificationMember
+            .map(member => member.memberID.osUserID)
+            .filter(osUserId => osUserId !== '' && osUserId !== undefined);
+
+        console.log(oneSignalUserId);
+
         // Step 4: Create a notification with Firebase
-        // TODO
-        // const newNotification = new Notification({
-        //     title: `A New Notice Added By ${findAccount.name}`,
-        //     noticeId: notice._id,
-        // });
-        // await newNotification.save();
+        const response = await sendNotificationMethode(oneSignalUserId, `A New Notice from ${findAccount.name}`, "New Notice");
 
         res.status(200).json({ message: 'Notice created and added successfully', notice: savedNotice });
         console.log(savedNotice);
@@ -76,6 +87,7 @@ exports.addNotice = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 
 // //************  Delete Notice ***************************/
 exports.deleteNotice = async (req, res) => {

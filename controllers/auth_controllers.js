@@ -26,8 +26,16 @@ require('dotenv').config();
 
 
 exports.loginAccount = async (req, res) => {
-  const { username, password, phone, email } = req.body;
+  const { username, password, phone, email, osUserID } = req.body;
   console.log(req.body);
+
+  if (osUserID) {
+
+    console.log("define")
+  } if (!osUserID) {
+
+    console.log("undefine")
+  }
 
   try {
     let account;
@@ -97,8 +105,8 @@ exports.loginAccount = async (req, res) => {
     //   const hashedPassword = await bcrypt.hash(password, 10);
 
     // Find user and update password
-    const updated = await Account.findByIdAndUpdate(account._id, { password: password }, { new: true });
-
+    const updated = await Account.findByIdAndUpdate(account._id, { password: password, osUserID: osUserID }, { new: true });
+    console.log(updated)
     // Send response with token and account details
     res.status(200).json({ message: "Login successful", updated, token, account });
   } catch (error) {

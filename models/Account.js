@@ -41,6 +41,10 @@ const accountSchema = new Schema({
     type: String,
     required: true
   },
+
+  osUserID: {
+    type: String,
+  },
   account_type: {
     type: String,
     enum: ['user', 'academy'],

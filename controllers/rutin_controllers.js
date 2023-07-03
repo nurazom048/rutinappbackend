@@ -631,9 +631,11 @@ exports.rutinDetails = async (req, res) => {
 exports.homeFeed = async (req, res) => {
   const { id } = req.user;
   const { userID } = req.params;
+  const { osUserID } = req.body;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 3;
   console.log(req.user);
+  console.log('>sdgfsdgdfge>>>>>>>>>>>');
   try {
     // Find routines where the user is the owner or a member and Routine ID exists and is not null
     let query = { memberID: userID || id };
@@ -671,6 +673,11 @@ exports.homeFeed = async (req, res) => {
 
     // Get the total count of matching routines
     const totalCount = await RoutineMember.countDocuments(query);
+
+    if (page == 1 && !userID) {
+      const updated = await Account.findByIdAndUpdate(req.user.id, { osUserID: osUserID }, { new: true });
+      console.log(updated)
+    }
 
     res.status(200).json({
       message: 'success',

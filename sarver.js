@@ -11,6 +11,7 @@ const summary = require('./routes/summary_route');
 const account = require('./routes/account_route');
 const notice = require('./routes/notice_route');
 const notification = require('./routes/notice_route');
+const { sendPushNotificationsToAll, onesignal } = require('./controllers/notification/oneSignalNotification.controller');
 const cors = require("cors");
 
 //mid
@@ -51,6 +52,8 @@ const { createNotification, deleteNotification, getAllNotifications } = require(
 app.post("/notification", upload.single('image'), createNotification);
 app.patch("/notification/:notificationId", deleteNotification);
 app.get("/notification/", getAllNotifications);
+
+app.get("/oneSignal", onesignal);
 
 
 app.get("/", (req, res) => {
