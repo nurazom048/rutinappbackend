@@ -53,7 +53,7 @@ exports.loginAccount = async (req, res) => {
     if (pendigAccount) {
       const pendigAccountCredential = await admin.auth().getUserByEmail(pendigAccount.email)
       console.log('pendigAccountCredential')
-      console.log(pendigAccountCredential)
+      console.log(pendigAccount)
       // Check if email is verified
 
       if (!pendigAccountCredential.emailVerified) {
@@ -166,7 +166,7 @@ exports.createAccount = async (req, res) => {
       return res.status(200).json(response);
     } else {
 
-      const account = new Account({ name, username, password, phone, email, EIIN, contractInfo });
+      const account = new Account({ name, username, password, phone, email });
 
       // Check if email is taken or not
       try {

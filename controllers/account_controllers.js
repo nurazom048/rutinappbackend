@@ -25,7 +25,7 @@ const { use } = require('../routes/account_route');
 exports.edit_account = async (req, res) => {
   console.log(req.body);
   console.log(req.files);
-
+  console.log("req.body");
   const { name, username, about, email } = req.body;
 
   try {

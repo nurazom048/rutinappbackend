@@ -65,7 +65,7 @@ exports.addNotice = async (req, res) => {
         const savedNotice = await notice.save();
 
 
-        const NotificationMember = await NoticeBoardMember.find({ notificationOn: true })
+        const NotificationMember = await NoticeBoardMember.find({ academyID: id, notificationOn: true })
             .populate('memberID', 'osUserID')
             .exec();
 
