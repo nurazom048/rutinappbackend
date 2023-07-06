@@ -8,6 +8,10 @@ const RoutineMember = require('../models/rutineMembersModel')
 const SaveSummary = require('../models/save_summary,mode')
 
 
+// firebase
+
+const { summaryImageUploader } = require('../controllers/Routines/firebase/summary.firebase')
+
 
 
 //! firebase
@@ -19,54 +23,31 @@ initializeApp(firebase_stroage.firebaseConfig); // Initialize Firebase
 const storage = getStorage();
 
 //************   create summary        *************** *//
+
+// Create Summary
 exports.create_summary = async (req, res) => {
   const { message } = req.body;
   const { class_id } = req.params;
   const { id } = req.user;
-  console.log(req.body);
-  //console.log(req.files);
 
   try {
-    // Step 1: find class
+    // Step 1: Find class
     const findClass = await Class.findOne({ _id: class_id });
     if (!findClass) return res.status(404).send({ message: 'Class not found' });
 
-    // Step 2: generate unique file names
-    const newImageFileNames = [];
-    const timestamp = Date.now();
+    // Step 2: Upload summary's to Firebase Storage
+    const downloadUrls = await summaryImageUploader({ files: req.files, class_id });
 
-    for (let i = 0; i < req.files.length; i++) {
-      const filename = `${timestamp}-${i}-${req.files[i].originalname}`;
-      newImageFileNames.push(filename);
-
-      // Step 3: upload file with new name and metadata
-      const fileRef = ref(storage, `summary/classID-${class_id}/files/${filename}`);
-      const metadata = { contentType: req.files[i].mimetype };
-      await uploadBytes(fileRef, req.files[i].buffer, metadata);
-    }
-
-    // Step 4: get download URLs for the uploaded files
-    const downloadUrls = [];
-    for (let i = 0; i < newImageFileNames.length; i++) {
-      const fileRef = ref(storage, `summary/classID-${class_id}/files/${newImageFileNames[i]}`);
-      try {
-        const url = await getDownloadURL(fileRef);
-        downloadUrls.push(url);
-      } catch (error) {
-        console.log(error);
-        downloadUrls.push('');
-      }
-    }
-    // Step 5: create instance
+    // Step 3: Create instance
     const summary = new Summary({
       ownerId: id,
       text: message,
-      imageLinks: newImageFileNames,
+      imageLinks: downloadUrls,
       routineId: findClass.rutin_id,
       classId: findClass.id,
     });
 
-    // Step 6: save and send response
+    // Step 4: Save and send response
     const createdSummary = await summary.save();
     console.log(createdSummary);
     console.log(id);
@@ -84,13 +65,12 @@ exports.create_summary = async (req, res) => {
 exports.remove_summary = async (req, res) => {
   const { summary_id } = req.params;
   const { id } = req.user;
-  console.log('request for delte summary')
-  console.log(req.body)
+
   try {
     let isCaptain = false;
 
     // Find the summary to be removed
-    const findSummary = await Summary.findOne({ id: summary_id });
+    const findSummary = await Summary.findOne({ _id: summary_id });
     if (!findSummary) {
       return res.status(404).json({ message: 'Summary not found' });
     }
@@ -108,28 +88,27 @@ exports.remove_summary = async (req, res) => {
     }
 
     // Only summary owner, routine owner, or captains can delete
-    const deletePermission = findSummary.ownerId !== id || routine.ownerid == id || isCaptain;
+    const deletePermission = findSummary.ownerId !== id || routine.ownerId == id || isCaptain;
     if (!deletePermission) {
       return res.status(403).json({ message: "You don't have permission to delete" });
     }
 
-    // delete from save
-
-    const deleteTheSAve = await SaveSummary.deleteMany({ summaryId: summary_id })
-    const class_id = findSummary.classId;
-    // Delete files from Firebase Storage
-    for (let i = 0; i < findSummary.imageLinks.length; i++) {
-      const fileRef = ref(storage, `summary/classID-${class_id}/files/${findSummary.imageLinks[i]}`);
+    // Step 1: Delete the summary from Firebase storage
+    for (const imageLink of findSummary.imageLinks) {
+      const fileRef = ref(storage, imageLink);
       await deleteObject(fileRef);
     }
-    // Delete the summary from MongoDb
-    const deleteed = await Summary.findByIdAndDelete(summary_id);
 
-    return res.status(200).json({ message: "Summary deleted successfully", deleteed, deleteTheSAve });
+    // Step 2: Delete the summary from MongoDB
+    await Summary.findByIdAndDelete(summary_id);
+
+    // Step 3: Delete associated save records
+    await SaveSummary.deleteMany({ summaryId: summary_id });
+
+    return res.status(200).json({ message: "Summary deleted successfully" });
   } catch (error) {
-    console.log('From delte dummary')
-
-    console.log(error)
+    console.log('From delete summary');
+    console.log(error);
     return res.status(400).json({ message: error.message });
   }
 };
@@ -139,21 +118,7 @@ exports.remove_summary = async (req, res) => {
 
 
 
-
 //************ Get class summary list *************** */
-const getSummaryPDFUrls = async (summary, class_id) => {
-  const urls = [];
-  const storage = getStorage();
-
-  for (let i = 0; i < summary.imageLinks.length; i++) {
-    const imageRef = ref(storage, `summary/classID-${class_id}/files/${summary.imageLinks[i]}`);
-    const url = await getDownloadURL(imageRef);
-    urls.push(url);
-  }
-
-  return urls;
-};
-
 exports.get_class_summary_list = async (req, res) => {
   const { class_id } = req.params;
   const { id } = req.user;
@@ -192,24 +157,18 @@ exports.get_class_summary_list = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(limit);
 
-
     if (!summaries) {
       return res.status(404).json({ message: 'Not found' });
     }
 
-    const summarysWithUrls = await Promise.all(
-      summaries.map(async (summary) => {
-        const pdfUrls = await getSummaryPDFUrls(summary, summary.classId);
-        return { ...summary.toObject(), imageUrls: pdfUrls };
-      })
-    );
+
 
     return res.status(200).json({
       currentPage: parseInt(page),
       totalPages: Math.ceil(count / limit),
       totalCount: count,
       message: 'All the summaries',
-      summaries: summarysWithUrls,
+      summaries: summaries,
 
     });
   } catch (error) {
@@ -219,23 +178,6 @@ exports.get_class_summary_list = async (req, res) => {
 
 
 
-// exports.get_class_summary_list = async (req, res) => {
-//   const { class_id } = req.params;
-
-//   try {
-//     //... find class
-//     const classInstance = await Class.findOne({ _id: class_id });
-//     if (!classInstance) return res.status(404).json({ message: 'Class not found' });
-
-//     //.. send response with summary list
-//     const summarys = await Summary.find({ classId :class_id });
-
-//     return res.status(200).json({ message: "All the summarys" , summarys });
-
-//   } catch (error) {
-//     return res.status(400).json({ message: error });
-//   }
-// };
 
 //************ update  summary list *************** */
 
@@ -265,30 +207,7 @@ exports.update_summary = async (req, res) => {
   }
 };
 
-
-//.... get last updated summay....//
-exports.get_last_updated_summary = async (req, res) => {
-
-
-  try {
-
-
-
-
-
-  } catch (error) {
-
-  }
-
-
-
-}
-
-
 //************* SUMMARY STATUS ********************/
-
-
-
 exports.sunnary_status = async (req, res) => {
   try {
     const { summary_id } = req.params;
