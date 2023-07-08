@@ -117,15 +117,10 @@ exports.sendMemberRequest = async (req, res) => {
 };
 
 
-
-
-
-
-//**********  see all member in rutin    ************* */
+//******* All Members in the  Routine  ***************/
 exports.allMembers = async (req, res) => {
   const { rutin_id } = req.params;
-  console.log("allmembers");
-  console.log(rutin_id);
+  const { page = 1, limit = 10 } = req.query;
 
   try {
     // Find the routine and its members
@@ -134,19 +129,30 @@ exports.allMembers = async (req, res) => {
       return res.json({ message: "Routine not found" });
     }
 
-    // Find the members and populate the memberID field
+    // Count the total number of members
+    const count = await RoutineMember.countDocuments({ RutineID: rutin_id });
+
+    // Calculate the total number of pages
+    const totalPages = Math.ceil(count / limit);
+
+    // Find the members and populate the memberID field with pagination
     const members = await RoutineMember.find({ RutineID: rutin_id })
       .select('-__v -blocklist -_id')
       .populate({
         path: 'memberID',
         select: '_id username name image',
         options: {
+          skip: (page - 1) * limit,
+          limit: parseInt(limit),
           sort: { createdAt: -1 },
         },
       });
 
     // Format the response by extracting the member objects
     const formattedMembers = members.map(({ memberID, notificationOn, captain, owner }) => {
+      if (!memberID) {
+        return null; // Skip null memberID
+      }
       const { _id, username, name, image } = memberID;
       return {
         _id,
@@ -155,22 +161,23 @@ exports.allMembers = async (req, res) => {
         image,
         notificationOn,
         captain,
-        owner
+        owner,
       };
-    });
-
-    const count = formattedMembers.length;
+    }).filter(member => member !== null);
 
     res.json({
       message: "All Members",
-      count,
-      members: formattedMembers
+      currentPage: parseInt(page),
+      totalPages,
+      totalCount: count,
+      members: formattedMembers,
     });
   } catch (error) {
     console.error(error);
     res.json({ message: error.toString() });
   }
 };
+
 
 
 

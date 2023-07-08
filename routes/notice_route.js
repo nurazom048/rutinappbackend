@@ -20,10 +20,10 @@ router.route("/:noticeId").delete(verifyToken, notice.deleteNotice);//... delete
 // get notice
 
 
-//******     chack status   ********/ 
+//******     check status   ********/ 
 router.route("/status/:academyID").post(verifyToken, notice.current_user_status);
 
-// join and leave notice boaed
+// join and leave notice board
 router.route("/join/:academyID").post(verifyToken, notice.joinNoticeboard);
 router.route("/leave/:academyID").delete(verifyToken, notice.leaveMember);
 // status

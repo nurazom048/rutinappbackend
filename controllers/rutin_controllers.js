@@ -323,20 +323,34 @@ exports.save_checkout = async (req, res) => {
 };
 
 
-
-
-
-//********** Search rutins    ************* */
-
+//**************** search_rutins ***********************************/
 exports.search_rutins = async (req, res) => {
   const { src } = req.query; // get the value of 'src' from the query parameters
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 1;
+  const limit = parseInt(req.query.limit) || 10;
 
   try {
-    const regex = new RegExp(src, "i");
-    const count = await Routine.countDocuments({ name: regex });
-    const routine = await Routine.find({ name: regex })
+    const regex = new RegExp(src, "i"); // Adjust the regex pattern for case-insensitive matching
+    const count = await Routine.countDocuments({
+      $or: [
+        { name: regex },
+        // Add more fields to search here
+      ]
+    });
+    const accountIds = await Account.find(
+      { $or: [{ name: regex }, { username: regex }] },
+      "_id"
+    ).lean();
+
+    const routines = await Routine.find({
+      $or: [
+        { name: regex },
+        {
+          ownerid: { $in: accountIds.map((account) => account._id) }
+        },
+        // Add more fields to search here
+      ]
+    })
       .select("_id name ownerid")
       .populate({
         path: "ownerid",
@@ -345,20 +359,18 @@ exports.search_rutins = async (req, res) => {
       .limit(limit)
       .skip((page - 1) * limit);
 
-    if (!routine) return res.status(404).send({ message: "Not found" });
-
+    if (!routines) return res.status(404).send({ message: "Not found" });
 
     res.status(200).json({
-      routine,
-      // Sunday,
+      routines,
       currentPage: page,
-      totalPages: Math.ceil(count / limit)
+      totalPages: Math.ceil(count / limit),
+      totalCount: count
     });
   } catch (error) {
     res.send({ message: error.message });
   }
 };
-
 
 
 
