@@ -35,6 +35,14 @@ exports.create_summary = async (req, res) => {
     const findClass = await Class.findOne({ _id: class_id });
     if (!findClass) return res.status(404).send({ message: 'Class not found' });
 
+    // Step 2: Check MIME types of uploaded files
+    const allowedMimeTypes = ['image/jpeg', 'image/png']; // Add more allowed MIME types if needed
+    const invalidFiles = req.files.filter(file => !allowedMimeTypes.includes(file.mimetype));
+    if (invalidFiles.length > 0) {
+      const invalidFileNames = invalidFiles.map(file => file.originalname);
+      return res.status(400).send({ message: `Invalid file types: ${invalidFileNames.join(', ')}` });
+    }
+
     // Step 2: Upload summary's to Firebase Storage
     const downloadUrls = await summaryImageUploader({ files: req.files, class_id });
 

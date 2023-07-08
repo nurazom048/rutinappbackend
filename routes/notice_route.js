@@ -7,7 +7,8 @@ const notice = require("../controllers/NoticeBoard/notice_controller");
 // Set up multer with the storage
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 }
+    //limits: { fileSize: 11 * 1024 * 1024 }
+
 });
 
 

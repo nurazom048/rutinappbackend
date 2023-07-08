@@ -76,6 +76,14 @@ exports.createRutin = async (req, res) => {
     const existingRoutine = await Routine.findOne({ name, ownerid: ownerId });
     if (existingRoutine) return res.status(500).send({ message: "Routine already created with this name" });
 
+    // Check the number of existing routines for the user
+    const routineCount = await Routine.countDocuments({ ownerid: ownerId });
+    if (routineCount >= 20) {
+      return res.status(400).json({ message: 'You can only create up to 20 routines' });
+    }
+
+
+
     // Create a new routine object
     const routine = new Routine({ name, ownerid: ownerId });
     const routineMember = new RoutineMember({ RutineID: routine._id, memberID: ownerId, owner: true }); // Create a new RoutineMember instance
@@ -337,16 +345,11 @@ exports.search_rutins = async (req, res) => {
         // Add more fields to search here
       ]
     });
-    const accountIds = await Account.find(
-      { $or: [{ name: regex }, { username: regex }] },
-      "_id"
-    ).lean();
-
     const routines = await Routine.find({
       $or: [
         { name: regex },
         {
-          ownerid: { $in: accountIds.map((account) => account._id) }
+          ownerid: { $in: await Account.find({ $or: [{ name: regex }, { username: regex }] }, "_id") }
         },
         // Add more fields to search here
       ]
@@ -371,6 +374,7 @@ exports.search_rutins = async (req, res) => {
     res.send({ message: error.message });
   }
 };
+
 
 
 

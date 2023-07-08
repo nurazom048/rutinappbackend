@@ -38,7 +38,19 @@ exports.addNotice = async (req, res) => {
     console.log(req.file);
 
     try {
-        if (!req.file) return res.status(404).json({ message: 'rdf is required' });
+        if (!req.file) return res.status(400).json({ message: 'PDF file is required' });
+
+        // Check file size
+        const fileSize = req.file.size;
+        if (fileSize > 11 * 1024 * 1024) {
+            return res.status(400).json({ message: 'File size exceeds the allowed limit (10 MB)' });
+        }
+
+        // Check file type
+        const fileType = req.file.mimetype;
+        if (fileType !== 'application/pdf') {
+            return res.status(400).json({ message: 'Only PDF files are allowed' });
+        }
 
         // Step 1: Find Account and check permission
         const findAccount = await Account.findById(id);
