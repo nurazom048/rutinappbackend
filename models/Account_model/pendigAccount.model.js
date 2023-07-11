@@ -66,7 +66,6 @@ const pendingAccount = new Schema({
   },
   password: {
     type: String,
-    required: true
   },
   account_type: {
     type: String,
@@ -74,6 +73,11 @@ const pendingAccount = new Schema({
     required: true,
     default: 'user'
   },
+  googleSignIn: {
+    type: Boolean,
+    require: true,
+    default: false,
+  }
 
 
 });

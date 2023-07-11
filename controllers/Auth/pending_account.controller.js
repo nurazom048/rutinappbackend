@@ -32,6 +32,7 @@ exports.acceptPending = async (req, res) => {
         const phone = pendingAccount.phone;
         const email = pendingAccount.email;
         const EIIN = pendingAccount.EIIN;
+        const googleSignIn = pendingAccount.googleSignIn;
 
         try {
             // Check if email is taken or not
@@ -70,7 +71,7 @@ exports.acceptPending = async (req, res) => {
 
 
         // // create user
-        const createNewAccount = new Account({ id, name, username, password, phone, email, EIIN });
+        const createNewAccount = new Account({ id, name, username, password, phone, email, EIIN, googleSignIn });
         createNewAccount.save();
 
         // update the pending account 
