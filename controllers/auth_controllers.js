@@ -1,4 +1,4 @@
-const PendigAccount = require('../models/Account_model/pendigAccount.model');
+const PendingAccount = require('../models/Account_model/pendigAccount.model');
 const Account = require('../models/Account');
 const jwt = require('jsonwebtoken');
 
@@ -29,39 +29,32 @@ exports.loginAccount = async (req, res) => {
   const { username, password, phone, email, osUserID } = req.body;
   console.log(req.body);
 
-  if (osUserID) {
-
-    console.log("define")
-  } if (!osUserID) {
-
-    console.log("undefine")
-  }
 
   try {
     let account;
-    let pendigAccount;
+    let pendingAccount;
     //.. check is pending or not 
     if (username) {
-      pendigAccount = await PendigAccount.findOne({ username });
+      pendingAccount = await PendingAccount.findOne({ username });
 
     }
     if (email) {
-      pendigAccount = await PendigAccount.findOne({ email });
+      pendingAccount = await PendingAccount.findOne({ email });
     }
 
 
-    if (pendigAccount) {
-      const pendigAccountCredential = await admin.auth().getUserByEmail(pendigAccount.email)
-      console.log('pendigAccountCredential')
-      console.log(pendigAccount)
+    if (pendingAccount) {
+      const pendingAccountCredential = await admin.auth().getUserByEmail(pendingAccount.email)
+      console.log('pendingAccountCredential')
+      console.log(pendingAccount)
       // Check if email is verified
 
-      if (!pendigAccountCredential.emailVerified) {
-        return res.status(401).json({ message: "Email is not verified", account: { email: pendigAccount.email }, pendigAccount });
+      if (!pendingAccountCredential.emailVerified) {
+        return res.status(401).json({ message: "Email is not verified", account: { email: pendingAccount.email }, pendigAccount: pendingAccount });
       }
 
-      if (!pendigAccount.isAccept) {
-        return res.status(402).json({ message: "Academy request is pending", account: { email: pendigAccount.email }, pendigAccount });
+      if (!pendingAccount.isAccept) {
+        return res.status(402).json({ message: "Academy request is pending", account: { email: pendingAccount.email }, pendigAccount: pendingAccount });
       }
     }
 
@@ -80,6 +73,8 @@ exports.loginAccount = async (req, res) => {
 
     if (!account) {
       return res.status(400).json({ message: "User not found" });
+    } if (account.googleSignIn) {
+      return res.status(400).json({ message: "Try To Continue With Google" });
     }
 
     // Compare passwords
@@ -159,7 +154,7 @@ exports.createAccount = async (req, res) => {
         return res.status(400).json({ message: "Phone number already exists" });
       }
     }
-    //! if accademy move to pending request wlase create noram account
+    //! if academy move to pending request to create new account
     if (account_type == 'academy') {
       // Call the createPendingRequest function
       const response = await createPendingRequest(req, res);
@@ -186,7 +181,7 @@ exports.createAccount = async (req, res) => {
         emailVerified: false,
       });
 
-      // const createdAccount = await account.save();
+      const createdAccount = await account.save();
 
       // Send response
       res.status(200).json({ message: "Account created successfully", createdAccount, firebaseAuthCreate });
@@ -216,17 +211,17 @@ const createPendingRequest = async (req, res) => {
   if (!EIIN) return { message: 'EIIN Number is required' };
   if (!contractInfo) return { message: 'contractInfo is required' };
 
-  const emailAlreadyUsed = await PendigAccount.findOne({ email });
+  const emailAlreadyUsed = await PendingAccount.findOne({ email });
   if (emailAlreadyUsed) {
     return { message: "Request already pending with this email" };
   }
 
-  const EIINAlreadyUsed = await PendigAccount.findOne({ EIIN });
+  const EIINAlreadyUsed = await PendingAccount.findOne({ EIIN });
   if (EIINAlreadyUsed) {
     return { message: "Request already pending with this EIIN" };
   }
 
-  const account = new PendigAccount({
+  const account = new PendingAccount({
     name,
     username,
     password,
@@ -287,7 +282,7 @@ exports.rejectPending = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const account = await PendigAccount.findById(id);
+    const account = await PendingAccount.findById(id);
     if (account.isAccept) {
       return res.status(200).json({ message: "Request already accepted" });
     }
@@ -301,7 +296,7 @@ exports.rejectPending = async (req, res) => {
     }
 
     // Delete account from pending requests
-    await PendigAccount.findByIdAndDelete(id);
+    await PendingAccount.findByIdAndDelete(id);
 
     res.status(200).json({ message: "Account rejected and deleted successfully" });
   } catch (error) {

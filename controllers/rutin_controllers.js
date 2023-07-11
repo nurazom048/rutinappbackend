@@ -378,7 +378,7 @@ exports.search_rutins = async (req, res) => {
 
 
 
-//.......  /save_rutins.../
+//.......  /save routines.../
 exports.save_rutins = async (req, res) => {
   const { username } = req.params;
   const page = parseInt(req.query.page) || 1;
@@ -400,6 +400,12 @@ exports.save_rutins = async (req, res) => {
 
 
     res.status(200).json({
+      savedRoutines,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit)
+    });
+
+    console.log({
       savedRoutines,
       currentPage: page,
       totalPages: Math.ceil(count / limit)

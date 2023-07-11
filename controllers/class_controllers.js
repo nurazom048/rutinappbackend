@@ -3,7 +3,7 @@ const Routine = require('../models/rutin_models')
 const Class = require('../models/class_model');
 const Account = require('../models/Account');
 const { handleValidationError } = require('../methode/validation_error');
-const { getClasses } = require('../methode/get_class_methode');
+const { getClasses, getNotificationClasses } = require('../methode/get_class_methode');
 const Priode = require('../models/priodeModels');
 const Weekday = require('../models/weakdayModel');
 
@@ -415,19 +415,23 @@ exports.classNotification = async (req, res) => {
 
     // Find priodes
     const priodes = await Priode.find({ rutin_id: { $in: filteredRoutineIds } });
+    console.log(priodes)
     // Get class by Weekday
     const allDayWithNull = await Weekday.find({ routine_id: { $in: filteredRoutineIds } }).populate('class_id');
     const allDay = allDayWithNull.filter(weekday => weekday.class_id !== null);
+    // console.log({ allday: allDay });
+
+    // add start time and end time with it 
+    const allClass = await getNotificationClasses(allDay, priodes)
+    const filteredClasses = allClass.filter((classItem) => classItem.start_time && classItem.end_time);
 
 
-    // addd start time and end time with it 
-    const allClass = await getClasses(allDay, priodes)
-    res.send({ notificationOnClasses: allClass });
+    // console.log({ notificationOnClasses: filteredClasses });
+    res.send({ notificationOnClasses: filteredClasses });
+
 
   } catch (error) {
-
     console.error(error);
-
-    res.status(500).send({ message: 'Server Error' });
+    res.status(500).send({ message: 'Server Error', notificationOnClasses: [] });
   }
 };

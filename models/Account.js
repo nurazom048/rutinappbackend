@@ -38,8 +38,7 @@ const accountSchema = new Schema({
   }],
 
   password: {
-    type: String,
-    required: true
+    type: String
   },
 
   osUserID: {
@@ -55,7 +54,16 @@ const accountSchema = new Schema({
   routines: [{
     type: Schema.Types.ObjectId,
     ref: 'Routine'
-  }]
+  }],
+
+
+  googleSignIn: {
+    type: Boolean,
+    require: true,
+    default: false,
+  }
+
+
 });
 
 const Account = mongoose.model('Account', accountSchema);

@@ -73,7 +73,7 @@ exports.edit_account = async (req, res) => {
       profileImageURL = await getDownloadURL(profileImageRef);
 
       // Delete the old profile image if it exists
-      if (account.image) {
+      if (account.image && !account.googleSignIn) {
         const oldProfileImageRef = ref(storage, account.image);
         await deleteObject(oldProfileImageRef);
       }
