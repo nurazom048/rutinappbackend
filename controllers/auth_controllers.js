@@ -73,15 +73,16 @@ exports.loginAccount = async (req, res) => {
 
     if (!account) {
       return res.status(400).json({ message: "User not found" });
-    } if (account.googleSignIn) {
+    }
+    if (account.googleSignIn) {
       return res.status(400).json({ message: "Try To Continue With Google" });
     }
 
     // Compare passwords
-    // const passwordMatch = await bcrypt.compare(password, account.password);
-    // if (!passwordMatch) {
-    //   return res.status(400).json({ message: "Incorrect password" });
-    // }
+    const passwordMatch = bcrypt.compare(password, account.password);
+    if (!passwordMatch || password == account.password) {
+      return res.status(400).json({ message: "Incorrect password" });
+    }
 
     // Sign in with email and password on firebase
     const userCredential = await signInWithEmailAndPassword(auth, account.email, password);
@@ -96,11 +97,11 @@ exports.loginAccount = async (req, res) => {
     // Create a JWT token
     const token = jwt.sign({ id: account._id, username: account.username }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
 
-    // Encrypt the new password
-    //   const hashedPassword = await bcrypt.hash(password, 10);
+    //Encrypt the new password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Find user and update password
-    const updated = await Account.findByIdAndUpdate(account._id, { password: password, osUserID: osUserID }, { new: true });
+    const updated = await Account.findByIdAndUpdate(account._id, { password: hashedPassword, osUserID: osUserID }, { new: true });
     console.log(updated)
     // Send response with token and account details
     res.status(200).json({ message: "Login successful", updated, token, account });
@@ -160,8 +161,9 @@ exports.createAccount = async (req, res) => {
       const response = await createPendingRequest(req, res);
       return res.status(200).json(response);
     } else {
-
-      const account = new Account({ name, username, password, phone, email });
+      //Encrypt the new password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const account = new Account({ name, username, password: hashedPassword, phone, email });
 
       // Check if email is taken or not
       try {
@@ -220,11 +222,13 @@ const createPendingRequest = async (req, res) => {
   if (EIINAlreadyUsed) {
     return { message: "Request already pending with this EIIN" };
   }
+  //Encrypt the new password
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const account = new PendingAccount({
     name,
     username,
-    password,
+    password: hashedPassword,
     phone,
     email,
     account_type,

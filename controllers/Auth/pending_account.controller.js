@@ -3,6 +3,7 @@ const PendingAccount = require('../../models/Account_model/pendigAccount.model')
 // const { admin } = require('../../controllers/auth_controllers');
 const Account = require('../../models/Account');
 const admin = require('firebase-admin');
+const { joinHisOwnNoticeboard } = require('../Auth/auth.methods');
 //
 
 // ***************** allPendingAccount *******************************/
@@ -77,6 +78,11 @@ exports.acceptPending = async (req, res) => {
         // update the pending account 
         pendingAccount.isAccept = true;
         await pendingAccount.save();
+        const error = await joinHisOwnNoticeboard(id, id)
+        if (error) {
+            console.log(error)
+            res.status(200).json({ message: "Account created successfully", createNewAccount });
+        }
 
         res.status(200).json({ message: "Account created successfully", createNewAccount });
     } catch (error) {
