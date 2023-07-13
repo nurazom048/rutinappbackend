@@ -6,12 +6,16 @@ const notice = require("../controllers/NoticeBoard/notice_controller");
 
 // Set up multer with the storage
 const upload = multer({
-    storage: multer.memoryStorage(),
     //limits: { fileSize: 11 * 1024 * 1024 }
+    storage: multer.memoryStorage(),
+    // fileFilter: (req, file, cb) => {
+    //     if (file.mimetype !== 'application/pdf') {
 
+    //         return cb(new Error('Only PDF files are allowed'), false);
+    //     }
+    //     cb(null, true);
+    // },
 });
-
-
 
 
 //.. create update delete

@@ -31,13 +31,16 @@ const { v4: uuidv4 } = require('uuid');
 
 ///......... write code to add notice to notice bode 
 exports.addNotice = async (req, res) => {
-    const { content_name, description } = req.body;
-    const { id } = req.user;
+    const { content_name, description, mimetypeChecked } = req.body;
+    const { id, error } = req.user;
+    console.log("req.use")
+    console.log(req.user)
 
-    console.log(req.body);
-    console.log(req.file);
+    // console.log(req.body);
+    // console.log(req.file);
 
     try {
+        if (error) return res.status(400).json({ message: 'PDF file is required' });
         if (!req.file) return res.status(400).json({ message: 'PDF file is required' });
 
         // Check file size
@@ -47,11 +50,13 @@ exports.addNotice = async (req, res) => {
         }
 
         // Check file type
-        const fileType = req.file.mimetype;
-        if (fileType !== 'application/pdf') {
-            return res.status(400).json({ message: 'Only PDF files are allowed' });
+        if (!mimetypeChecked) {
+            const fileType = req.file.mimetype;
+            if (fileType !== 'application/pdf') {
+                //console.log({ message: 'Only PDF files are allowed' })
+                throw res.status(400).json({ message: 'Only PDF files are allowed from code' });
+            }
         }
-
         // Step 1: Find Account and check permission
         const findAccount = await Account.findById(id);
         if (!findAccount) return res.status(404).json({ message: 'Account not found' });
@@ -95,7 +100,9 @@ exports.addNotice = async (req, res) => {
         res.status(200).json({ message: 'Notice created and added successfully', notice: savedNotice });
         console.log(savedNotice);
     } catch (error) {
+        console.error("error");
         console.error(error);
+
         res.status(500).json({ message: error.message });
     }
 };
