@@ -80,7 +80,7 @@ exports.loginAccount = async (req, res) => {
 
     // Compare passwords
     const passwordMatch = bcrypt.compare(password, account.password);
-    if (!passwordMatch || password == account.password) {
+    if (!passwordMatch && password == account.password) {
       return res.status(400).json({ message: "Incorrect password" });
     }
 
