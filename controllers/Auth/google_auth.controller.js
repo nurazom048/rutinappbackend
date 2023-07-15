@@ -17,6 +17,7 @@ const bcrypt = require('bcrypt');
 require('dotenv').config();
 //method's
 const { generateJWT, generateUniqUsername } = require("./auth.methods");
+const { generateAuthToken, generateRefreshToken } = require('../Auth/helper/Jwt.helper')
 
 
 
@@ -83,13 +84,15 @@ exports.continueWithGoogle = async (req, res) => {
             return res.status(401).json({ message: "Username already exists" });
         }
 
+        if (await Account.findOne({ email: userEmail })) {
+            return res.status(401).json({ message: "Email already exists" });
+        }
+
         //............................................................................................//
         //............................... Sign Up............. .......................................//
         //............................................................................................//
 
-
-
-        if (!userId || !name || !username || !image) {
+        if (!userId || !name || !username || !userEmail) {
             return res.status(400).json({ message: "Please fill the form" });
         }
         // step: Chak if ths is academy or not
@@ -111,9 +114,16 @@ exports.continueWithGoogle = async (req, res) => {
         });
         await account.save();
 
-        const JwtToken = generateJWT({ account });
+        // Create a new auth token and refresh token
+        const authToken = generateAuthToken(account._id, account, account.username);
+        const refreshToken = generateRefreshToken(account._id);
 
-        res.status(200).json({ message: "Login successful", token: JwtToken, account: account });
+        // Set the tokens in the response headers
+        res.setHeader('Authorization', `Bearer ${authToken}`);
+        res.setHeader('x-refresh-token', refreshToken);
+
+
+        res.status(200).json({ message: "Login successful", token: authToken, account: account });
     } catch (error) {
         console.error("Error processing Google Auth Token:", error);
         return res.status(500).json({ message: "Internal server error" });

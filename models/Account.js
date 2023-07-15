@@ -20,10 +20,13 @@ const accountSchema = new Schema({
   },
   email: {
     type: String,
+    unique: true,
 
   },
   phone: {
     type: String,
+    unique: true,
+
 
   },
   image: {
@@ -61,8 +64,10 @@ const accountSchema = new Schema({
     type: Boolean,
     require: true,
     default: false,
+  },
+  lastLoginTime: {
+    type: Date
   }
-
 
 });
 

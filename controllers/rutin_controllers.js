@@ -67,8 +67,6 @@ exports.createRutin = async (req, res) => {
   console.log(req.body);
 
   // Log the user who is creating the routine
-  console.log(req.user);
-
   const ownerId = req.user.id;
 
   try {
@@ -381,12 +379,18 @@ exports.search_rutins = async (req, res) => {
 //.......  /save routines.../
 exports.save_rutins = async (req, res) => {
   const { username } = req.params;
+  const { id } = req.user;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 2;
 
   try {
     // Find the account by primary username
-    const account = await Account.findOne({ username: username || req.user.username });
+
+    const account = await Account.findOne({ id: id });
+
+
+
+
     if (!account) return res.status(404).json({ message: "Account not found" });
 
     // Find the saved routines for the account and populate owner details

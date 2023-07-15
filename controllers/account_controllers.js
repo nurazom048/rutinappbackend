@@ -1,4 +1,5 @@
 const Account = require('../models/Account');
+const bcrypt = require('bcrypt');
 
 
 //? firebase
@@ -220,9 +221,14 @@ exports.changePassword = async (req, res) => {
     }
 
     // Compare old password
-    if (oldPassword !== account.password) {
+
+    // Compare passwords
+    const passwordMatch = bcrypt.compare(oldPassword, account.password);
+    if (!passwordMatch && oldPassword != account.password) {
       return res.status(400).json({ message: "Old password is incorrect" });
     }
+
+
 
     // Update the password on Firebase
     await auth().updateUser(account.id, {

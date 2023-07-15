@@ -20,9 +20,10 @@ const dotenv = require('dotenv');
 dotenv.config(); // Load environment variables from .env file
 const bcrypt = require('bcrypt');
 require('dotenv').config();
+const { generateAuthToken, generateRefreshToken } = require('../controllers/Auth/helper/Jwt.helper')
+
 
 //*********** loginAccount **********/
-
 
 
 exports.loginAccount = async (req, res) => {
@@ -93,18 +94,22 @@ exports.loginAccount = async (req, res) => {
       return res.status(401).json({ message: "Email is not verified", email: email, password: user, account });
     }
 
+    // Create a new auth token and refresh token
+    const authToken = generateAuthToken(account._id, account.username);
+    const refreshToken = generateRefreshToken(account._id, account.username);
 
-    // Create a JWT token
-    const token = jwt.sign({ id: account._id, username: account.username }, process.env.JWT_SECRET_KEY, { expiresIn: "1d" });
+    // Set the tokens in the response headers
+    res.setHeader('Authorization', `Bearer ${authToken}`);
+    res.setHeader('x-refresh-token', refreshToken);
 
     //Encrypt the new password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Find user and update password
-    const updated = await Account.findByIdAndUpdate(account._id, { password: hashedPassword, osUserID: osUserID }, { new: true });
-    console.log(updated)
+    const updated = await Account.findByIdAndUpdate(account._id, { password: hashedPassword, osUserID: osUserID, lastLoginTime: Date.now() }, { new: true });
+
     // Send response with token and account details
-    res.status(200).json({ message: "Login successful", updated, token, account });
+    res.status(200).json({ message: "Login successful", token: authToken, account });
   } catch (error) {
     console.error(error);
     if (error.code === "auth/wrong-password") {
