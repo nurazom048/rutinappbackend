@@ -12,8 +12,7 @@ const routineMemberSchema = new mongoose.Schema({
     RutineID: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Routine',
-        default: null,
-
+        require: true
     },
     notificationOn: {
         type: Boolean,
@@ -24,6 +23,10 @@ const routineMemberSchema = new mongoose.Schema({
         default: false,
     },
     owner: {
+        type: Boolean,
+        default: false,
+    },
+    isSaved: {
         type: Boolean,
         default: false,
     },

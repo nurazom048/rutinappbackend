@@ -8,6 +8,7 @@ const verifyToken = require("../varifitoken")
 const Middleware = require('../midlewere/rutinMidewere');
 const member = require('../controllers/members_controller');
 const member_mid = require('../midlewere/member_mid');
+const { permition_add_priode, permition_remove_priode } = require('../midlewere/priode_mid');
 
 
 
@@ -26,9 +27,8 @@ app.post("/home", verifyToken, rutin.homeFeed);/// feed
 
 // 2 
 //.. save and unsave rutin ..//
-app.post('/save_unsave/:rutin_id', verifyToken, rutin.add_to_save_routine);
+app.post('/save_unsave/:routineId', verifyToken, rutin.add_to_save_routine);
 app.get('/unsave/:rutin_id', verifyToken, rutin.unsave_routine);
-app.get('/save/:rutin_id/chack', verifyToken, rutin.save_checkout);
 //
 app.post('/joined', verifyToken, rutin.joined_rutins);
 
@@ -38,7 +38,6 @@ app.get('/search', rutin.search_rutins);
 
 
 
-const { permition_add_priode, permition_remove_priode } = require('../midlewere/priode_mid');
 
 //... priode add  remove priode ...//
 
@@ -78,21 +77,19 @@ app.post('/notification/on/:rutin_id', verifyToken, member.notification_On);
 
 
 
-//... Show save rutin
-
-app.route("/save_rutins").post(verifyToken, rutin.save_rutins);//
-app.route("/save_rutins/:username").post(rutin.save_rutins);
 
 //... Show uploaded save rutin
 app.route("/uploded_rutins").post(verifyToken, rutin.uploaded_rutins);
 app.route("/uploded_rutins/:username").post(rutin.uploaded_rutins);
 
-//.. chack current stuts ...//
+//.. check current stuts ...//
 
 app.post('/status/:rutin_id/', verifyToken, rutin.current_user_status);
 app.route("/details").post(rutin.rutinDetails);
 app.route("/details").post(verifyToken, rutin.rutinDetails);
 
 
+
+app.route("/save/routines").post(verifyToken, rutin.save_routines); //... Show save rutin
 
 module.exports = app;

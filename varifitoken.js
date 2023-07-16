@@ -5,7 +5,7 @@ require('dotenv').config();
 const verifyToken = async (req, res, next) => {
   try {
     // console.log("req.headers.authorization")
-    // console.log(req.headers)
+    //console.log(req.headers)
     const tokenArray = req.headers.authorization.split(' ');
     const token = tokenArray[tokenArray.length - 1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
@@ -31,7 +31,7 @@ const verifyToken = async (req, res, next) => {
 
     next();
   } catch (error) {
-    return res.status(401).json({ message: 'Auth failed. Please login again.' });
+    return res.status(401).json({ message: 'Auth failed Please login again.' });
   }
 };
 
