@@ -25,10 +25,7 @@ app.post("/home", verifyToken, rutin.homeFeed);/// feed
 
 
 
-// 2 
-//.. save and unsave rutin ..//
-app.post('/save_unsave/:routineId', verifyToken, rutin.add_to_save_routine);
-app.get('/unsave/:rutin_id', verifyToken, rutin.unsave_routine);
+
 //
 app.post('/joined', verifyToken, rutin.joined_rutins);
 
@@ -84,12 +81,13 @@ app.route("/uploded_rutins/:username").post(rutin.uploaded_rutins);
 
 //.. check current stuts ...//
 
-app.post('/status/:rutin_id/', verifyToken, rutin.current_user_status);
+app.post('/status/:routineId/', verifyToken, rutin.current_user_status);
 app.route("/details").post(rutin.rutinDetails);
 app.route("/details").post(verifyToken, rutin.rutinDetails);
 
 
 
 app.route("/save/routines").post(verifyToken, rutin.save_routines); //... Show save rutin
+app.post('/save_unsave/:routineId', verifyToken, rutin.save_and_unsave_routine);// 2 
 
 module.exports = app;

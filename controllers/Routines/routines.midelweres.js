@@ -4,7 +4,7 @@ const Routine = require('../../models/rutin_models')
 const Weekday = require('../../models/weakdayModel');
 
 
-// WEEKDAY vididation
+// WEEKDAY validation
 exports.validateWeekdayMiddleware = async (req, res, next) => {
     const { class_id } = req.params;
     const { num, start, end } = req.body;

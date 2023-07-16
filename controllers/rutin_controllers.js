@@ -8,7 +8,7 @@ const Classes = require('../models/class_model')
 const DeletedClass = require('../models/deleted/deleted_routines')
 const { getClasses } = require('../methode/get_class_methode');
 const Weekday = require('../models/weakdayModel');
-
+const SaveRoutine = require('../models/Routine/save_routine.model');
 const Class = require('../models/class_model');
 
 //
@@ -22,7 +22,7 @@ initializeApp(firebase_stroage.firebaseConfig); // Initialize Firebase
 const storage = getStorage();
 
 
-// routine firebse
+// routine firebase
 const { deleteSummariesFromFirebase } = require('../controllers/Routines/routines.frebase');
 
 
@@ -196,57 +196,6 @@ exports.allRutin = async (req, res) => {
 };
 
 
-//********** Save Routine   ************* */
-exports.add_to_save_routine = async (req, res) => {
-  const { routineId } = req.params;
-  const { id } = req.user;
-  const { saveCondition } = req.body;
-  console.log(routineId)
-
-
-  try {
-    // 1. Find the routine
-    const routineMember = await RoutineMember.findOne({ RutineID: routineId, memberID: id });
-    if (!routineMember) return res.status(404).json({ message: "Routine not found" });
-
-
-    let message, save;
-    // 2. Find the user
-    if (saveCondition == "true") {
-
-      // 3. Check if routine is already saved
-      if (routineMember.isSaved == true) {
-        message = "Routine already saved";
-        save = true;
-      } else {
-        // 4. Push the routine ID into the saved_routines array
-        routineMember.isSaved = true;
-        await routineMember.save();
-        message = "Routine saved successfully";
-        save = true;
-      }
-    }
-
-    if (saveCondition == "false") {
-      if (routineMember.isSaved == false) {
-        return res.status(400).json({ message: "Routine allReady unsaved" });
-      }
-      // 4. Remove the routine ID from the saved_routines array
-      routineMember.isSaved = false;
-      await routineMember.save();
-      message = "Routine unsaved successfully";
-      save = false;
-    }
-
-    // Send response
-    console.log({ message: message, save: save })
-    res.status(200).json({ message: message, save: save });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error saving routine" });
-  }
-};
 
 
 
@@ -254,39 +203,6 @@ exports.add_to_save_routine = async (req, res) => {
 
 
 
-
-
-//.... unsave rutin 
-exports.unsave_routine = async (req, res) => {
-  const { rutin_id } = req.params;
-  const ownerid = req.user.id;
-
-  try {
-    // 1. Find the routine
-    const routine = await Routine.findById(rutin_id);
-    if (!routine) return res.status(404).json({ message: "Routine not found" });
-
-
-    // 2. Find the user
-    const user = await Account.findById(ownerid);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    // 3. Check if routine is already saved
-    if (!user.Saved_routines.includes(routine._id)) {
-      return res.status(400).json({ message: "Routine not saved" });
-    }
-
-    // 4. Remove the routine ID from the saved_routines array
-    user.Saved_routines.pull(routine._id);
-    await user.save();
-
-    // Send response
-    res.status(200).json({ message: "Routine unsaved successfully", save: false });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error unsaving routine" });
-  }
-};
 
 
 
@@ -335,125 +251,110 @@ exports.search_rutins = async (req, res) => {
   }
 };
 
-// //************** user can see all routines where owner or joined ***********
-// exports.homeFeed = async (req, res) => {
-//   const { id } = req.user;
-//   const { userID } = req.params;
-//   const { osUserID } = req.body;
-//   const page = parseInt(req.query.page) || 1;
-//   const limit = parseInt(req.query.limit) || 3;
 
-//   try {
-//     // Find routines where the user is the owner or a member and Routine ID exists and is not null
-//     let query;
+//*********************************************************** */
+//
+//..... Save and unsave  Routine  &  show save routine .......//
+//
+//*********************************************************** */
 
-//     if (userID) {
-//       // This query is for to find all the uploaded routine on a specific user
-//       query = { memberID: userID, owner: true };
-//     }
-//     // This query is for to find all the home routine of logged in user 
-//     query = { memberID: userID || id };
-//     // Calculate the number of documents to skip
-//     const skip = (page - 1) * limit;
-//     console.log(query);
-//     console.log(userID);
+exports.save_and_unsave_routine = async (req, res) => {
+  const { routineId } = req.params;
+  const { saveCondition } = req.body;
+  const { id } = req.user;
+  console.log(routineId);
 
-//     // Find all matching routines
-//     const routines = await RoutineMember.find(query, '-_id -__v')
-//       .populate({
-//         path: 'RutineID',
-//         select: 'name'
-//       })
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(limit);
+  try {
+    // Find the user
+    const user = await Account.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-//     //  console.log(routines);
+    // Find the routine
+    const routine = await Routine.findById(routineId);
+    if (!routine) return res.status(404).json({ message: "Routine not found" });
 
-//     // Get the IDs of routines with null RutineID
-//     const nullRutineIDIds = routines
-//       .filter(routine => routine.RutineID === null || routine.RutineID === undefined || routine.RutineID === '')
-//       .map(routine => routine._id);
-//     //  console.log(nullRutineIDIds);
+    // Find the save routine entry
+    const alreadySaveRoutine = await SaveRoutine.findOne({ routineID: routineId, savedByAccountID: id });
 
-//     // Remove the objects with null RutineID from MongoDB
-//     await RoutineMember.deleteMany({ _id: { $in: nullRutineIDIds } });
+    let message, save;
 
-//     // Filter out the objects with null RutineID from the response
-//     const filteredRoutines = routines.filter(routine => routine.RutineID !== null);
+    // Handle saveCondition
+    if (saveCondition === "true") {
+      // Check if routine is already saved
+      if (alreadySaveRoutine) {
+        message = "Routine already saved";
+        save = true;
+      } else {
+        // Create a new SaveRoutine document
+        const saveRoutine = new SaveRoutine({ routineID: routineId, savedByAccountID: id });
+        await saveRoutine.save();
+        message = "Routine saved successfully";
+        save = true;
+      }
+    } else if (saveCondition === "false") {
+      if (!alreadySaveRoutine) {
+        return res.status(400).json({ message: "Routine not saved" });
+      }
 
-//     // Get the total count of matching routines
-//     const totalCount = await RoutineMember.countDocuments(query);
+      // Remove the save routine entry
+      await SaveRoutine.findOneAndDelete({ routineID: routineId, savedByAccountID: id });
 
-//     if (page == 1 && !userID) {
-//       const updated = await Account.findByIdAndUpdate(req.user.id, { osUserID: osUserID }, { new: true });
-//       //console.log(updated)
-//     }
+      message = "Routine unsaved successfully";
+      save = false;
+    } else {
+      return res.status(400).json({ message: "Invalid saveCondition" });
+    }
 
-//     res.status(200).json({
-//       message: 'success',
-//       homeRoutines: filteredRoutines,
-//       currentPage: page,
-//       totalPages: Math.ceil(totalCount / limit),
-//       totalItems: totalCount,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
+    // Send response
+    console.log({ message, save });
+    res.status(200).json({ message, save });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error saving routine" });
+  }
+};
 
 
-
-//.......  /save routines.../
+//.......save routines.../
 exports.save_routines = async (req, res) => {
-  const { username } = req.params;
   const { id } = req.user;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 2;
 
-
-  console.log('from svae routines')
   try {
+    // Find the account by primary username
+    const account = await Account.findById(id);
+    if (!account) return res.status(404).json({ message: "Account not found" });
 
-    const query = { memberID: id, isSaved: true };
-    const routines = await RoutineMember.find(query, '-_id -__v')
+    // Find the saved routines for the account and populate owner details
+    const savedRoutines = await SaveRoutine.find({ savedByAccountID: id })
       .populate({
-        path: 'RutineID',
-        select: 'name',
+        path: 'routineID',
+        select: 'name ownerid',
         populate: {
           path: 'ownerid',
           select: 'name username image'
         }
       })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
-    // Filter out the objects with null RutineID from the response
-    const filteredRoutines = routines.filter(routine => routine.RutineID !== null);
-    console.log(routines)
-    const count = await RoutineMember.countDocuments(query);
+      .limit(limit)
+      .skip((page - 1) * limit);
 
+    // Count the total number of saved routines
+    const count = await SaveRoutine.countDocuments({ savedByAccountID: id });
 
-    console.log({
-      savedRoutines: filteredRoutines,
+    // Prepare response data
+    const response = {
+      savedRoutines: savedRoutines.map((routine) => routine.routineID),
       currentPage: page,
       totalPages: Math.ceil(count / limit)
-    })
-    res.status(200).json({
-      savedRoutines: filteredRoutines,
-      currentPage: page,
-      totalPages: Math.ceil(count / limit)
-    });
+    };
 
-
+    res.status(200).json(response);
+    // console.log(response);
   } catch (error) {
-    console.log(error)
     res.status(500).json({ message: error.message });
   }
 };
-
-
-
 
 
 //**************  uploaded_rutins     *********** */
@@ -492,17 +393,16 @@ exports.uploaded_rutins = async (req, res) => {
 //**************  current_user_status     *********** */
 exports.current_user_status = async (req, res) => {
   try {
-    const { rutin_id } = req.params;
-    const { username } = req.user;
+
+    const { routineId } = req.params;
+    const { id } = req.user;
     console.log(req.user.id)
 
     console.log('Checking user status');
-    const findAccount = await Account.findOne({ username });
+    // const findAccount = await Account.findOne({ username });
+    const routine = await Routine.findOne({ _id: routineId });
+    if (!routine) return res.status(404).json({ message: "Routine not found" });
 
-    const routine = await Routine.findOne({ _id: rutin_id });
-    if (!routine) {
-      return res.status(404).json({ message: "Routine not found" });
-    }
 
     const memberCount = routine.members.length;
 
@@ -512,21 +412,20 @@ exports.current_user_status = async (req, res) => {
     let isSaved = false;
     let notificationOn = false;
 
-
-
-
-    const alreadyMember = await RoutineMember.findOne({ memberID: req.user.id, RutineID: rutin_id });
-
-    // check is save or not
-    if (alreadyMember.isSaved == true) {
+    //
+    const findAccount = await Account.findById(id);
+    const findOnSaveRoutine = await SaveRoutine.findOne({ routineID: routineId, savedByAccountID: id })
+    if (findOnSaveRoutine) {
       isSaved = true;
     }
-
+    //
+    const alreadyMember = await RoutineMember.findOne({ RutineID: routineId, memberID: id });
     if (alreadyMember) {
       activeStatus = "joined";
       isOwner = alreadyMember.owner;
       isCaptain = alreadyMember.captain;
       notificationOn = alreadyMember.notificationOn;
+
     }
 
     const pendingRequest = routine.send_request.includes(req.user.id);
@@ -552,6 +451,7 @@ exports.current_user_status = async (req, res) => {
       notificationOn
     });
   } catch (error) {
+    console.log(error)
     res.status(500).json({ message: error.message });
   }
 };
@@ -659,38 +559,7 @@ exports.rutinDetails = async (req, res) => {
 };
 
 
-// exports.homeFeed = async (req, res) => {
-//   const { id } = req.user;
-//   const page = parseInt(req.query.page) || 1;
-//   const limit = parseInt(req.query.limit) || 3;
-//   console.log(req.user);
-//   try {
-//     // Find routines where the user is the owner or a member
-//     const query = { members: id };
 
-//     // Calculate the number of documents to skip
-//     const skip = (page - 1) * limit;
-
-//     // Aggregate to eliminate duplicate routines based on RutineID
-//     const uniqueRoutines = await RoutineMember.aggregate(query)
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(limit);
-
-//     // Get the total count of matching routines
-//     const totalCount = await RoutineMember.countDocuments(query);
-
-//     res.status(200).json({
-//       message: 'success',
-//       homeRoutines: uniqueRoutines,
-//       currentPage: page,
-//       totalPages: Math.ceil(totalCount / limit),
-//       totalItems: totalCount
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
 //************** user can see all routines where owner or joined ***********
 exports.homeFeed = async (req, res) => {
   const { id } = req.user;
@@ -751,7 +620,13 @@ exports.homeFeed = async (req, res) => {
       const updated = await Account.findByIdAndUpdate(req.user.id, { osUserID: osUserID }, { new: true });
       //console.log(updated)
     }
-
+    // console.log({
+    //   message: 'success',
+    //   homeRoutines: filteredRoutines,
+    //   currentPage: page,
+    //   totalPages: Math.ceil(totalCount / limit),
+    //   totalItems: totalCount,
+    // })
     res.status(200).json({
       message: 'success',
       homeRoutines: filteredRoutines,
