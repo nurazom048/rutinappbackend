@@ -138,6 +138,7 @@ exports.deleteRoutine = async (req, res) => {
     await Weekday.deleteMany({ routine_id: id });
     await Priode.deleteMany({ rutin_id: id });
     await RoutineMember.deleteMany({ RutineID: id });
+    await SaveRoutine.deleteMany({ routineID: id })
 
     // Delete the routine
     await Routine.findByIdAndRemove(id);
