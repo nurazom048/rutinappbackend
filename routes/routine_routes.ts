@@ -6,8 +6,7 @@ const routine = require('../controllers/Routines/routine.controllers');
 const priode = require('../controllers/Routines/priode_controller');
 const member = require('../controllers/Routines/members_controller');
 import { addCaptain, removeCaptain } from '../controllers/Routines/captens.controller';
-import { peremption_add_member } from '../midlewere/member_mid';
-import { permission_add_Pride, permission_remove_priode } from '../midlewere/middleware';
+import { permission_add_Pride, permission_remove_priode, peremption_add_member } from '../controllers/Routines/middleware/member_mid';
 
 
 

@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 
-//
+// Models
 const Account = require('../../models/Account_model/Account.Model')
 const Routine = require('../../models/Routines Models/routine_models')
 const RoutineMember = require('../../models/Routines Models/rutineMembersModel')
@@ -9,7 +9,6 @@ const SaveSummarys = require('../../models/Routines Models/save_summary.model')
 const Priode = require('../../models/Routines Models/priodeModels')
 const Classes = require('../../models/Routines Models/class.model')
 const DeletedClass = require('../../models/deleted/deleted_routines')
-const { getClasses } = require('../../method/get_class_method');
 const Weekday = require('../../models/Routines Models/weakdayModel');
 const SaveRoutine = require('../../models/Routines Models/save_routine.model');
 const Class = require('../../models/Routines Models/class.model');
@@ -25,6 +24,7 @@ const storage = getStorage();
 
 // routine firebase
 import { deleteSummariesFromFirebase } from './firebase/routines.firebase';
+import { getClasses } from '../Routines/helper/class.helper';
 
 
 const getRoutineData = async (rutin_id: any) => {

@@ -13,7 +13,7 @@ const SaveSummary = require('../../models/Routines Models/save_summary.model')
 // routine firebase and helper
 import { deleteSummariesFromFirebase } from './firebase/routines.firebase';
 import { handleValidationError } from '../../method/validation_error';
-const { getClasses, getNotificationClasses } = require('../../method/get_class_method');
+import { getClasses, getNotificationClasses } from './helper/class.helper';
 
 //************   create class       *************** */
 export const create_class = async (req: any, res: Response) => {

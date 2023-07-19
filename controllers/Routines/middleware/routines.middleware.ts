@@ -81,3 +81,26 @@ export const validateWeekdayMiddleware = async (req: any, res: Response, next: N
     return res.status(500).send({ message: error.message });
   }
 };
+
+//
+
+
+
+
+export const Routine_Owner = async (req: any, res: Response, next: NextFunction) => {
+  const { id } = req.params;
+
+  try {
+    const routine = await Routine.findById(id);
+    if (!routine) return res.status(404).json({ message: "Routine not found" });
+
+    if (routine.ownerid.toString() !== req.user.id) {
+      return res.status(401).json({ message: "Unauthorized to delete routine" });
+    }
+
+    next();
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};

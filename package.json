@@ -5,8 +5,8 @@
   "main": "sarver.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node build/sarver.js",
-    "dev": "nodemon build/sarver.js",
+    "start": "node ./build/sarver.js",
+    "dev": "nodemon ./build/sarver.js",
     "build": "tsc",
     "ts": "nodemon --exec ts-node sarver.ts"
   },
