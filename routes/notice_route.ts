@@ -1,8 +1,18 @@
 import express from 'express';
 const router = express.Router();
-import verifyToken from "../controllers/Auth/helper/varifitoken";
+import { verifyToken } from "../controllers/Auth/helper/varifitoken";
 import multer from 'multer';
-const notice = require("../controllers/NoticeBoard/notice_controller");
+import {
+    addNotice,
+    deleteNotice,
+    current_user_status,
+    joinNoticeboard,
+    leaveMember,
+    notification_Off,
+    notification_On,
+    recentNotice,
+    recentNoticeByAcademeID
+} from "../controllers/NoticeBoard/notice_controller";
 
 // Set up multer with the storage
 const upload = multer({
@@ -18,24 +28,24 @@ const upload = multer({
 });
 
 //.. create update delete
-router.route("/add/").post(verifyToken, upload.single('pdf_file'), notice.addNotice);// add notice 
-router.route("/:noticeId").delete(verifyToken, notice.deleteNotice);//... delete notice
+router.route("/add/").post(verifyToken, upload.single('pdf_file'), addNotice);// add notice 
+router.route("/:noticeId").delete(verifyToken, deleteNotice);//... delete notice
 
 // get notice
 
 //******     check status   ********/ 
-router.route("/status/:academyID").post(verifyToken, notice.current_user_status);
+router.route("/status/:academyID").post(verifyToken, current_user_status);
 
 // join and leave notice board
-router.route("/join/:academyID").post(verifyToken, notice.joinNoticeboard);
-router.route("/leave/:academyID").delete(verifyToken, notice.leaveMember);
+router.route("/join/:academyID").post(verifyToken, joinNoticeboard);
+router.route("/leave/:academyID").delete(verifyToken, leaveMember);
 // status
 //notification on off
-router.post('/notification/off/:academyID', verifyToken, notice.notification_Off);
-router.post('/notification/on/:academyID', verifyToken, notice.notification_On);
+router.post('/notification/off/:academyID', verifyToken, notification_Off);
+router.post('/notification/on/:academyID', verifyToken, notification_On);
 
 //******     recent notice   ********/ 
-router.route("/recent/").post(verifyToken, notice.recentNotice);
-router.route("/recent/:academyID").post(verifyToken, notice.recentNoticeByAcademeID);
+router.route("/recent/").post(verifyToken, recentNotice);
+router.route("/recent/:academyID").post(verifyToken, recentNoticeByAcademeID);
 
 export default router;

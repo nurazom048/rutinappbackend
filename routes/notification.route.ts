@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import verifyToken from "../controllers/Auth/helper/varifitoken";
+import { verifyToken } from "../controllers/Auth/helper/varifitoken";
 import multer from 'multer';
 import { createNotification } from '../controllers/notification/notification.controller';
 

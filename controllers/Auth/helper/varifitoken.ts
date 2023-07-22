@@ -4,7 +4,7 @@ import { generateAuthToken, generateRefreshToken } from './Jwt.helper';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const verifyToken = async (req: any, res: Response, next: NextFunction) => {
+export const verifyToken = async (req: any, res: Response, next: NextFunction) => {
   try {
     const tokenArray = req.headers.authorization.split(' ');
     const token = tokenArray[tokenArray.length - 1];
@@ -37,4 +37,4 @@ const verifyToken = async (req: any, res: Response, next: NextFunction) => {
   }
 };
 
-export default verifyToken;
+

@@ -1,5 +1,5 @@
 import express from 'express';
-import verifyToken from "../controllers/Auth/helper/varifitoken";
+import { verifyToken } from "../controllers/Auth/helper/varifitoken";
 import { createAccount, loginAccount, } from "../controllers/Auth/auth_controllers";
 import { allPendingAccount, acceptPending } from "../controllers/Auth/pending_account.controller";
 import { continueWithGoogle } from "../controllers/Auth/google_auth.controller";

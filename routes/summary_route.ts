@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 const summary = require('../controllers/Routines/summary_controller');
-import verifyToken from '../controllers/Auth/helper/varifitoken';
+import { verifyToken } from '../controllers/Auth/helper/varifitoken';
 
 const app = express();
 

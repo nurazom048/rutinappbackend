@@ -1,7 +1,7 @@
 import express from 'express';
 const router = express.Router();
-import verifyToken from "../controllers/Auth/helper/varifitoken";
-const ac = require("../controllers/Account Controllers/account_controllers");
+import { verifyToken } from "../controllers/Auth/helper/varifitoken";
+import { edit_account, changePassword, forgetPassword, view_my_account, view_others_Account, searchAccounts } from "../controllers/Account Controllers/account_controllers";
 import multer from 'multer';
 
 // Set up multer with the storage
@@ -13,15 +13,15 @@ const upload = multer({
 });
 
 //... Edit account....///
-router.post("/eddit", verifyToken, upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'image', maxCount: 1 }]), ac.edit_account);
+router.post("/eddit", verifyToken, upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'image', maxCount: 1 }]), edit_account);
 
-router.post("/eddit/changepassword/", verifyToken, ac.changePassword);
+router.post("/eddit/changepassword/", verifyToken, changePassword);
 // later add security
-router.post("/eddit/forgotPassword/", ac.forgetPassword);
+router.post("/eddit/forgotPassword/", forgetPassword);
 
-router.route("/").post(verifyToken, upload.single('image'), ac.view_my_account);
-router.route("/:username").post(ac.view_others_Account);
+router.route("/").post(verifyToken, upload.single('image'), view_my_account);
+router.route("/:username").post(view_others_Account);
 
-router.route("/find").get(ac.searchAccounts); // search account
+router.route("/find").get(searchAccounts); // search account
 
 export default router;

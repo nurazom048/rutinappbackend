@@ -1,5 +1,5 @@
 import express from 'express';
-import verifyToken from "../controllers/Auth/helper/varifitoken";
+import { verifyToken } from "../controllers/Auth/helper/varifitoken";
 const app = express();
 // controller
 const routine = require('../controllers/Routines/routine.controllers');
