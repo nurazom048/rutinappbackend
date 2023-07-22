@@ -4,9 +4,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const Account = require('../../models/Account_model/Account.Model');
-const PendingAccount = require('../../models/Account_model/pending_account.model')
-const NoticeBoardMember = require("../../models/notice models/noticeboard_member")
+import Account from '../../models/Account_model/Account.Model';
+import PendingAccount from '../../models/Account_model/pending_account.model';
+import NoticeBoardMember from "../../models/notice models/noticeboard_member";
 //
 
 

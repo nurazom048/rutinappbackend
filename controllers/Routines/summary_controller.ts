@@ -1,16 +1,16 @@
 import express, { Request, Response } from 'express';
 
-const Account = require('../../models/Account_model/Account.Model')
-const Routine = require('../../models/Routines Models/routine_models')
-const Class = require('../../models/Routines Models/class.model');
-const Summary = require('../../models/Routines Models/summary.models');
-const RoutineMember = require('../../models/Routines Models/rutineMembersModel')
-const SaveSummary = require('../../models/Routines Models/save_summary.model')
+import Account from '../../models/Account_model/Account.Model'
+import Routine from '../../models/Routines Models/routine.models';
+import Class from '../../models/Routines Models/class.model';
+import Summary from '../../models/Routines Models/summary.models';
+import RoutineMember from '../../models/Routines Models/routineMembers.Model';
+import SaveSummary from '../../models/Routines Models/save_summary.model';
 
 
 // firebase
 
-const { summaryImageUploader } = require('../../controllers/Routines/firebase/summary.firebase')
+import { summaryImageUploader } from '../../controllers/Routines/firebase/summary.firebase';
 
 
 
@@ -100,13 +100,13 @@ export const remove_summary = async (req: any, res: Response) => {
     }
 
     // Only summary owner, routine owner, or captains can delete
-    const deletePermission = findSummary.ownerId !== id || routine.ownerId == id || isCaptain;
+    const deletePermission = findSummary.ownerId !== id || routine.ownerid == id || isCaptain;
     if (!deletePermission) {
       return res.status(403).json({ message: "You don't have permission to delete" });
     }
 
     // Step 1: Delete the summary from Firebase storage
-    for (const imageLink of findSummary.imageLinks) {
+    for (const imageLink of findSummary.imageLinks ?? []) {
       const fileRef = ref(storage, imageLink);
       await deleteObject(fileRef);
     }
@@ -124,10 +124,6 @@ export const remove_summary = async (req: any, res: Response) => {
     return res.status(400).json({ message: error.message });
   }
 };
-
-
-
-
 
 
 //************ Get class summary list *************** */
@@ -194,28 +190,28 @@ export const get_class_summary_list = async (req: any, res: Response) => {
 
 
 //************ update  summary list *************** */
-
-
-
 export const update_summary = async (req: any, res: Response) => {
   const { summary_id } = req.params;
+  const { id } = req.user;
 
   try {
     // find the class that contains the summary
-    const classInstance = await Class.findOne({ 'summary._id': summary_id });
-    if (!classInstance) return res.status(404).json({ message: 'Summary not found' });
+    const finsSummary = await Summary.findByIdAndUpdate(summary_id, { text: req.body.text });
+    // const classInstance = await Class.findOne({ 'summary._id': summary_id });
+    if (!finsSummary) return res.status(404).json({ message: 'Summary not found' });
 
     // find the routine that contains the class and check if the current user has permission to edit
-    const routineInstance = await Routine.findOne({ _id: classInstance.rutin_id });
+    const routineInstance = await Routine.findById(finsSummary.id);
     if (!routineInstance) return res.status(404).json({ message: 'Routine not found' });
-    if (req.user.id.toString() !== routineInstance.ownerid.toString())
+    if (id !== routineInstance.ownerid.toString() && finsSummary.ownerId !== id)
       return res.status(401).json({ message: 'You do not have permission to edit a summary' });
 
     // update the summary and send response
-    const summary = classInstance.summary.id(summary_id);
-    summary.text = req.body.text;
-    await classInstance.save();
-    return res.status(200).send(classInstance);
+    const updatedSummary = await Summary.findByIdAndUpdate(summary_id, { text: req.body.text });
+    if (!updatedSummary) {
+      return res.status(404).json({ message: "Summary not found" });
+    }
+    return res.status(200).send({ message: "Summary Updated successfully" });
   } catch (error: any) {
     return res.status(400).send(error.message);
   }

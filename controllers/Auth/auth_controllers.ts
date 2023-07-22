@@ -1,5 +1,5 @@
-const PendingAccount = require('../../models/Account_model/pending_account.model');
-const Account = require('../../models/Account_model/Account.Model');
+import PendingAccount from '../../models/Account_model/pending_account.model';
+import Account from '../../models/Account_model/Account.Model';
 import jwt from 'jsonwebtoken';
 import express, { Request, Response } from 'express';
 
@@ -72,13 +72,13 @@ export const loginAccount = async (req: Request, res: any) => {
     }
 
     // Compare passwords
-    const passwordMatch = await bcrypt.compare(password, account.password);
+    const passwordMatch = await bcrypt.compare(password, account.password!);
     if (!passwordMatch && password === account.password) {
       return res.status(400).json({ message: "Incorrect password" });
     }
 
     // Sign in with email and password on firebase
-    const userCredential = await signInWithEmailAndPassword(auth, account.email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, account.email!, password);
 
     // Check if email is verified
     const user = userCredential.user;

@@ -1,21 +1,20 @@
 import express, { Request, Response } from 'express';
 
 // Models
-const Account = require('../../models/Account_model/Account.Model')
-const Routine = require('../../models/Routines Models/routine_models')
-const RoutineMember = require('../../models/Routines Models/rutineMembersModel')
-const Summary = require('../../models/Routines Models/save_summary.model')
-const SaveSummarys = require('../../models/Routines Models/save_summary.model')
-const Priode = require('../../models/Routines Models/priodeModels')
-const Classes = require('../../models/Routines Models/class.model')
-const DeletedClass = require('../../models/deleted/deleted_routines')
-const Weekday = require('../../models/Routines Models/weakdayModel');
-const SaveRoutine = require('../../models/Routines Models/save_routine.model');
-const Class = require('../../models/Routines Models/class.model');
+import Account from '../../models/Account_model/Account.Model'
+import Routine from '../../models/Routines Models/routine.models';
+import RoutineMember from '../../models/Routines Models/routineMembers.Model';
+import Summary from '../../models/Routines Models/save_summary.model';
+import SaveSummaries from '../../models/Routines Models/save_summary.model';
+import Priode from '../../models/Routines Models/priode.Models';
+import Classes from '../../models/Routines Models/class.model';
+import Weekday from '../../models/Routines Models/weakday.Model';
+import SaveRoutine from '../../models/Routines Models/save_routine.model';
+import Class from '../../models/Routines Models/class.model';
 
 //! firebase
-const { initializeApp } = require('firebase/app');
-const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = require('firebase/storage');
+import { initializeApp } from 'firebase/app';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 const firebase_storage = require("../../config/firebase/firebase_storage");
 initializeApp(firebase_storage.firebaseConfig); // Initialize Firebase
 // Get a reference to the Firebase storage bucket
@@ -63,7 +62,7 @@ const getRoutineData = async (rutin_id: any) => {
 
 
 //********** createRoutine   ************* */
-exports.createRutin = async (req: any, res: Response) => {
+export const createRoutine = async (req: any, res: Response) => {
   const { name } = req.body;
   console.log(req.body);
 
@@ -112,12 +111,12 @@ exports.createRutin = async (req: any, res: Response) => {
 
 //*******   deleteRoutine   ***** */
 
-exports.deleteRoutine = async (req: any, res: Response) => {
+export const deleteRoutine = async (req: any, res: Response) => {
   const { id } = req.params;
 
   try {
 
-    await SaveSummarys.deleteMany({ routineId: id });
+    await SaveSummaries.deleteMany({ routineId: id });
 
     // Delete summaries from MongoDB and firebse
     const summariesToDelete = await Summary.find({ routineId: id });
@@ -130,8 +129,6 @@ exports.deleteRoutine = async (req: any, res: Response) => {
     // Saving the deleted classes
     for (let i = 0; i < deletedClassIDList.length; i++) {
       const classId = deletedClassIDList[i];
-      const deletedClass = new DeletedClass({ classId });
-      await deletedClass.save();
       // Delete the class
       await Classes.findByIdAndRemove(findClassesWhichShouldBeDeleted[i].id);
     }
@@ -153,7 +150,7 @@ exports.deleteRoutine = async (req: any, res: Response) => {
 
 //*******      allRutin   ***** */
 
-exports.allRutin = async (req: any, res: Response) => {
+export const all_Routine = async (req: any, res: Response) => {
   console.log(req.user);
 
   const userid = req.user.id;
@@ -209,8 +206,8 @@ exports.allRutin = async (req: any, res: Response) => {
 
 
 
-//**************** search_rutins ***********************************/
-exports.search_rutins = async (req: any, res: Response) => {
+//**************** search_routine***********************************/
+export const search_routine = async (req: any, res: Response) => {
   const { src } = req.query; // get the value of 'src' from the query parameters
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
@@ -260,7 +257,7 @@ exports.search_rutins = async (req: any, res: Response) => {
 //
 //*********************************************************** */
 
-exports.save_and_unsave_routine = async (req: any, res: Response) => {
+export const save_and_unsave_routine = async (req: any, res: Response) => {
   const { routineId } = req.params;
   const { saveCondition } = req.body;
   const { id } = req.user;
@@ -318,7 +315,7 @@ exports.save_and_unsave_routine = async (req: any, res: Response) => {
 
 
 //.......save routines.../
-exports.save_routines = async (req: any, res: Response) => {
+export const save_routines = async (req: any, res: Response) => {
   const { id } = req.user;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 2;
@@ -360,7 +357,7 @@ exports.save_routines = async (req: any, res: Response) => {
 
 
 //**************  uploaded_rutins     *********** */
-exports.uploaded_rutins = async (req: any, res: Response) => {
+export const uploaded_routine = async (req: any, res: Response) => {
   const { username } = req.params;
 
   const page = parseInt(req.query.page) || 1;
@@ -393,7 +390,7 @@ exports.uploaded_rutins = async (req: any, res: Response) => {
 }
 
 //**************  current_user_status     *********** */
-exports.current_user_status = async (req: any, res: Response) => {
+export const current_user_status = async (req: any, res: Response) => {
   try {
 
     const { routineId } = req.params;
@@ -461,7 +458,7 @@ exports.current_user_status = async (req: any, res: Response) => {
 
 
 ///.... joined rutins ......///
-exports.joined_rutins = async (req: any, res: Response) => {
+export const joined_routine = async (req: any, res: Response) => {
   const { id } = req.user;
 
   const page = parseInt(req.query.page) || 1;
@@ -490,7 +487,7 @@ exports.joined_rutins = async (req: any, res: Response) => {
 };
 
 //**************  uploaded_rutins     *********** */
-exports.rutinDetails = async (req: any, res: Response) => {
+export const routine_details = async (req: any, res: Response) => {
   const { rutin_id } = req.params;
   const { username } = req.user;
 
@@ -549,7 +546,7 @@ exports.rutinDetails = async (req: any, res: Response) => {
       });
     if (!routine) return res.json({ message: "Routine not found" });
 
-    const members = routines.members;
+    const members = routines?.members;
 
 
     //res.json({ message: "All Members", count, members });
@@ -563,7 +560,7 @@ exports.rutinDetails = async (req: any, res: Response) => {
 
 
 //************** user can see all routines where owner or joined ***********
-exports.homeFeed = async (req: any, res: Response) => {
+export const homeFeed = async (req: any, res: Response) => {
   const { id } = req.user;
   const { userID } = req.params;
   const { osUserID } = req.body;
@@ -571,11 +568,10 @@ exports.homeFeed = async (req: any, res: Response) => {
   const limit = parseInt(req.query.limit) || 3;
   // console.log('req.user');
   // console.log(req.user);
-  // console.log(req.body);
+  console.log(req.body);
   // console.log('req.body');
   // console.log('req.params');
   // console.log(req.params);
-  // console.log('>sdgfsdgdfge>>>>>>>>>>>');
   try {
     // Find routines where the user is the owner or a member and Routine ID exists and is not null
     let query;
@@ -624,7 +620,7 @@ exports.homeFeed = async (req: any, res: Response) => {
 
     if (page == 1 && !userID) {
       const updated = await Account.findByIdAndUpdate(req.user.id, { osUserID: osUserID }, { new: true });
-      //console.log(updated)
+      // console.log(updated)
     }
     // console.log({
     //   message: 'success',

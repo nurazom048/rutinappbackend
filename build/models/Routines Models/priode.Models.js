@@ -24,44 +24,55 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const NoticeBoardMemberSchema = new mongoose_1.Schema({
-    academyID: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Account',
-        required: true,
+const priodeModelSchema = new mongoose_1.Schema({
+    priode_number: {
+        type: Number,
+        required: [true, 'Please provide a period number'],
+        default: 1,
     },
-    notificationOn: {
-        type: Boolean,
-        default: false,
+    start_time: {
+        type: Date,
+        required: [true, 'Start Time is required'],
     },
-    memberID: {
+    end_time: {
+        type: Date,
+        required: [true, 'end_time is required'],
+    },
+    rutin_id: {
         type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Account',
+        ref: 'Routine',
         required: true,
     },
 });
-const NoticeBoardMember = mongoose_1.default.model('NoticeBoardMember', NoticeBoardMemberSchema);
-exports.default = NoticeBoardMember;
+const PriodeModel = mongoose_1.default.model('priodModel', priodeModelSchema);
+exports.default = PriodeModel;
 // const mongoose = require('mongoose');
 // const Schema = mongoose.Schema;
-// const NoticeBoardMemberSchema = new Schema({
-//     academyID: {
-//         type: Schema.Types.ObjectId,
-//         ref: 'Account',
-//         required: true,
+// const priodModelSchema = new Schema({
+//     priode_number: {
+//         type: Number,
+//         required: [true, 'Please provide a period number'],
+//         default: 1,
+//         validate: {
+//             validator: function (v) {
+//                 return v > 0;
+//             },
+//             message: 'Period number must be greater than zero'
+//         }
 //     },
-//     notificationOn: {
-//         type: Boolean,
-//         default: false,
+//     start_time: {
+//         type: Date,
+//         required: [true, 'Start Time is required '],
 //     },
-//     memberID: {
+//     end_time: {
+//         type: Date,
+//         required: [true, 'end_time is required'],
+//     },
+//     rutin_id: {
 //         type: Schema.Types.ObjectId,
-//         ref: 'Account',
+//         ref: 'Routine',
 //         required: true,
 //     },
 // });
-// const NoticeBoardMember = mongoose.model(
-//     'NoticeBoardMember',
-//     NoticeBoardMemberSchema
-// );
-// module.exports = NoticeBoardMember;
+// const priodModel = mongoose.model('priodModel', priodModelSchema);
+// module.exports = priodModel;

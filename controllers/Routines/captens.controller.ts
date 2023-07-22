@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
-const Account = require('../../models/Account_model/Account.Model');
-const Routine = require('../../models/Routines Models/routine_models');
-const RoutineMember = require('../../models/Routines Models/rutineMembersModel');
+import Account from '../../models/Account_model/Account.Model';
+import Routine from '../../models/Routines Models/routine.models';
+import RoutineMember from '../../models/Routines Models/routineMembers.Model';
 
 //************   addCaptain      *************** */
 export const addCaptain = async (req: any, res: Response) => {

@@ -1,19 +1,16 @@
 
-//! iports
-const NoticeBoard = require('../../models/notice models/notice_bord');
-const NoticeBoardMember = require('../../models/notice models/noticeboard_member');
-const Notice = require('../../models/notice models/notice');
-const Notification = require('../../models/Notification Models/notification.model');
-const { sendNotificationMethode } = require('../../controllers/notification/oneSignalNotification.controller');
+// imports
+import { sendNotificationMethods } from '../../controllers/notification/oneSignalNotification.controller';
 import express, { Request, Response } from 'express';
+//
+//Models
+const Notification = require('../../models/Notification Models/notification.model');
+import Notice from '../../models/notice models/notice';
+import NoticeBoard from '../../models/notice models/notice_board';
+import NoticeBoardMember from '../../models/notice models/noticeboard_member';
+import Account from '../../models/Account_model/Account.Model';
 
-
-
-
-const Account = require('../../models/Account_model/Account.Model');
-const mongoose = require('mongoose');
-
-//! firebase
+//! firebase imports
 const { initializeApp } = require('firebase/app');
 const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = require('firebase/storage');
 const firebase_stroage = require("../../config/firebase/firebase_storage");
@@ -23,7 +20,7 @@ const storage = getStorage();
 
 
 import { getNoticePDFUrls, getNoticePDFs } from "./firebase/norice_board.firebase";
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 
 /// make a add to 
@@ -33,8 +30,8 @@ const { v4: uuidv4 } = require('uuid');
 export const addNotice = async (req: any, res: Response) => {
     const { content_name, description, mimetypeChecked } = req.body;
     const { id, error } = req.user;
-    console.log("req.use")
-    console.log(req.user)
+    // console.log("req.use")
+    // console.log(req.user)
 
     // console.log(req.body);
     // console.log(req.file);
@@ -92,10 +89,11 @@ export const addNotice = async (req: any, res: Response) => {
             .map((member: any) => member.memberID.osUserID)
             .filter((osUserId: string) => osUserId !== '' && osUserId !== undefined);
 
+        console.log("oneSignalUserId");
         console.log(oneSignalUserId);
 
         // Step 4: Create a notification with Firebase
-        const response = await sendNotificationMethode(oneSignalUserId, `A New Notice from ${findAccount.name}`, "New Notice");
+        const response = await sendNotificationMethods(oneSignalUserId, `A New Notice from ${findAccount.name}`, "New Notice");
 
         res.status(200).json({ message: 'Notice created and added successfully', notice: savedNotice });
         console.log(savedNotice);
@@ -123,7 +121,7 @@ export const deleteNotice = async (req: any, res: Response) => {
         if (!notice) return res.status(404).json({ message: 'Notice not found' });
 
         // Step 3: Check if the notice belongs to the user
-        if (notice.academyID.toString() !== findAccount.id.toString()) {
+        if (notice.academyID !== findAccount.id.toString()) {
             return res.status(403).json({ message: 'You do not have permission to delete this notice' });
         }
 

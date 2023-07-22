@@ -1,11 +1,12 @@
 
 import { Request, Response } from 'express';
-
 import admin from 'firebase-admin';
-import { joinHisOwnNoticeboard } from '../Auth/auth.methods';
 // models
-const PendingAccount = require('../../models/Account_model/pending_account.model');
-const Account = require('../../models/Account_model/Account.Model');
+import PendingAccount from '../../models/Account_model/pending_account.model';
+import Account from '../../models/Account_model/Account.Model';
+// methods
+import { joinHisOwnNoticeboard } from '../Auth/auth.methods';
+
 
 // ***************** allPendingAccount *******************************/
 export const allPendingAccount = async (req: Request, res: Response) => {

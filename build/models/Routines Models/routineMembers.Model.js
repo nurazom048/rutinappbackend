@@ -24,44 +24,37 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const NoticeBoardMemberSchema = new mongoose_1.Schema({
-    academyID: {
+const routineMemberSchema = new mongoose_1.Schema({
+    memberID: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'Account',
+        required: true,
+    },
+    RutineID: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'Routine',
         required: true,
     },
     notificationOn: {
         type: Boolean,
         default: false,
     },
-    memberID: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Account',
-        required: true,
+    captain: {
+        type: Boolean,
+        default: false,
+    },
+    owner: {
+        type: Boolean,
+        default: false,
+    },
+    isSaved: {
+        type: Boolean,
+        default: false,
+    },
+    blocklist: {
+        type: Boolean,
+        default: false,
     },
 });
-const NoticeBoardMember = mongoose_1.default.model('NoticeBoardMember', NoticeBoardMemberSchema);
-exports.default = NoticeBoardMember;
-// const mongoose = require('mongoose');
-// const Schema = mongoose.Schema;
-// const NoticeBoardMemberSchema = new Schema({
-//     academyID: {
-//         type: Schema.Types.ObjectId,
-//         ref: 'Account',
-//         required: true,
-//     },
-//     notificationOn: {
-//         type: Boolean,
-//         default: false,
-//     },
-//     memberID: {
-//         type: Schema.Types.ObjectId,
-//         ref: 'Account',
-//         required: true,
-//     },
-// });
-// const NoticeBoardMember = mongoose.model(
-//     'NoticeBoardMember',
-//     NoticeBoardMemberSchema
-// );
-// module.exports = NoticeBoardMember;
+const RoutineMember = mongoose_1.default.model('RoutineMember', routineMemberSchema);
+exports.default = RoutineMember;

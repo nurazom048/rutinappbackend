@@ -1,4 +1,4 @@
-const Account = require('../../models/Account_model/Account.Model');
+import Account from '../../models/Account_model/Account.Model';
 import bcrypt from 'bcrypt';
 import express, { Request, Response } from 'express';
 
@@ -222,7 +222,7 @@ export const changePassword = async (req: any, res: Response) => {
     // Compare old password
 
     // Compare passwords
-    const passwordMatch = bcrypt.compare(oldPassword, account.password);
+    const passwordMatch = bcrypt.compare(oldPassword, account.password!);
     if (!passwordMatch && oldPassword != account.password) {
       return res.status(400).json({ message: "Old password is incorrect" });
     }

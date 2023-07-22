@@ -43,25 +43,37 @@ const NoticeBoardMemberSchema = new mongoose_1.Schema({
 const NoticeBoardMember = mongoose_1.default.model('NoticeBoardMember', NoticeBoardMemberSchema);
 exports.default = NoticeBoardMember;
 // const mongoose = require('mongoose');
-// const Schema = mongoose.Schema;
-// const NoticeBoardMemberSchema = new Schema({
-//     academyID: {
-//         type: Schema.Types.ObjectId,
+// const NoticeBordSchema = new mongoose.Schema({
+//     owner: {
+//         type: mongoose.Schema.Types.ObjectId,
 //         ref: 'Account',
 //         required: true,
 //     },
-//     notificationOn: {
-//         type: Boolean,
-//         default: false,
+//     name: {
+//         type: String,
+//         required: [true, 'The name field is required.'],
 //     },
-//     memberID: {
-//         type: Schema.Types.ObjectId,
+//     description: String,
+//     notices: [{
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: 'Notice',
+//     }],
+//     member: [{
+//         type: mongoose.Schema.Types.ObjectId,
 //         ref: 'Account',
-//         required: true,
-//     },
+//     }],
+//     joinRequest: [{
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: 'Account',
+//     }],
+//     pined_notice: [{
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: 'Account',
+//     }],
+//     notificationOn: [{
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: 'Account',
+//     }],
 // });
-// const NoticeBoardMember = mongoose.model(
-//     'NoticeBoardMember',
-//     NoticeBoardMemberSchema
-// );
-// module.exports = NoticeBoardMember;
+// const NoticeBordModel = mongoose.model('NoticeBord', NoticeBordSchema);
+// module.exports = NoticeBordModel;

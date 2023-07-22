@@ -1,7 +1,7 @@
-const Class = require('../../../models/Routines Models/class.model.js');
-const Priode = require('../../../models/Routines Models/priodeModels');
-const Routine = require('../../../models/Routines Models/routine_models')
-const Weekday = require('../../../models/Routines Models/weakdayModel');
+import Class from '../../../models/Routines Models/class.model';
+import Priode from '../../../models/Routines Models/priode.Models';
+import Routine from '../../../models/Routines Models/routine.models';
+import Weekday from '../../../models/Routines Models/weakday.Model';
 import { Request, Response, NextFunction } from 'express';
 
 

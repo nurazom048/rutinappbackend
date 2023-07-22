@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { firebaseConfig } from '../../config/firebase/firebase_storage'; // Replace with the actual path to your firebaseConfig file
 import { Request, Response } from 'express';
-const Notification = require('../../models/Notification Models/notification.model');
+import Notification from '../../models/Notification Models/notification.model';
 
 // Initialize Firebase
 initializeApp(firebaseConfig);
@@ -14,8 +14,9 @@ export const createNotification = async (req: Request, res: Response) => {
     console.log(req.body);
     try {
         // Retrieve data from the request body
-        const { accountID, title, body, rutineID, NoticeID, type } = req.body;
+        const { accountID, title, body, rutineID, routineID, NoticeID, type } = req.body;
         const image = req.file;
+
 
         // Validate required fields
         if (!title || !body || !type) {

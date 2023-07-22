@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-const Account = require('../../models/Account_model/Account.Model');
-const PendingAccount = require('../../models/Account_model/pending_account.model');
+import Account from '../../models/Account_model/Account.Model';
+import PendingAccount from '../../models/Account_model/pending_account.model';
 import jwt from 'jsonwebtoken';
 import admin from 'firebase-admin';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';

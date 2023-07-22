@@ -3,10 +3,10 @@ import express, { Request, Response } from 'express';
 
 import { handleValidationError } from '../../method/validation_error';
 // Models
-const Priode = require('../../models/Routines Models/priodeModels');
-const Weekday = require('../../models/Routines Models/weakdayModel');
-const Routine = require('../../models/Routines Models/routine_models');
-const Class = require('../../models/Routines Models/class.model');
+import Priode from '../../models/Routines Models/priode.Models';
+import Weekday from '../../models/Routines Models/weakday.Model';
+import Routine from '../../models/Routines Models/routine.models';
+import Class from '../../models/Routines Models/class.model';
 
 
 

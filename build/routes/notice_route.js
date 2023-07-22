@@ -5,9 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const router = express_1.default.Router();
-const varifitoken_1 = __importDefault(require("../controllers/Auth/helper/varifitoken"));
+const varifitoken_1 = require("../controllers/Auth/helper/varifitoken");
 const multer_1 = __importDefault(require("multer"));
-const notice = require("../controllers/NoticeBoard/notice_controller");
+const notice_controller_1 = require("../controllers/NoticeBoard/notice_controller");
 // Set up multer with the storage
 const upload = (0, multer_1.default)({
     //limits: { fileSize: 11 * 1024 * 1024 }
@@ -20,19 +20,19 @@ const upload = (0, multer_1.default)({
     // },
 });
 //.. create update delete
-router.route("/add/").post(varifitoken_1.default, upload.single('pdf_file'), notice.addNotice); // add notice 
-router.route("/:noticeId").delete(varifitoken_1.default, notice.deleteNotice); //... delete notice
+router.route("/add/").post(varifitoken_1.verifyToken, upload.single('pdf_file'), notice_controller_1.addNotice); // add notice 
+router.route("/:noticeId").delete(varifitoken_1.verifyToken, notice_controller_1.deleteNotice); //... delete notice
 // get notice
 //******     check status   ********/ 
-router.route("/status/:academyID").post(varifitoken_1.default, notice.current_user_status);
+router.route("/status/:academyID").post(varifitoken_1.verifyToken, notice_controller_1.current_user_status);
 // join and leave notice board
-router.route("/join/:academyID").post(varifitoken_1.default, notice.joinNoticeboard);
-router.route("/leave/:academyID").delete(varifitoken_1.default, notice.leaveMember);
+router.route("/join/:academyID").post(varifitoken_1.verifyToken, notice_controller_1.joinNoticeboard);
+router.route("/leave/:academyID").delete(varifitoken_1.verifyToken, notice_controller_1.leaveMember);
 // status
 //notification on off
-router.post('/notification/off/:academyID', varifitoken_1.default, notice.notification_Off);
-router.post('/notification/on/:academyID', varifitoken_1.default, notice.notification_On);
+router.post('/notification/off/:academyID', varifitoken_1.verifyToken, notice_controller_1.notification_Off);
+router.post('/notification/on/:academyID', varifitoken_1.verifyToken, notice_controller_1.notification_On);
 //******     recent notice   ********/ 
-router.route("/recent/").post(varifitoken_1.default, notice.recentNotice);
-router.route("/recent/:academyID").post(varifitoken_1.default, notice.recentNoticeByAcademeID);
+router.route("/recent/").post(varifitoken_1.verifyToken, notice_controller_1.recentNotice);
+router.route("/recent/:academyID").post(varifitoken_1.verifyToken, notice_controller_1.recentNoticeByAcademeID);
 exports.default = router;

@@ -2,16 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 
 
 // Models
-const Account = require('../../models/Account_model/Account.Model');
-const Routine = require('../../models/Routines Models/routine_models');
-const RoutineMember = require('../../models/Routines Models/rutineMembersModel');
+import Account from '../../models/Account_model/Account.Model';
+import Routine from '../../models/Routines Models/routine.models';
+import RoutineMember from '../../models/Routines Models/routineMembers.Model';
 
 
 
 
 //**********  addMembers   ************* */
-export const addMebers = async (req: any, res: Response) => {
-  const { rutin_id, username } = req.params;
+export const addMember = async (req: any, res: Response) => {
+  const { routineID, username } = req.params;
 
   try {
     // Check if the member's account exists
@@ -19,7 +19,7 @@ export const addMebers = async (req: any, res: Response) => {
     if (!members_ac) return res.json({ message: "Account not found" });
 
     // Find the routine to add the member to
-    const routine = await Routine.findOne({ _id: rutin_id });
+    const routine = await Routine.findOne({ _id: routineID });
     if (!routine) return res.json({ message: "Routine not found" });
 
     // Check if the member is already added
@@ -27,14 +27,14 @@ export const addMebers = async (req: any, res: Response) => {
     if (alreadyAdded) return res.json({ message: "Member already added" });
 
     //add member
-    const addmember = new RoutineMember({ memberID: members_ac._id }); // Create a new RoutineMember instance
-    await addmember.save(); // Wait for the routineMember instance to be saved
+    const addMember = new RoutineMember({ memberID: members_ac._id }); // Create a new RoutineMember instance
+    await addMember.save(); // Wait for the routineMember instance to be saved
 
 
     // Add the member to the routine
     routine.members.push(members_ac._id);
     const new_member = await routine.save();
-    res.json({ message: "Member added successfully", addmember, new_member });
+    res.json({ message: "Member added successfully", addMember, new_member });
 
     //
   } catch (error: any) {
@@ -45,7 +45,7 @@ export const addMebers = async (req: any, res: Response) => {
 
 //**********  removeMember   ************* */
 export const removeMember = async (req: any, res: Response) => {
-  const { rutin_id, username } = req.params;
+  const { routineID, username } = req.params;
 
   try {
     // Check if the member's account exists
@@ -53,14 +53,14 @@ export const removeMember = async (req: any, res: Response) => {
     if (!member_ac) return res.json({ message: "Account not found" });
 
     // Find the routine to remove the member from
-    const routine = await Routine.findOne({ _id: rutin_id });
+    const routine = await Routine.findOne({ _id: routineID });
     if (!routine) return res.json({ message: "Routine not found" });
 
     // Check if the member is already added
-    const ifMemberFound = new RoutineMember.findOne({ memberID: member_ac._id, RutineID: routine });
-    if (!ifMemberFound) return res.json({ message: "Member Allrady removed" });
+    const ifMemberFound = await RoutineMember.findOne({ memberID: member_ac._id, RutineID: routine });
+    if (!ifMemberFound) return res.json({ message: "Member Already removed" });
 
-    const removeMember = new RoutineMember.findByIdAndRemove(ifMemberFound._id);
+    const removeMember = RoutineMember.findByIdAndRemove(ifMemberFound._id);
 
     // // Remove the member from the routine
     // routine.members = routine.members.filter((member) => member.toString() !== member_ac._id.toString());
@@ -123,24 +123,24 @@ export const sendMemberRequest = async (req: any, res: Response) => {
 
 //******* All Members in the  Routine  ***************/
 export const allMembers = async (req: any, res: Response) => {
-  const { rutin_id } = req.params;
+  const { routineID } = req.params;
   const { page = 1, limit = 10 } = req.query;
 
   try {
     // Find the routine and its members
-    const routine = await Routine.findOne({ _id: rutin_id }, { members: 1 });
+    const routine = await Routine.findOne({ _id: routineID }, { members: 1 });
     if (!routine) {
       return res.json({ message: "Routine not found" });
     }
 
     // Count the total number of members
-    const count = await RoutineMember.countDocuments({ RutineID: rutin_id });
+    const count = await RoutineMember.countDocuments({ RutineID: routineID });
 
     // Calculate the total number of pages
     const totalPages = Math.ceil(count / limit);
 
     // Find the members and populate the memberID field with pagination
-    const members = await RoutineMember.find({ RutineID: rutin_id })
+    const members = await RoutineMember.find({ RutineID: routineID })
       .select('-__v -blocklist -_id')
       .populate({
         path: 'memberID',
@@ -244,7 +244,10 @@ export const acceptRequest = async (req: any, res: Response) => {
 
         if (!isMember) {
           // Remove the member from send_request array
-          routine.send_request.pull(memberId);
+          // routine.send_request.pull(memberId);
+          await Routine.findOneAndUpdate({ _id: rutin_id },
+            { $pull: { send_request: memberId } }
+          );
           // Create a new RoutineMember object and save it
           const makeMember = new RoutineMember({ memberID: memberId, RutineID: rutin_id });
           await makeMember.save();
@@ -326,19 +329,19 @@ export const rejectMember = async (req: any, res: Response) => {
 
 //********************  leave members  *****************//
 export const leave = async (req: any, res: Response) => {
-  const { rutin_id } = req.params;
+  const { routineID } = req.params;
   const { id } = req.user;
-  console.log(rutin_id);
+  // console.log(routineID);
 
   try {
     // Step 1: Find the Routine
-    const routine = await Routine.findById(rutin_id);
+    const routine = await Routine.findById(routineID);
     if (!routine) {
       return res.status(404).json({ message: "Routine not found" });
     }
 
     // Step 2: Check if the user is a member and not the owner
-    const member = await RoutineMember.findOne({ memberID: id, RutineID: rutin_id });
+    const member = await RoutineMember.findOne({ memberID: id, RutineID: routineID });
     if (!member) {
       return res.status(404).json({ message: "User is not a member" });
     }
@@ -347,7 +350,7 @@ export const leave = async (req: any, res: Response) => {
     }
 
     // Step 3: Remove the member and send a success message
-    const leaveMember = await RoutineMember.findOneAndDelete({ memberID: id, RutineID: rutin_id });
+    const leaveMember = await RoutineMember.findOneAndDelete({ memberID: id, RutineID: routineID });
 
     res.json({
       message: "Routine leave successful",
@@ -364,14 +367,14 @@ export const leave = async (req: any, res: Response) => {
 
 //*****************   kickOut  ************************ */
 export const kickOut = async (req: any, res: Response) => {
-  const { rutin_id, memberid } = req.params;
+  const { routineID, memberID } = req.params;
   const { id } = req.user;
-  console.log(rutin_id);
-  console.log(memberid);
+  // console.log(routineID);
+  // console.log(memberID);
 
   try {
     // Step 1: Find the Routine and check permission
-    const routine = await Routine.findById(rutin_id);
+    const routine = await Routine.findById(routineID);
     if (!routine) return res.status(404).json({ message: "Routine not found" });
 
     // Check if the logged-in user is the owner or a captain
@@ -381,7 +384,7 @@ export const kickOut = async (req: any, res: Response) => {
     }
 
     // Check if the member is in the routine and not the owner
-    const isMember = await RoutineMember.findOne({ RutineID: routine.id, memberID: memberid });
+    const isMember = await RoutineMember.findOne({ RutineID: routine.id, memberID: routineID });
     if (!isMember) return res.status(400).json({ message: "User already removed" });
     if (isMember.owner === true) return res.status(400).json({ message: "No one can kick the owner" });
 

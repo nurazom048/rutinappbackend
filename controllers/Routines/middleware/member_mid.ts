@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 // Models
-const Routine = require('../../../models/Routines Models/routine_models');
-const RoutineMember = require('../../../models/Routines Models/rutineMembersModel');
+import Routine from '../../../models/Routines Models/routine.models';
+import RoutineMember from '../../../models/Routines Models/routineMembers.Model';
+import Priode from '../../../models/Routines Models/priode.Models';
 
 
 export const peremption_add_member = async (req: any, res: Response, next: NextFunction) => {
@@ -34,17 +35,18 @@ export const permission_add_Pride = async (req: any, res: Response, next: NextFu
   const { rutin_id } = req.params;
 
   try {
+
     // 1. Find Routine and Pride
     const routine = await Routine.findOne({ _id: rutin_id });
     if (!routine) return res.status(404).json({ message: "Routine not found" });
 
     // 2. Check permission is owner or captain
     const routineMember = await RoutineMember.findOne({ RutineID: rutin_id, memberID: req.user.id });
-    if (!routineMember?.owner && !routineMember?.captain) {
+    if (!routineMember?.owner && !routineMember?.captain!) {
       return res.status(401).json({ message: "You don't have permission to add priode" });
     }
 
-    req.routine = routine;
+    // req.routine = routine;
     next();
   } catch (err: any) {
     console.error(err);
@@ -57,11 +59,12 @@ export const permission_remove_priode = async (req: any, res: Response, next: Ne
   const { priodeId } = req.params;
 
   try {
+
     // 1. Find Routine and Priode
-    const routine = await Routine.findOne({ "priode._id": priodeId });
+    const routine = await Routine.findById(priodeId);
     if (!routine) return res.status(404).json({ message: "Routine not found" });
 
-    const priode = routine.priode.id(priodeId);
+    const priode = Priode.findById(priodeId);
     if (!priode) return res.status(404).json({ message: "Priode not found" });
 
     // 2. Check permission is owner or captain

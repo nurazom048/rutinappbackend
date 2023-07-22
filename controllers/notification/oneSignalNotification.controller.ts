@@ -48,11 +48,11 @@ async function sendNotification(tokenIdList: string[], contents: string, heading
 }
 
 // // Call the function to send the notification
-// sendNotification(["773f0ac8-e904-45b9-b2ef-a6fc250da2b2"], "Notification content", "Notification heading")
+// sendNotification(["5f018a24-8cba-408d-9a2a-27a63f8c7b26"], "Notification content", "Notification heading")
 //     .then(json => console.log(json))
 //     .catch(err => console.error('error:' + err));
-//******* Expoexport*****/
-export const sendNotificationMethode = async (tokenIdList: string[], contents: string, heading: string) => {
+//******* Export*****/
+export const sendNotificationMethods = async (tokenIdList: string[], contents: string, heading: string) => {
     const apiUrl = 'https://onesignal.com/api/v1/notifications';
     const appId = 'db13122e-448d-4418-9df0-b83989eef9ab'; // Replace with your OneSignal App ID
     const apiKey = 'MzQ2YWQ3OGUtYWU5OC00Y2MzLWEyM2EtNjEyNjE2ODZkYmJl'; // Replace with your OneSignal API Key
