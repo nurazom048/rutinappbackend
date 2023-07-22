@@ -13,7 +13,7 @@ import {
     addWeekday,
     allWeekdayInClass,
 } from "../controllers/Routines/class_controllers";
-import { classValidation } from "../controllers/Routines/validation/class.validation";
+import { classValidation, validateClassBookingAndPeremption } from "../controllers/Routines/validation/class.validation";
 //
 // Weekday
 import { weekdayValidation } from "../controllers/Routines/validation/weekday.validation";
@@ -22,7 +22,10 @@ import { validateWeekdayMiddleware } from "../controllers/Routines/middleware/ro
 
 //
 // 3
-app.post('/:routineID/addclass', verifyToken, classValidation, create_class);
+app.post('/:routineID/addclass',
+    verifyToken, classValidation, validateClassBookingAndPeremption,
+    create_class,
+);
 app.post('/eddit/:class_id', verifyToken, edit_class);
 app.delete('/delete/:class_id', verifyToken, delete_class);
 
@@ -36,7 +39,10 @@ app.post('/notification', verifyToken, classNotification);
 
 //
 // weekday
-app.post('/weakday/add/:class_id', weekdayValidation, validateWeekdayMiddleware, addWeekday);
+app.post('/weakday/add/:classID',
+    weekdayValidation, validateWeekdayMiddleware,
+    addWeekday,
+);
 app.delete('/weakday/delete/:id/:classID', deleteWeekdayById);
 // show weekday by class
 app.get('/weakday/show/:class_id', allWeekdayInClass);

@@ -32,16 +32,16 @@ export const peremption_add_member = async (req: any, res: Response, next: NextF
 
 // permission_add_prided
 export const permission_add_Pride = async (req: any, res: Response, next: NextFunction) => {
-  const { rutin_id } = req.params;
+  const { routineID } = req.params;
 
   try {
 
     // 1. Find Routine and Pride
-    const routine = await Routine.findOne({ _id: rutin_id });
+    const routine = await Routine.findOne({ _id: routineID });
     if (!routine) return res.status(404).json({ message: "Routine not found" });
 
     // 2. Check permission is owner or captain
-    const routineMember = await RoutineMember.findOne({ RutineID: rutin_id, memberID: req.user.id });
+    const routineMember = await RoutineMember.findOne({ RutineID: routineID, memberID: req.user.id });
     if (!routineMember?.owner && !routineMember?.captain!) {
       return res.status(401).json({ message: "You don't have permission to add priode" });
     }

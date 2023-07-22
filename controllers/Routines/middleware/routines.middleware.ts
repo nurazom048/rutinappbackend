@@ -9,7 +9,7 @@ import { Request, Response, NextFunction } from 'express';
 
 
 export const validateWeekdayMiddleware = async (req: any, res: Response, next: NextFunction) => {
-  const { class_id } = req.params;
+  const { classID } = req.params;
   const { num, start, end } = req.body;
 
   try {
@@ -25,7 +25,7 @@ export const validateWeekdayMiddleware = async (req: any, res: Response, next: N
     }
 
     // Check from database
-    const classFind = await Class.findOne({ _id: class_id });
+    const classFind = await Class.findById(classID);
     if (!classFind) {
       return res.status(404).send({ message: 'Class not found' });
     }

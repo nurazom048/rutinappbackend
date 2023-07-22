@@ -12,8 +12,6 @@ const priodeModelSchema: Schema<IPriodeModel> = new Schema<IPriodeModel>({
     priode_number: {
         type: Number,
         required: [true, 'Please provide a period number'],
-        default: 1,
-
     },
     start_time: {
         type: Date,

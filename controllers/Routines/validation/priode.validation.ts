@@ -2,17 +2,15 @@ import { Request, Response, NextFunction } from 'express';
 
 
 
-
-
-
 // Middleware for validation
 export const periodModelValidation = (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { priode_number, start_time, end_time, rutin_id } = req.body;
+        const { priode_number, start_time, end_time } = req.body;
+        const { routineID } = req.params;
 
-        if (!priode_number) {
-            return res.status(400).send({ message: 'Validation failed: Please provide a period number' });
-        }
+        // if (!priode_number) {
+        //     return res.status(400).send({ message: 'Validation failed: Please provide a period number' });
+        // }
 
         if (priode_number <= 0) {
             return res.status(400).send({ message: 'Validation failed: Period number must be greater than zero' });
@@ -26,8 +24,8 @@ export const periodModelValidation = (req: Request, res: Response, next: NextFun
             return res.status(400).send({ message: 'Validation failed: end_time is required' });
         }
 
-        if (!rutin_id) {
-            return res.status(400).send({ message: 'Validation failed: rutin_id is required' });
+        if (!routineID) {
+            return res.status(400).send({ message: 'Validation failed: routineID is required' });
         }
 
         // If all validations pass, proceed to the next middleware/controller

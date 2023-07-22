@@ -1,12 +1,14 @@
-
+// Imports
 import express, { Request, Response } from 'express';
 
-import { handleValidationError } from '../../method/validation_error';
 // Models
 import Priode from '../../models/Routines Models/priode.Models';
 import Weekday from '../../models/Routines Models/weakday.Model';
 import Routine from '../../models/Routines Models/routine.models';
 import Class from '../../models/Routines Models/class.model';
+// Helper
+import { calculateMidArray } from './helper/priode.helper';
+import { handleValidationError } from '../../method/validation_error';
 
 
 
@@ -16,12 +18,13 @@ export const add_priode = async (req: any, res: Response) => {
   const { routineID } = req.params;
 
   try {
+    console.log(routineID)
     // Check if the routine exists
-    const existingRoutine = await Routine.findOne({ _id: routineID });
+    const existingRoutine = await Routine.findById(routineID);
     if (!existingRoutine) return res.status(404).send({ message: 'Routine not found' });
 
     // Count the number of existing prides for the routine
-    const priodeCount = await Priode.countDocuments({ routineID });
+    const priodeCount = await Priode.countDocuments({ rutin_id: routineID });
     console.log(priodeCount)
 
 
@@ -48,66 +51,49 @@ export const add_priode = async (req: any, res: Response) => {
 
 
 
-
-// const findPriodes = await Priode.find({ rutin_id });
-// console.log(findPriodes)
-
-// const allMidProdesNumber = [];
-// const getMidpriodeNumber(findPriodes){
-
-//   if (findPriodes.lenght !== 0) {
-//     for (i = 0, findPriodes.lenght = i, i++) {
-//       if (
-//         findPriodes[i].end_time - findPriodes[i].start > 1) {
-
-//         for (j, j = findPriodes[i].end_time, j++ ) {
-//           allMidProdesNumber.add(j)
-//         }
-//       }
-
-//       //get mid priode number and add to allMidProdesNumber[] list 
-
-//     }
-//   }
-// }
-
-// const thisMidPriodeIsnNot_free = await Routine.findOne({
-//   _id: rutin_id, $or: [
-//     { start: { $in: [priode.priode_number] } },
-//     { end: { $in: [priode.priode_number] } }
-//   ]
-// });
-// if (thisMidPriodeIsnNot_free) return res.status(404).send({ message: 'Ths start : ${start} or end priode is allrady using ' });
 //************  delete Priode *************** */
 export const delete_priode = async (req: any, res: Response) => {
   const { priode_id } = req.params;
 
   try {
     // Find the priode to be deleted and its associated routine
-    const priode = await Priode.findOne({ _id: priode_id }).populate('rutin_id');
-    if (!priode) return res.status(404).send({ message: 'Priode not found' });
+    const priode = await Priode.findById(priode_id);
+    if (!priode) {
+      return res.status(404).send({ message: 'Priode not found' });
+    }
+    // console.log(priode);
 
-    // step 2 chack the priode number is allrady using or not 
+    // Check if the priode is being used in a weekday
     const weekdayUsing = await Weekday.findOne({
       routine_id: priode.rutin_id,
       $or: [
         { start: { $in: [priode.priode_number] } },
-        { end: { $in: [priode.priode_number] } }
-      ]
+        { end: { $in: [priode.priode_number] } },
+      ],
     });
-    if (weekdayUsing) return res.status(404).send({ message: 'Cannot delete this priode because it is being used in a weekday' });
 
+    if (weekdayUsing) {
+      return res.status(400).send({ message: 'You cannot delete this period because it is now used on other classes' });
+    }
 
+    // Calculate the mid array
+    const routineID = priode.rutin_id!;
+    const mid: number[] = await calculateMidArray(routineID);
+    console.log(mid)
+    // Check if priode.priode_number is within valid weekday numbers
+    if (mid.includes(priode.priode_number)) {
+      return res.status(400).send({ message: 'You cannot delete this period because it is now used on other classes' });
+    }
 
     // Delete the priode
     await priode.deleteOne();
 
-    // Update the priode numbers of the remaining priodes in the routine
-    const remainingPriodes = await Priode.find({ rutin_id: priode.rutin_id })
+    // Update the priode numbers of the remaining priode in the routine
+    const remainingPriode = await Priode.find({ rutin_id: priode.rutin_id })
       .sort({ priode_number: 'asc' });
     let priodeNumber = 1;
-    for (let i = 0; i < remainingPriodes.length; i++) {
-      const currPriode = remainingPriodes[i];
+    for (let i = 0; i < remainingPriode.length; i++) {
+      const currPriode = remainingPriode[i];
       if (currPriode.priode_number !== priodeNumber) {
         currPriode.priode_number = priodeNumber;
         await currPriode.save();
@@ -121,8 +107,7 @@ export const delete_priode = async (req: any, res: Response) => {
   }
 };
 
-
-//************  eddit priode ***************** */
+//************  edit priode ***************** */
 export const edit_priode = async (req: any, res: Response) => {
   const { start_time, end_time } = req.body;
   const { rutin_id, priode_id } = req.params;
@@ -155,11 +140,11 @@ export const edit_priode = async (req: any, res: Response) => {
 export const all_priode = async (req: any, res: Response) => {
   const { routineID } = req.params;
 
-  console.log(`rutin_id: ${routineID}`);
+  // console.log(`rutin_id: ${routineID}`);
 
   try {
-    const priodes = await Priode.find({ routineID });
-    res.send({ message: 'All priodes list', priodes });
+    const priode = await Priode.find({ rutin_id: routineID });
+    res.send({ message: 'All priode list', priodes: priode });
 
   } catch (error: any) {
     console.error(error);

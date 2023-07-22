@@ -4,7 +4,6 @@ import mongoose, { Document, Schema, Model } from 'mongoose';
 interface IRoutine extends Document {
   name: string;
   ownerid: mongoose.Types.ObjectId;
-  class: mongoose.Types.ObjectId[];
   cap10s: mongoose.Types.ObjectId[];
   send_request: mongoose.Types.ObjectId[];
   members: mongoose.Types.ObjectId[];
@@ -23,10 +22,7 @@ const routineSchema: Schema<IRoutine> = new Schema<IRoutine>({
     ref: 'Account',
     required: true,
   },
-  class: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Class',
-  }],
+
   cap10s: [{
     type: Schema.Types.ObjectId,
     ref: 'Account',

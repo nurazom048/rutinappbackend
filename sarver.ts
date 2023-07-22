@@ -40,6 +40,7 @@ app.use("/account", account);
 
 // Routine 
 app.use("/rutin", routine_route);
+app.use("/routine", routine_route);
 app.use("/class", class_route);
 app.use("/summary", summary);
 // NoticeBoard

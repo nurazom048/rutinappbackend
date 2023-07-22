@@ -17,57 +17,12 @@ import { getClasses, getNotificationClasses } from './helper/class.helper';
 
 //************   create class       *************** */
 export const create_class = async (req: any, res: Response) => {
-  const { routineID } = req.params;
+  // const { routineID } = req.params;
   const { name, subjectcode, instuctor_name } = req.body;
-  const { num, start, room, end, start_time, end_time } = req.body;
-
-  // console.log(req.body);
-  // console.log(routineID);
-
-
+  const { start_time, end_time, room } = req.body;
+  const { routineID, weekday, start, end } = req.validateClassBookingAndPeremption;
 
   try {
-
-    // find  Rutine to chack owener
-    const rutin = await Routine.findOne({ _id: routineID });
-    if (!rutin) return res.status(401).json({ message: "routine not found" });
-
-
-    // Check permission: owner or captain
-    const routineMember = await RoutineMember.findOne({ RutineID: routineID, memberID: req.user.id });
-    if (!routineMember || (!routineMember.owner && !routineMember.captain)) {
-      return res.status(401).json({ message: "Only captains and owners can add classes" });
-    }
-
-    // validation 1 check priode is created or not  
-    const findEnd = await Priode.findOne({ rutin_id: routineID, priode_number: start });
-    const findstarpriod = await Priode.findOne({ rutin_id: routineID, priode_number: end });
-    if (!findEnd) return res.status(404).send({ message: `${end} priode is not created` });
-    if (!findstarpriod) return res.status(404).send({ message: `${start}priode is not created` });
-
-    //  validation  2 chack booking
-    const startPriodeAllradyBooking = await Weekday.findOne({ routine_id: routineID, num, start });
-    if (startPriodeAllradyBooking) return res.status(404).send({ message: 'Sart priode is allrady booking ' });
-    const endPriodeAllradyBooking = await Weekday.findOne({ routine_id: routineID, num, end });
-    if (endPriodeAllradyBooking) return res.status(404).send({ message: 'end priode is allrady booking' });
-
-    // console.log(start);
-    // console.log(end);
-    const mid = [];
-    const allStart = await Weekday.find({ routine_id: routineID, num }, { start: 1 });
-    const allEnd = await Weekday.find({ routine_id: routineID, num }, { end: 1 });
-
-    for (let i = 0; i < allStart.length; i++) {
-      for (let j = allStart[i].start + 1; j < allEnd[i].end; j++) {
-        mid.push(j);
-      }
-    }
-    console.log(mid);
-
-    if (mid.includes(start)) return res.status(400).send({ message: `${start} This  period is already booked  all booking upto  ${mid} ` });
-    if (mid.includes(end)) return res.status(400).send({ message: `This ${end}  period is already booked all booking up to  ${mid} ` });
-
-    //******* main code  */
     // create and save new class
     const newClass = new Class({
       name,
@@ -81,7 +36,7 @@ export const create_class = async (req: any, res: Response) => {
     const newWeekday = new Weekday({
       class_id: newClass._id,
       routine_id: routineID,
-      num: num,
+      num: weekday,
       start,
       room,
       end,
@@ -90,16 +45,13 @@ export const create_class = async (req: any, res: Response) => {
     });
     await newWeekday.save();
 
-    // add new class to the class array of the routine
-    rutin.class.push(newClass._id);
-    await rutin.save();
 
-    const updatedRoutine = await Routine.findOne({ _id: routineID }).populate('class');
+    const updatedRoutine = await Routine.findOne({ _id: routineID });
     res.send({ _id: newClass.id, class: newClass, message: 'Class added successfully', routine: updatedRoutine, newWeekday });
 
     //
   } catch (error: any) {
-
+    console.log({ message: error.message });
     if (!handleValidationError(res, error))
       return res.status(500).send({ message: error.message });
   }
@@ -110,18 +62,18 @@ export const create_class = async (req: any, res: Response) => {
 //,, Add weekday to class
 export const addWeekday = async (req: any, res: Response) => {
   // Come after middleware
-  const { class_id } = req.params;
+  const { classID } = req.params;
   const { num, room, start, end } = req.body;
   console.log(req.body)
 
   try {
     //
-    const classFind = await Class.findOne({ _id: class_id });
-    if (!classFind) return res.status(404).send('Class not found');
+    const classFind = await Class.findById(classID);
+    if (!classFind) return res.status(404).send({ message: 'Class not found' });
 
     // create and save new weekday
     const newWeekday = new Weekday({
-      class_id,
+      class_id: classID,
       routine_id: classFind.rutin_id.toString(),
       num,
       room: room,
