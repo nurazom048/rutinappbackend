@@ -24,9 +24,9 @@ const { use } = require('../../routes/account_route');
 // Account controller to update the account with images
 
 export const edit_account = async (req: any, res: Response) => {
-  console.log(req.body);
-  console.log(req.files);
-  console.log("req.body");
+  // console.log(req.body);
+  // console.log(req.files);
+  // console.log("req.body");
   const { name, username, about, email } = req.body;
 
   try {
@@ -117,8 +117,8 @@ export const edit_account = async (req: any, res: Response) => {
 //.......... Search Account ....//
 export const searchAccounts = async (req: any, res: Response) => {
   const { q: searchQuery = '', page = 1, limit = 10 } = req.query;
-  console.log("search ac");
-  console.log(req.query);
+  // console.log("search ac");
+  // console.log(req.query);
 
   try {
     const regex = new RegExp(searchQuery, 'i');

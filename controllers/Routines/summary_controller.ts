@@ -61,8 +61,8 @@ export const create_summary = async (req: any, res: Response) => {
 
     // Step 4: Save and send response
     const createdSummary = await summary.save();
-    console.log(createdSummary);
-    console.log(id);
+    // console.log(createdSummary);
+    // console.log(id);
     return res.status(201).json({
       message: 'Summary created successfully',
       summary: createdSummary,
@@ -218,13 +218,13 @@ export const update_summary = async (req: any, res: Response) => {
 };
 
 //************* SUMMARY STATUS ********************/
-export const sunnary_status = async (req: any, res: Response) => {
+export const summary_status = async (req: any, res: Response) => {
   try {
     const { summary_id } = req.params;
     const { id } = req.user;
 
-    console.log("sunnary_id");
-    console.log(summary_id);
+    // console.log("summary_status id");
+    // console.log(summary_id);
 
 
     let summaryOwner = false;
@@ -239,9 +239,9 @@ export const sunnary_status = async (req: any, res: Response) => {
     }
 
     // Update summary owner status
-    console.log('owener')
+    // console.log('owener')
 
-    console.log(foundSummary.ownerId)
+    // console.log(foundSummary.ownerId)
     console.log(id)
     if (foundSummary.ownerId == id) {
       summaryOwner = true;

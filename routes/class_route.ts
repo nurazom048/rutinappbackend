@@ -10,7 +10,7 @@ import {
     allclass,
     findclass,
     classNotification,
-    addWeakday,
+    addWeekday,
     allWeekdayInClass,
 } from "../controllers/Routines/class_controllers";
 import { classValidation } from "../controllers/Routines/validation/class.validation";
@@ -22,21 +22,21 @@ import { validateWeekdayMiddleware } from "../controllers/Routines/middleware/ro
 
 //
 // 3
-app.post('/:rutin_id/addclass', verifyToken, classValidation, create_class);
+app.post('/:routineID/addclass', verifyToken, classValidation, create_class);
 app.post('/eddit/:class_id', verifyToken, edit_class);
 app.delete('/delete/:class_id', verifyToken, delete_class);
 
 //
-app.get('/:rutin_id/:weekday', show_weekday_classes);
-app.get('/:rutin_id/all/class', allclass);
-app.post('/:rutin_id/all/class', verifyToken, allclass);
+app.get('/:routineID/:weekday', show_weekday_classes);
+app.get('/:routineID/all/class', allclass);
+app.post('/:routineID/all/class', verifyToken, allclass);
 app.get('/find/class/:class_id', findclass);
 // notification
 app.post('/notification', verifyToken, classNotification);
 
 //
 // weekday
-app.post('/weakday/add/:class_id', weekdayValidation, validateWeekdayMiddleware, addWeakday);
+app.post('/weakday/add/:class_id', weekdayValidation, validateWeekdayMiddleware, addWeekday);
 app.delete('/weakday/delete/:id/:classID', deleteWeekdayById);
 // show weekday by class
 app.get('/weakday/show/:class_id', allWeekdayInClass);

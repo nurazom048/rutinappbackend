@@ -17,45 +17,45 @@ import { getClasses, getNotificationClasses } from './helper/class.helper';
 
 //************   create class       *************** */
 export const create_class = async (req: any, res: Response) => {
-  const { rutin_id } = req.params;
+  const { routineID } = req.params;
   const { name, subjectcode, instuctor_name } = req.body;
   const { num, start, room, end, start_time, end_time } = req.body;
 
-  console.log(req.body);
-  console.log(rutin_id);
+  // console.log(req.body);
+  // console.log(routineID);
 
 
 
   try {
 
     // find  Rutine to chack owener
-    const rutin = await Routine.findOne({ _id: rutin_id });
+    const rutin = await Routine.findOne({ _id: routineID });
     if (!rutin) return res.status(401).json({ message: "routine not found" });
 
 
     // Check permission: owner or captain
-    const routineMember = await RoutineMember.findOne({ RutineID: rutin_id, memberID: req.user.id });
+    const routineMember = await RoutineMember.findOne({ RutineID: routineID, memberID: req.user.id });
     if (!routineMember || (!routineMember.owner && !routineMember.captain)) {
       return res.status(401).json({ message: "Only captains and owners can add classes" });
     }
 
-    // validation 1 chack priod is created or not  
-    const findEnd = await Priode.findOne({ rutin_id, priode_number: start });
-    const findstarpriod = await Priode.findOne({ rutin_id, priode_number: end });
+    // validation 1 check priode is created or not  
+    const findEnd = await Priode.findOne({ rutin_id: routineID, priode_number: start });
+    const findstarpriod = await Priode.findOne({ rutin_id: routineID, priode_number: end });
     if (!findEnd) return res.status(404).send({ message: `${end} priode is not created` });
     if (!findstarpriod) return res.status(404).send({ message: `${start}priode is not created` });
 
     //  validation  2 chack booking
-    const startPriodeAllradyBooking = await Weekday.findOne({ routine_id: rutin_id, num, start });
+    const startPriodeAllradyBooking = await Weekday.findOne({ routine_id: routineID, num, start });
     if (startPriodeAllradyBooking) return res.status(404).send({ message: 'Sart priode is allrady booking ' });
-    const endPriodeAllradyBooking = await Weekday.findOne({ routine_id: rutin_id, num, end });
+    const endPriodeAllradyBooking = await Weekday.findOne({ routine_id: routineID, num, end });
     if (endPriodeAllradyBooking) return res.status(404).send({ message: 'end priode is allrady booking' });
 
     // console.log(start);
     // console.log(end);
     const mid = [];
-    const allStart = await Weekday.find({ routine_id: rutin_id, num }, { start: 1 });
-    const allEnd = await Weekday.find({ routine_id: rutin_id, num }, { end: 1 });
+    const allStart = await Weekday.find({ routine_id: routineID, num }, { start: 1 });
+    const allEnd = await Weekday.find({ routine_id: routineID, num }, { end: 1 });
 
     for (let i = 0; i < allStart.length; i++) {
       for (let j = allStart[i].start + 1; j < allEnd[i].end; j++) {
@@ -72,7 +72,7 @@ export const create_class = async (req: any, res: Response) => {
     const newClass = new Class({
       name,
       subjectcode,
-      rutin_id: rutin_id,
+      rutin_id: routineID,
       instuctor_name
     });
     await newClass.save();
@@ -80,7 +80,7 @@ export const create_class = async (req: any, res: Response) => {
     // create and save new weekday
     const newWeekday = new Weekday({
       class_id: newClass._id,
-      routine_id: rutin_id,
+      routine_id: routineID,
       num: num,
       start,
       room,
@@ -94,7 +94,7 @@ export const create_class = async (req: any, res: Response) => {
     rutin.class.push(newClass._id);
     await rutin.save();
 
-    const updatedRoutine = await Routine.findOne({ _id: rutin_id }).populate('class');
+    const updatedRoutine = await Routine.findOne({ _id: routineID }).populate('class');
     res.send({ _id: newClass.id, class: newClass, message: 'Class added successfully', routine: updatedRoutine, newWeekday });
 
     //
@@ -107,9 +107,9 @@ export const create_class = async (req: any, res: Response) => {
 
 
 
-//,, Add waakday to class
-export const addWeakday = async (req: any, res: Response) => {
-  // Come after midelwere
+//,, Add weekday to class
+export const addWeekday = async (req: any, res: Response) => {
+  // Come after middleware
   const { class_id } = req.params;
   const { num, room, start, end } = req.body;
   console.log(req.body)
@@ -283,15 +283,15 @@ export const delete_class = async (req: any, res: Response) => {
 
 //************ show_weekday_classes *************** */
 export const show_weekday_classes = async (req: any, res: Response) => {
-  const { rutin_id, weekday } = req.params;
+  const { routineID, weekday } = req.params;
   console.log(weekday);
   try {
-    const routine = await Routine.findById(rutin_id);
+    const routine = await Routine.findById(routineID);
     if (!routine) return res.status(404).send('Routine not found');
 
     const classes = await Class.find({
       weekday: 1,
-      rutin_id,
+      rutin_id: routineID,
     }).sort({ start_time: 1 });
 
     res.send({ classes });
@@ -303,28 +303,28 @@ export const show_weekday_classes = async (req: any, res: Response) => {
 
 //************ all class *************** */
 export const allclass = async (req: any, res: Response) => {
-  const { rutin_id } = req.params;
+  const { routineID } = req.params;
 
   try {
-    const routine = await Routine.findById(rutin_id);
+    const routine = await Routine.findById(routineID);
     if (!routine) return res.status(404).send('Routine not found');
 
 
     // find period 
-    const priodes = await Priode.find({ rutin_id: rutin_id });
+    const priodes = await Priode.find({ rutin_id: routineID });
 
     //.. Get class By Weakday
-    const allDayWithNull = await Weekday.find({ routine_id: rutin_id }).populate('class_id');
+    const allDayWithNull = await Weekday.find({ routine_id: routineID }).populate('class_id');
     const allDay = allDayWithNull.filter((weekday: any) => weekday.class_id !== null);
 
     // with null class id valu 
-    const SundayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 0 }).populate('class_id');
-    const MondayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 1 }).populate('class_id');
-    const TuesdayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 2 }).populate('class_id');
-    const WednesdayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 3 }).populate('class_id');
-    const ThursdayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 4 }).populate('class_id');
-    const FridayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 5 }).populate('class_id');
-    const SaturdayClassWithNull = await Weekday.find({ routine_id: rutin_id, num: 6 }).populate('class_id');
+    const SundayClassWithNull = await Weekday.find({ routine_id: routineID, num: 0 }).populate('class_id');
+    const MondayClassWithNull = await Weekday.find({ routine_id: routineID, num: 1 }).populate('class_id');
+    const TuesdayClassWithNull = await Weekday.find({ routine_id: routineID, num: 2 }).populate('class_id');
+    const WednesdayClassWithNull = await Weekday.find({ routine_id: routineID, num: 3 }).populate('class_id');
+    const ThursdayClassWithNull = await Weekday.find({ routine_id: routineID, num: 4 }).populate('class_id');
+    const FridayClassWithNull = await Weekday.find({ routine_id: routineID, num: 5 }).populate('class_id');
+    const SaturdayClassWithNull = await Weekday.find({ routine_id: routineID, num: 6 }).populate('class_id');
     // with out null valu
     // without null value
     const SundayClass = SundayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
@@ -348,7 +348,7 @@ export const allclass = async (req: any, res: Response) => {
     const Saturday = await getClasses(SaturdayClass, priodes);
 
     //
-    const uniqClass = await Class.find({ rutin_id: rutin_id });
+    const uniqClass = await Class.find({ rutin_id: routineID });
     const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
 
     res.send({ _id: routine._id, rutin_name: routine.name, priodes, uniqClass: uniqClass, Classes: { allClass, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });

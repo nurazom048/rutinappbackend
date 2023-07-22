@@ -148,51 +148,51 @@ export const deleteRoutine = async (req: any, res: Response) => {
   }
 };
 
-//*******      allRutin   ***** */
+// //*******      allRoutine   ***** */
 
-export const all_Routine = async (req: any, res: Response) => {
-  console.log(req.user);
+// export const all_Routine = async (req: any, res: Response) => {
+//   console.log(req.user);
 
-  const userid = req.user.id;
+//   const userid = req.user.id;
 
-  try {
-
-
-    const user = await Account.findOne({ _id: userid }).populate([
-      {
-        path: 'routines',
-        select: 'name ownerid class priode last_summary',
-        options: {
-          sort: { createdAt: -1 }
-        },
-
-        populate: {
-          path: 'ownerid',
-          select: 'name username image'
-        }
-      },
-      {
-        path: 'Saved_routines',
-        select: 'name ownerid class',
-        options: {
-          sort: { createdAt: -1 }
-        },
-        populate: {
-          path: 'ownerid',
-          select: 'name username image'
-        }
-      }
-    ]);
-    if (!user) return res.status(404).json({ message: "User not found" });
+//   try {
 
 
+//     const user = await Account.findOne({ _id: userid }).populate([
+//       {
+//         path: 'routines',
+//         select: 'name ownerid class priode last_summary',
+//         options: {
+//           sort: { createdAt: -1 }
+//         },
 
-    res.status(200).json({ user, });
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ message: "Error getting routines" });
-  }
-};
+//         populate: {
+//           path: 'ownerid',
+//           select: 'name username image'
+//         }
+//       },
+//       {
+//         path: 'Saved_routines',
+//         select: 'name ownerid class',
+//         options: {
+//           sort: { createdAt: -1 }
+//         },
+//         populate: {
+//           path: 'ownerid',
+//           select: 'name username image'
+//         }
+//       }
+//     ]);
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+
+
+//     res.status(200).json({ user, });
+//   } catch (error: any) {
+//     console.error(error);
+//     res.status(500).json({ message: "Error getting routines" });
+//   }
+// };
 
 
 
@@ -356,38 +356,38 @@ export const save_routines = async (req: any, res: Response) => {
 };
 
 
-//**************  uploaded_rutins     *********** */
-export const uploaded_routine = async (req: any, res: Response) => {
-  const { username } = req.params;
+// //**************  uploaded_rutins     *********** */
+// export const uploaded_routine = async (req: any, res: Response) => {
+//   const { username } = req.params;
 
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 3;
+//   const page = parseInt(req.query.page) || 1;
+//   const limit = parseInt(req.query.limit) || 3;
 
-  try {
-    const findAccount = await Account.findOne({ username: username || req.user.username })
-    if (!findAccount) return res.status(404).json({ message: "Account not found" });
+//   try {
+//     const findAccount = await Account.findOne({ username: username || req.user.username })
+//     if (!findAccount) return res.status(404).json({ message: "Account not found" });
 
-    const count = await Routine.countDocuments({ ownerid: findAccount._id });
+//     const count = await Routine.countDocuments({ ownerid: findAccount._id });
 
-    const rutins = await Routine.find({ ownerid: findAccount._id })
-      .select("name ownerid")
-      .populate({ path: 'ownerid', select: 'name image username' })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
+//     const rutins = await Routine.find({ ownerid: findAccount._id })
+//       .select("name ownerid")
+//       .populate({ path: 'ownerid', select: 'name image username' })
+//       .sort({ createdAt: -1 })
+//       .skip((page - 1) * limit)
+//       .limit(limit);
 
-    if (!rutins) return res.status(404).json({ message: "rutins not found" });
+//     if (!rutins) return res.status(404).json({ message: "rutins not found" });
 
-    res.status(200).json({
-      rutins,
-      currentPage: page,
-      totalPages: Math.ceil(count / limit)
-    });
+//     res.status(200).json({
+//       rutins,
+//       currentPage: page,
+//       totalPages: Math.ceil(count / limit)
+//     });
 
-  } catch (error: any) {
-    res.send({ message: error.message });
-  }
-}
+//   } catch (error: any) {
+//     res.send({ message: error.message });
+//   }
+// }
 
 //**************  current_user_status     *********** */
 export const current_user_status = async (req: any, res: Response) => {

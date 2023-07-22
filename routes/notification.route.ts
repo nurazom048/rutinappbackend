@@ -2,7 +2,8 @@ import express from 'express';
 const router = express.Router();
 import { verifyToken } from "../controllers/Auth/helper/varifitoken";
 import multer from 'multer';
-import { createNotification } from '../controllers/notification/notification.controller';
+import { createNotification, getAllNotifications, deleteNotification, } from '../controllers/notification/notification.controller';
+import { onesignal } from '../controllers/notification/oneSignalNotification.controller';
 
 // Set up multer with the storage
 const upload = multer({
@@ -12,7 +13,20 @@ const upload = multer({
     // }
 });
 
-//... create....///
-router.get("/", verifyToken, upload.single('image'), createNotification);
+
+//****************************************************************************/
+//
+//........................... Notification ...................................//
+//
+//****************************************************************************/
+
+
+// router.get("/", verifyToken, upload.single('image'), createNotification);
+router.post("/notification", upload.single('image'), createNotification);
+router.patch("/notification/:notificationId", deleteNotification);
+router.get("/notification/", getAllNotifications);
+router.get("/oneSignal", onesignal);
+
+
 
 export default router;

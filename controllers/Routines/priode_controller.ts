@@ -13,15 +13,15 @@ import Class from '../../models/Routines Models/class.model';
 //************  add Priode *************** */
 export const add_priode = async (req: any, res: Response) => {
   const { start_time, end_time } = req.body;
-  const { rutin_id } = req.params;
+  const { routineID } = req.params;
 
   try {
     // Check if the routine exists
-    const existingRoutine = await Routine.findOne({ _id: rutin_id });
+    const existingRoutine = await Routine.findOne({ _id: routineID });
     if (!existingRoutine) return res.status(404).send({ message: 'Routine not found' });
 
-    // Count the number of existing priodes for the routine
-    const priodeCount = await Priode.countDocuments({ rutin_id });
+    // Count the number of existing prides for the routine
+    const priodeCount = await Priode.countDocuments({ routineID });
     console.log(priodeCount)
 
 
@@ -30,7 +30,7 @@ export const add_priode = async (req: any, res: Response) => {
       priode_number: !priodeCount || priodeCount === 0 ? 1 : priodeCount + 1,
       start_time,
       end_time,
-      rutin_id,
+      rutin_id: routineID,
     });
     console.log(priode)
 
@@ -153,12 +153,12 @@ export const edit_priode = async (req: any, res: Response) => {
 
 //************ all priode  *************** */
 export const all_priode = async (req: any, res: Response) => {
-  const { rutin_id } = req.params;
+  const { routineID } = req.params;
 
-  console.log(`rutin_id: ${rutin_id}`);
+  console.log(`rutin_id: ${routineID}`);
 
   try {
-    const priodes = await Priode.find({ rutin_id });
+    const priodes = await Priode.find({ routineID });
     res.send({ message: 'All priodes list', priodes });
 
   } catch (error: any) {

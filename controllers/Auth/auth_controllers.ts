@@ -26,7 +26,7 @@ import { generateAuthToken, generateRefreshToken } from './helper/Jwt.helper';
 //*********** loginAccount **********/
 export const loginAccount = async (req: Request, res: any) => {
   const { username, password, phone, email, osUserID } = req.body;
-  console.log(req.body);
+  // console.log(req.body);
 
   try {
     let account;
