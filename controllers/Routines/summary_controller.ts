@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-
+// Models
 import Account from '../../models/Account_model/Account.Model'
 import Routine from '../../models/Routines Models/routine.models';
 import Class from '../../models/Routines Models/class.model';
@@ -26,7 +26,7 @@ const storage = getStorage();
 
 // Create Summary
 export const create_summary = async (req: any, res: Response) => {
-  const { message } = req.body;
+  const { message, checkedType } = req.body;
   const { class_id } = req.params;
   const { id } = req.user;
 
@@ -34,28 +34,33 @@ export const create_summary = async (req: any, res: Response) => {
     // Step 1: Find class
     const findClass = await Class.findOne({ _id: class_id });
     if (!findClass) return res.status(404).send({ message: 'Class not found' });
+    const routineID = findClass.rutin_id;
+    // TODO onle member can upload summary
 
     // Step 2: Check MIME types of uploaded files
     const allowedMimeTypes = ['image/jpeg', 'image/png']; // Add more allowed MIME types if needed
     // const invalidFiles = req.files.filter(file => !allowedMimeTypes.includes(file.mimetype));
     const invalidFiles = req.files.filter((file: any) => !allowedMimeTypes.includes(file.mimetype));
-
-    if (invalidFiles.length > 0) {
-      //const invalidFileNames = invalidFiles.map(file => file.originalname);
+    //console.log(invalidFiles)
+    if (invalidFiles.length > 0 && !checkedType) {
       const invalidFileNames = invalidFiles.map((file: any) => file.originalname);
-
       return res.status(400).send({ message: `Invalid file types: ${invalidFileNames.join(', ')}` });
     }
 
     // Step 2: Upload summary's to Firebase Storage
-    const downloadUrls = await summaryImageUploader({ files: req.files, class_id });
+    const downloadUrls = await summaryImageUploader(
+      {
+        files: req.files,
+        class_id,
+        routineID: routineID,
+      });
 
     // Step 3: Create instance
     const summary = new Summary({
       ownerId: id,
       text: message,
       imageLinks: downloadUrls,
-      routineId: findClass.rutin_id,
+      routineId: routineID,
       classId: findClass.id,
     });
 
@@ -82,7 +87,7 @@ export const remove_summary = async (req: any, res: Response) => {
     let isCaptain = false;
 
     // Find the summary to be removed
-    const findSummary = await Summary.findOne({ _id: summary_id });
+    const findSummary = await Summary.findById(summary_id);
     if (!findSummary) {
       return res.status(404).json({ message: 'Summary not found' });
     }
@@ -110,12 +115,12 @@ export const remove_summary = async (req: any, res: Response) => {
       const fileRef = ref(storage, imageLink);
       await deleteObject(fileRef);
     }
-
+    // Step 3: Delete associated save records
+    await SaveSummary.deleteMany({ summaryId: summary_id });
     // Step 2: Delete the summary from MongoDB
     await Summary.findByIdAndDelete(summary_id);
 
-    // Step 3: Delete associated save records
-    await SaveSummary.deleteMany({ summaryId: summary_id });
+
 
     return res.status(200).json({ message: "Summary deleted successfully" });
   } catch (error: any) {

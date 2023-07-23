@@ -35,7 +35,7 @@ export const add_priode = async (req: any, res: Response) => {
       end_time,
       rutin_id: routineID,
     });
-    console.log(priode)
+    // console.log(priode)
 
     // Save the priode to the database
     const added = await priode.save();

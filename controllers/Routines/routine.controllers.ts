@@ -22,7 +22,7 @@ const storage = getStorage();
 
 
 // routine firebase
-import { deleteSummariesFromFirebase } from './firebase/routines.firebase';
+import { deleteSummariesFromFirebaseBaseOnRoutineID } from './firebase/summary.firebase';
 import { getClasses } from '../Routines/helper/class.helper';
 
 
@@ -116,11 +116,10 @@ export const deleteRoutine = async (req: any, res: Response) => {
 
   try {
 
-    await SaveSummaries.deleteMany({ routineId: id });
 
-    // Delete summaries from MongoDB and firebse
-    const summariesToDelete = await Summary.find({ routineId: id });
-    await deleteSummariesFromFirebase(summariesToDelete);
+    // Delete summaries from MongoDB and firebase
+    const routineID = id;
+    await deleteSummariesFromFirebaseBaseOnRoutineID(id);
 
     // Delete the classes and save their IDs
     const findClassesWhichShouldBeDeleted = await Classes.find({ rutin_id: id });

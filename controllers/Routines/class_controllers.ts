@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 
 // Models
 import Routine from '../../models/Routines Models/routine.models';
@@ -11,7 +12,7 @@ import Summary from '../../models/Routines Models/save_summary.model';
 import SaveSummary from '../../models/Routines Models/save_summary.model';
 
 // routine firebase and helper
-import { deleteSummariesFromFirebase } from './firebase/routines.firebase';
+import { deleteSummariesFromFirebaseBaseOnClassId } from './firebase/summary.firebase';
 import { handleValidationError } from '../../method/validation_error';
 import { getClasses, getNotificationClasses } from './helper/class.helper';
 
@@ -120,7 +121,6 @@ export const deleteWeekdayById = async (req: any, res: Response) => {
 };
 
 
-const mongoose = require('mongoose');
 
 //******* show all weekday in a class ************** */
 
@@ -129,9 +129,9 @@ export const allWeekdayInClass = async (req: any, res: Response) => {
   const { class_id } = req.params;
 
   try {
-    if (!class_id) return res.status(500).send({ message: "CllassId not found", weekdays: [] });
-    // 1 cweekdays
-    const weekdays = await Weekday.find({ class_id: mongoose.Types.ObjectId(class_id) });
+    if (!class_id) return res.status(500).send({ message: "ClassId not found", weekdays: [] });
+    // 1 weekdays
+    const weekdays = await Weekday.find({ class_id: class_id });
 
     res.send({ message: "All weekday in the class", weekdays });
   } catch (error: any) {
@@ -145,7 +145,7 @@ export const allWeekdayInClass = async (req: any, res: Response) => {
 //************   edit_class       *************** */
 export const edit_class = async (req: any, res: Response) => {
 
-  console.log("from eddit");
+  console.log("from edit");
   console.log(req.body);
 
   const { class_id } = req.params;
@@ -153,7 +153,7 @@ export const edit_class = async (req: any, res: Response) => {
 
 
   try {
-    // 1 chack clases
+    // 1 chack class
     const classs = await Class.findOne({ _id: class_id });
     if (!classs) return res.status(404).send({ message: 'Class not found' });
 
@@ -199,33 +199,29 @@ export const edit_class = async (req: any, res: Response) => {
 //************ delete_class ***************
 export const delete_class = async (req: any, res: Response) => {
   const { class_id } = req.params;
-  console.log('request to delte class')
+  console.log('request to delete class')
 
 
   try {
 
-    // Step: 1 check Permiton 
-    const classs = await Class.findOne({ _id: class_id });
-    if (!classs) return res.status(404).send('Class not found');
+    // Step: 1 check Permeation 
+    const classs = await Class.findById(class_id);
+    if (!classs) return res.status(404).send({ message: 'Class not found' });
 
     // Check if routine exists
-    const routine = await Routine.findOne({ _id: classs.rutin_id });
-    if (!routine) return res.status(404).send('Routine not found');
+    const routine = await Routine.findById(classs.rutin_id);
+    if (!routine) return res.status(404).send({ message: 'Routine not found' });
     // Check permission
     if (routine.ownerid.toString() !== req.user.id)
-      return res.status(401).send('You can only delete classes from your own routine');
+      return res.status(401).send({ message: 'You can only delete classes from your own routine' });
 
     // step 2 : delete 
-    // Delete other related entities
-    await SaveSummary.deleteMany({ routineId: classs.rutin_id });
-    // Delete summaries from MongoDB and Firebase Storage
-    const summariesToDelete = await Summary.find({ classId: class_id });
-    await deleteSummariesFromFirebase(summariesToDelete);
+    await deleteSummariesFromFirebaseBaseOnClassId(class_id);
     await Weekday.deleteMany({ class_id: class_id });
     // Delete the class
     await Class.findByIdAndDelete(class_id);
-    // step 3: Send responce
-    console.log({ message: 'Class deleted successfully' })
+    // step 3: Send response
+    // console.log({ message: 'Class deleted successfully' })
     res.send({ message: 'Class deleted successfully' });
   } catch (error: any) {
     res.status(500).send({ message: error.message });
