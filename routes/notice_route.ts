@@ -13,6 +13,7 @@ import {
     recentNotice,
     recentNoticeByAcademeID
 } from "../controllers/NoticeBoard/notice_controller";
+import { checkAccountType } from '../controllers/NoticeBoard/middleware/notice.middleware'
 
 // Set up multer with the storage
 const upload = multer({
@@ -28,8 +29,13 @@ const upload = multer({
 });
 
 //.. create update delete
-router.route("/add/").post(verifyToken, upload.single('pdf_file'), addNotice);// add notice 
-router.route("/:noticeId").delete(verifyToken, deleteNotice);//... delete notice
+router.route("/add/").post(
+    verifyToken, checkAccountType, upload.single('pdf_file'),
+    addNotice
+);// add notice 
+router.route("/:noticeId").delete(
+    verifyToken, deleteNotice,
+);//... delete notice
 
 // get notice
 

@@ -4,7 +4,7 @@ import { sendNotificationMethods } from '../../controllers/notification/oneSigna
 import express, { Request, Response } from 'express';
 //
 //Models
-const Notification = require('../../models/Notification Models/notification.model');
+import Notification from '../../models/Notification Models/notification.model';
 import Notice from '../../models/notice models/notice';
 import NoticeBoard from '../../models/notice models/notice_board';
 import NoticeBoardMember from '../../models/notice models/noticeboard_member';
@@ -19,7 +19,7 @@ initializeApp(firebase_stroage.firebaseConfig);// Initialize Firebase
 const storage = getStorage();
 
 
-import { getNoticePDFUrls, getNoticePDFs } from "./firebase/norice_board.firebase";
+import { uploadFileToFirebaseAndGetDownloadUrl } from "./firebase/norice_board.firebase";
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -30,11 +30,8 @@ import { v4 as uuidv4 } from 'uuid';
 export const addNotice = async (req: any, res: Response) => {
     const { content_name, description, mimetypeChecked } = req.body;
     const { id, error } = req.user;
-    // console.log("req.use")
-    // console.log(req.user)
+    const uuid = uuidv4();
 
-    // console.log(req.body);
-    // console.log(req.file);
 
     try {
         if (error) return res.status(400).json({ message: 'PDF file is required' });
@@ -60,13 +57,15 @@ export const addNotice = async (req: any, res: Response) => {
         const accountID = findAccount.id;
 
         // Step 2: Upload to Firebase Storage
-        const uuid = uuidv4();
-        const filename = `${accountID}-${uuid}-${req.file.originalname}`;
-        const metadata = { contentType: req.file.mimetype };
-        const storage = getStorage(); // Get a reference to the Firebase Storage bucket
-        const pdfRef = ref(storage, `notice/academyId-${accountID}/pdf/${filename}`); // Create a reference to the bucket
-        await uploadBytes(pdfRef, req.file.buffer, metadata);
-        const pdfUrl = await getDownloadURL(pdfRef);
+        const pdfUrl = await uploadFileToFirebaseAndGetDownloadUrl(uuid, accountID, req.file);
+
+
+        // const filename = `${accountID}-${uuid}-${req.file.originalname}`;
+        // const metadata = { contentType: req.file.mimetype };
+        // const storage = getStorage(); // Get a reference to the Firebase Storage bucket
+        // const pdfRef = ref(storage, `notice/academyId-${accountID}/pdf/${filename}`); // Create a reference to the bucket
+        // await uploadBytes(pdfRef, req.file.buffer, metadata);
+        // const pdfUrl = await getDownloadURL(pdfRef);
 
         // Step 3: Save to MongoDB with PDF URL
         const notice = new Notice({
@@ -79,7 +78,8 @@ export const addNotice = async (req: any, res: Response) => {
         const savedNotice = await notice.save();
 
 
-        const NotificationMember = await NoticeBoardMember.find({ academyID: id, notificationOn: true })
+        const NotificationMember = await NoticeBoardMember
+            .find({ academyID: id, notificationOn: true })
             .populate('memberID', 'osUserID')
             .exec();
 

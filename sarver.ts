@@ -20,7 +20,9 @@ app.use(cors());
 
 // Connection
 const mongodbUri_Test = process.env.MONGODB_URI_TEST_PROJECT || '';
+//
 const mongodbUri_Production = process.env.MONGODB_URI_PRODUCTION_PROJECT || '';
+const mongodbUri_Beta = process.env.MONGODB_URI_BETA_PROJECT || '';
 
 // Connect to the test project
 mongoose.connect(mongodbUri_Test)
