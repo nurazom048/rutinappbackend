@@ -32,9 +32,7 @@ export const generateUniqUsername = async (email: string): Promise<string> => {
 };
 //Methods: Generate Token
 
-export const generateJWT = (account: any): string => {
-    return jwt.sign({ id: account._id, username: account.username }, process.env.JWT_SECRET_KEY as Secret, { expiresIn: "1d" });
-};
+
 /// join the academy user when he create academy account 
 
 export const joinHisOwnNoticeboard = async (academyID: string, id: string): Promise<any> => {

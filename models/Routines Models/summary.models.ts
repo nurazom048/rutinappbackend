@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema, Model } from 'mongoose';
+import { RoutineDB } from '../../connection/mongodb.connection';
 
 interface ISummary extends Document {
   ownerId: mongoose.Types.ObjectId;
@@ -36,7 +37,7 @@ const summarySchema: Schema<ISummary> = new Schema<ISummary>({
   },
 });
 
-const Summary: Model<ISummary> = mongoose.model<ISummary>('Summary', summarySchema);
+const Summary: Model<ISummary> = RoutineDB.model<ISummary>('Summary', summarySchema);
 
 export default Summary;
 
@@ -50,43 +51,3 @@ export default Summary;
 
 
 
-
-
-
-
-// const mongoose = require('mongoose');
-// const Schema = mongoose.Schema;
-
-// const SummarySchema = new Schema({
-//     ownerId: {
-//         type: Schema.Types.ObjectId,
-//         ref: 'Account',
-//         required: true
-//     },
-//     text: {
-//         type: String,
-//         required: [true, 'text is required']
-//     },
-//     imageLinks: {
-//         type: [String]
-//     },
-//     routineId: {
-//         type: Schema.Types.ObjectId,
-//         ref: 'Routine',
-//         required: true
-//     },
-//     classId: {
-//         type: Schema.Types.ObjectId,
-//         ref: 'Class',
-//         required: true
-//     },
-//     createdAt: {
-//         type: Date,
-//         default: Date.now
-//     }
-
-// });
-
-// const Summary = mongoose.model('Summary', SummarySchema);
-
-// module.exports = Summary;

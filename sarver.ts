@@ -1,3 +1,8 @@
+
+
+
+
+
 import dotenv from 'dotenv';
 dotenv.config();
 import express, { Request, Response } from 'express';
@@ -11,6 +16,7 @@ import summary from './routes/summary_route';
 import account from './routes/account_route';
 import notice from './routes/notice_route';
 import notification from './routes/notice_route';
+
 const app = express();
 
 // Middleware
@@ -18,16 +24,16 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
-// Connection
-const mongodbUri_Test = process.env.MONGODB_URI_TEST_PROJECT || '';
-//
-const mongodbUri_Production = process.env.MONGODB_URI_PRODUCTION_PROJECT || '';
-const mongodbUri_Beta = process.env.MONGODB_URI_BETA_PROJECT || '';
+// // Connection
+// const mongodbUri_Test = process.env.MONGODB_URI_TEST_PROJECT || '';
+// //
+// const mongodbUri_Production = process.env.MONGODB_URI_PRODUCTION_PROJECT || '';
+// const mongodbUri_Beta = process.env.MONGODB_URI_BETA_PROJECT || '';
 
-// Connect to the test project
-mongoose.connect(mongodbUri_Test)
-  .then(() => console.log('Connected!'))
-  .catch((err) => console.error('Error connecting to MongoDB Test:', err));
+// // Connect to the test project
+// mongoose.connect(mongodbUri_Test)
+//   .then(() => console.log('Connected!'))
+//   .catch((err) => console.error('Error connecting to MongoDB Test:', err));
 
 
 
@@ -65,6 +71,17 @@ app.use((req: Request, res: Response) => {
 
 const port = process.env.PORT || 3000;
 
-app.listen(port, () => {
-  console.log("****server started********");
-});
+
+//mongodb connection
+import { NoticeDB, maineDB, RoutineDB, NotificationDB } from './connection/mongodb.connection'
+
+// Use Promise.all to wait for both database connections to be established
+Promise.all([maineDB, NoticeDB, RoutineDB, NotificationDB])
+  .then(() => {
+    app.listen(port, () => {
+      console.log("****server started********");
+    });
+  })
+  .catch((error) => {
+    console.error('Error connecting to databases:', error);
+  });

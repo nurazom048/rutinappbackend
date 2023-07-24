@@ -86,15 +86,16 @@ export const validateWeekdayMiddleware = async (req: any, res: Response, next: N
 
 
 
-
-export const Routine_Owner = async (req: any, res: Response, next: NextFunction) => {
+// Peremption To delete Routine
+export const Peremption_To_delete_Routine = async (req: any, res: Response, next: NextFunction) => {
   const { id } = req.params;
+  const requestUserID = req.user.id;
 
   try {
     const routine = await Routine.findById(id);
     if (!routine) return res.status(404).json({ message: "Routine not found" });
 
-    if (routine.ownerid.toString() !== req.user.id) {
+    if (routine.ownerid.toString() !== requestUserID) {
       return res.status(401).json({ message: "Unauthorized to delete routine" });
     }
 

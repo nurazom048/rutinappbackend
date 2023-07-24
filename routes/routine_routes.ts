@@ -8,16 +8,16 @@ import {
     save_routines, routine_details, save_and_unsave_routine, current_user_status,
 } from '../controllers/Routines/routine.controllers';
 //priode
-import { periodModelValidation } from '../controllers/Routines/validation/priode.validation';
-import { add_priode, edit_priode, delete_priode, all_priode, find_priode_by_id } from '../controllers/Routines/priode_controller';
+import { periodModelValidation, } from '../controllers/Routines/validation/priode.validation';
+import { add_priode, edit_priode, delete_priode, all_priode, find_priode_by_id, } from '../controllers/Routines/priode_controller';
 // Members
 import {
-    addMember, removeMember, allMembers,
-    notification_Off, notification_On,
+    addMember, removeMember, allMembers, notification_Off, notification_On,
     acceptRequest, rejectMember, allRequest, kickOut, leave, sendMemberRequest,
 } from '../controllers/Routines/members_controller';
 import { addCaptain, removeCaptain } from '../controllers/Routines/captens.controller';
-import { permission_add_Pride, permission_remove_priode, peremption_add_member } from '../controllers/Routines/middleware/member_mid';
+import { permission_add_Pride, permission_remove_priode, peremption_add_member, permission_edit_priode } from '../controllers/Routines/middleware/member_mid';
+import { Peremption_To_delete_Routine } from '../controllers/Routines/middleware/routines.middleware';
 //
 //
 //
@@ -28,7 +28,7 @@ import { permission_add_Pride, permission_remove_priode, peremption_add_member }
 //
 //****************************************************************************/
 app.post("/create", verifyToken, createRoutine);// for create routine
-app.delete("/:id", verifyToken, deleteRoutine); // delete routine
+app.delete("/:id", verifyToken, Peremption_To_delete_Routine, deleteRoutine); // delete routine
 
 app.post("/home/:userID", verifyToken, homeFeed); /// feed {user can see her uploaded routines}
 app.post("/home", verifyToken, homeFeed); /// feed {user can see her uploaded routines and joined routines}
@@ -52,8 +52,14 @@ app.post('/priode/add/:routineID',
     permission_add_Pride,
     add_priode,
 ); // add priode
-app.delete('/priode/remove/:priode_id', delete_priode);
-app.put('/priode/eddit/:priode_id', edit_priode);
+app.delete('/priode/remove/:priode_id',
+    permission_remove_priode,
+    delete_priode
+);// remove period
+app.put('/priode/eddit/:priode_id',
+    permission_edit_priode,
+    edit_priode,
+);
 
 //
 app.get('/all_priode/:routineID', all_priode);

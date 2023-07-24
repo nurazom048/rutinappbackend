@@ -136,8 +136,8 @@ export const get_class_summary_list = async (req: any, res: Response) => {
   const { class_id } = req.params;
   const { id } = req.user;
   const { page = 1, limit = 10 } = req.query;
-  console.log(class_id)
-  console.log(page)
+  // console.log(class_id)
+  // console.log(page)
   try {
     let query: any = { classId: class_id };
 
@@ -166,6 +166,8 @@ export const get_class_summary_list = async (req: any, res: Response) => {
     const summaries = await Summary.find(query, { __v: 0 })
       .populate({
         path: 'ownerId',
+        model: Account,
+
         select: 'name username image'
       })
       .sort({ createdAt: -1 }) // Sort by createdAt field in descending order
@@ -243,10 +245,6 @@ export const summary_status = async (req: any, res: Response) => {
       return res.status(500).json({ message: 'Summary Not Found' });
     }
 
-    // Update summary owner status
-    // console.log('owener')
-
-    // console.log(foundSummary.ownerId)
     console.log(id)
     if (foundSummary.ownerId == id) {
       summaryOwner = true;

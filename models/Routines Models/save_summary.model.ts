@@ -1,5 +1,6 @@
 
 import mongoose, { Document, Schema, Model } from 'mongoose';
+import { RoutineDB } from '../../connection/mongodb.connection';
 
 interface ISaveSummary extends Document {
   summaryId: mongoose.Types.ObjectId;
@@ -29,7 +30,7 @@ const saveSummarySchema: Schema<ISaveSummary> = new Schema<ISaveSummary>({
   },
 });
 
-const SaveSummary: Model<ISaveSummary> = mongoose.model<ISaveSummary>('SaveSummary', saveSummarySchema);
+const SaveSummary: Model<ISaveSummary> = RoutineDB.model<ISaveSummary>('SaveSummary', saveSummarySchema);
 
 export default SaveSummary;
 
@@ -44,32 +45,3 @@ export default SaveSummary;
 
 
 
-
-
-
-// const mongoose = require('mongoose');
-
-// const saveSummarySchema = new mongoose.Schema({
-//     summaryId: {
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: 'Summary',
-//         required: true,
-//     },
-//     routineId: {
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: 'Routine',
-//     },
-//     classID: {
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: 'Class',
-//     },
-//     savedByAccountId: {
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: 'Account',
-//         required: true,
-//     },
-// });
-
-// const SaveSummary = mongoose.model('SaveSummary', saveSummarySchema);
-
-// module.exports = SaveSummary;

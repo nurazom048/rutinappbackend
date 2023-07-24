@@ -1,4 +1,6 @@
 import mongoose, { Document, Schema, Model } from 'mongoose';
+import { RoutineDB } from '../../connection/mongodb.connection';
+
 
 interface IRoutineMember extends Document {
   memberID: mongoose.Types.ObjectId;
@@ -43,6 +45,6 @@ const routineMemberSchema: Schema<IRoutineMember> = new Schema<IRoutineMember>({
   },
 });
 
-const RoutineMember: Model<IRoutineMember> = mongoose.model<IRoutineMember>('RoutineMember', routineMemberSchema);
+const RoutineMember: Model<IRoutineMember> = RoutineDB.model<IRoutineMember>('RoutineMember', routineMemberSchema);
 
 export default RoutineMember;

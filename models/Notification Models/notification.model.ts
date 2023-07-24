@@ -1,6 +1,6 @@
 
-
 import mongoose, { Document, Schema, Model } from 'mongoose';
+import { NotificationDB } from '../../connection/mongodb.connection';
 
 enum NotificationType {
   Public = 'public',
@@ -48,7 +48,7 @@ const notificationSchema: Schema<INotification> = new Schema<INotification>({
   },
 });
 
-const Notification: Model<INotification> = mongoose.model<INotification>('Notification', notificationSchema);
+const Notification: Model<INotification> = NotificationDB.model<INotification>('Notification', notificationSchema);
 
 export default Notification;
 
@@ -64,46 +64,3 @@ export default Notification;
 
 
 
-
-
-
-
-// const mongoose = require('mongoose');
-
-// const notificationSchema = new mongoose.Schema({
-//     accountID: {
-//         type: String,
-//     },
-//     title: {
-//         type: String,
-//         required: true,
-//     },
-//     body: {
-//         type: String,
-//     },
-//     imageUrl: {
-//         type: String,
-//     },
-//     rutineID: {
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: 'Routine',
-//     },
-//     NoticeID: {
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: 'Notice',
-//     },
-//     type: {
-//         type: String,
-//         enum: ['public', 'private'],
-//         required: true,
-//         default: 'public',
-//     },
-//     createdAt: {
-//         type: Date,
-//         default: Date.now,
-//     },
-// });
-
-// const Notification = mongoose.model('Notification', notificationSchema);
-
-// module.exports = Notification;

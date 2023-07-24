@@ -142,6 +142,7 @@ export const allMembers = async (req: any, res: Response) => {
       .select('-__v -blocklist -_id')
       .populate({
         path: 'memberID',
+        model: Account,
         select: '_id username name image',
         options: {
           skip: (page - 1) * limit,
@@ -173,7 +174,7 @@ export const allMembers = async (req: any, res: Response) => {
       message: "All Members",
       currentPage: parseInt(page),
       totalPages,
-      totalCount: count,
+      totalCount: count || 1,
       members: formattedMembers,
     });
   } catch (error: any) {
@@ -200,6 +201,7 @@ export const allRequest = async (req: any, res: Response) => {
     const routine = await Routine.findOne({ _id: routineID }, { send_request: 1 })
       .populate({
         path: 'send_request',
+        model: Account,
         select: 'name username image',
         options: {
           sort: { createdAt: -1 },

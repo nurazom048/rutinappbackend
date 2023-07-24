@@ -6,8 +6,9 @@ import express, { Request, Response } from 'express';
 //Models
 import Notification from '../../models/Notification Models/notification.model';
 import Notice from '../../models/notice models/notice';
-import NoticeBoard from '../../models/notice models/notice_board';
 import NoticeBoardMember from '../../models/notice models/noticeboard_member';
+import { maineDB } from '../../connection/mongodb.connection';
+
 import Account from '../../models/Account_model/Account.Model';
 
 //! firebase imports
@@ -245,6 +246,7 @@ export const recentNotice = async (req: any, res: Response) => {
             .limit(limit)
             .populate({
                 path: 'academyID',
+                model: Account,
                 select: 'name username image',
             })
             .sort({ time: -1 });
@@ -270,14 +272,14 @@ export const recentNotice = async (req: any, res: Response) => {
 };
 
 
-// view all noties by notice id
+// view all notices by notice id
 export const recentNoticeByAcademeID = async (req: any, res: Response) => {
     const { academyID } = req.params;
     const { page = 1, limit = 10 } = req.query;
 
     try {
-        const findaccount = await Account.find({ id: academyID });
-        if (!findaccount) return res.status(404).json({ message: "Acoount not found" });
+        const findAccount = await Account.find({ id: academyID });
+        if (!findAccount) return res.status(404).json({ message: "Account not found" });
 
 
 
@@ -295,13 +297,13 @@ export const recentNoticeByAcademeID = async (req: any, res: Response) => {
             .sort({ time: -1 });
 
 
-        const final_notice_with_no_null_academtid = notices.filter((notice: any) => notice.academyID !== null);
+        const final_notice_with_no_null_Academy_ID = notices.filter((notice: any) => notice.academyID !== null);
 
         // const noticesWithPDFs = await fb.getNoticePDFs(notices);
 
         res.status(200).json({
             message: "success",
-            notices: final_notice_with_no_null_academtid,
+            notices: final_notice_with_no_null_Academy_ID,
             currentPage: parseInt(page),
             totalPages,
             totalCount: count,

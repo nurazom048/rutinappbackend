@@ -7,7 +7,7 @@ import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
-import { generateJWT, generateUniqUsername } from './auth.methods';
+import { generateUniqUsername } from './auth.methods';
 import { generateAuthToken, generateRefreshToken } from '../Auth/helper/Jwt.helper';
 dotenv.config();
 // // Firebase admin sdk from Firebase config
@@ -85,8 +85,16 @@ export const continueWithGoogle = async (req: Request, res: Response) => {
         if (existUser) {
             const ifGoogleSignEnable = existUser.googleSignIn;
             if (ifGoogleSignEnable) {
-                const token = generateJWT(existUser);
-                return res.status(200).json({ message: "Login successful", token, account: existUser });
+
+                // Create a new auth token and refresh token
+                const authToken = generateAuthToken(existUser._id, existUser.username);
+                const refreshToken = generateRefreshToken(existUser._id, existUser.username);
+
+                // Set the tokens in the any headers
+                res.setHeader('Authorization', `Bearer ${authToken}`);
+                res.setHeader('x-refresh-token', refreshToken);
+                // send success response
+                return res.status(200).json({ message: "Login successful", token: authToken, account: existUser });
             }
         }
 

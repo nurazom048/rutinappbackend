@@ -1,4 +1,6 @@
+
 import mongoose, { Document, Schema, Model } from 'mongoose';
+import { maineDB } from '../../connection/mongodb.connection';
 
 export const  enum AccountType {
   User = 'user',
@@ -24,6 +26,7 @@ interface IAccount extends Document {
 }
 
 const accountSchema: Schema<IAccount> = new Schema<IAccount>({
+
   username: {
     type: String,
     required: true,
@@ -64,7 +67,8 @@ const accountSchema: Schema<IAccount> = new Schema<IAccount>({
   },
   lastLoginTime: Date,
 });
+maineDB.model('Account', accountSchema);
 
-const Account: Model<IAccount> = mongoose.model<IAccount>('Account', accountSchema);
+const Account: Model<IAccount> = maineDB.model<IAccount>('Account', accountSchema);
 
 export default Account;

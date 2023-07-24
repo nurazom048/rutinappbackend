@@ -25,7 +25,7 @@ export const add_priode = async (req: any, res: Response) => {
 
     // Count the number of existing prides for the routine
     const priodeCount = await Priode.countDocuments({ rutin_id: routineID });
-    console.log(priodeCount)
+    // console.log(priodeCount)
 
 
     // Create a new priode instance with the next priode number
@@ -79,7 +79,7 @@ export const delete_priode = async (req: any, res: Response) => {
     // Calculate the mid array
     const routineID = priode.rutin_id!;
     const mid: number[] = await calculateMidArray(routineID);
-    console.log(mid)
+    // console.log(mid)
     // Check if priode.priode_number is within valid weekday numbers
     if (mid.includes(priode.priode_number)) {
       return res.status(400).send({ message: 'You cannot delete this period because it is now used on other classes' });

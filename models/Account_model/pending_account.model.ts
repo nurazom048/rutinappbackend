@@ -1,6 +1,7 @@
 
 import mongoose, { Document, Schema, Model } from 'mongoose';
 import { AccountType } from './Account.Model';
+import { maineDB } from '../../connection/mongodb.connection';
 
 
 
@@ -67,105 +68,9 @@ const pendingAccountSchema: Schema<IPendingAccount> = new Schema<IPendingAccount
   },
 });
 
-const PendingAccount: Model<IPendingAccount> = mongoose.model<IPendingAccount>('PendingAccount', pendingAccountSchema);
+const PendingAccount: Model<IPendingAccount> = maineDB.model<IPendingAccount>('PendingAccount', pendingAccountSchema);
 
 export default PendingAccount;
 
 
 
-
-
-
-
-
-
-
-
-
-// const mongoose = require('mongoose');
-// const Schema = mongoose.Schema;
-
-// const pendingAccount = new Schema({
-
-//   isAccept: {
-//     type: Boolean,
-//     default: false,
-
-//   },
-
-//   email: {
-//     type: String,
-//     required: true,
-//   },
-//   username: {
-//     type: String,
-//     required: true,
-//     unique: true
-//   },
-//   EIIN: {
-//     type: String,
-//     required: true,
-//     unique: true
-//   },
-//   adddress: {
-//     type: String,
-
-//   },
-
-
-//   name: {
-//     type: String,
-
-//   },
-
-//   about: {
-//     type: String,
-
-
-//   },
-
-//   contractInfo: {
-//     type: String,
-
-
-//   },
-//   email: {
-//     type: String,
-
-//   },
-//   phone: {
-//     type: String,
-
-//   },
-//   image: {
-//     type: String
-//   },
-//   coverImage: {
-//     type: String
-//   },
-//   sendTime: {
-//     type: Date,
-//     required: true,
-//     default: Date.now
-//   },
-//   password: {
-//     type: String,
-//   },
-//   account_type: {
-//     type: String,
-//     enum: ['user', 'academy'],
-//     required: true,
-//     default: 'user'
-//   },
-//   googleSignIn: {
-//     type: Boolean,
-//     require: true,
-//     default: false,
-//   }
-
-
-// });
-
-// const Account = mongoose.model('PendingAccount', pendingAccount);
-
-// module.exports = Account;
