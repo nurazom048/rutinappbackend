@@ -35,15 +35,15 @@ export const generateUniqUsername = async (email: string): Promise<string> => {
 
 /// join the academy user when he create academy account 
 
-export const joinHisOwnNoticeboard = async (academyID: string, id: string): Promise<any> => {
+export const joinHisOwnNoticeboard = async (id: any): Promise<any> => {
     try {
-        const account = await Account.findById(academyID);
+        const account = await Account.findOne({ id: id });
         if (!account) {
-            return { message: 'Academy not found' };
+            return { message: 'Academy not found ', id: id };
         }
 
         const existingMember = await NoticeBoardMember.findOne({
-            academyID,
+            academyID: id,
             memberID: id,
         });
 
@@ -52,11 +52,13 @@ export const joinHisOwnNoticeboard = async (academyID: string, id: string): Prom
         }
 
         const newMember = new NoticeBoardMember({
-            academyID,
+            academyID: id,
             memberID: id,
         });
 
-        await newMember.save();
+        const added = await newMember.save();
+        console.log('added to noticeboard account  : ' + added)
+
     } catch (error: any) {
         console.error(error);
         return { message: error.message };

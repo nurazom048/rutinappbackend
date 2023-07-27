@@ -24,10 +24,6 @@ const NoticeBoardMemberSchema: Schema<INoticeBoardMember> = new Schema<INoticeBo
     },
 });
 
-// const NoticeBoardMember: Model<INoticeBoardMember> = mongoose.model<INoticeBoardMember>(
-//     'NoticeBoardMember',
-//     NoticeBoardMemberSchema
-// );
 
 // export default NoticeBoardMember;
 export default NoticeDB.model('NoticeBoardMember', NoticeBoardMemberSchema);

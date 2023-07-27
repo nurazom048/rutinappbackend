@@ -6,6 +6,7 @@ import PendingAccount from '../../models/Account_model/pending_account.model';
 import Account from '../../models/Account_model/Account.Model';
 // methods
 import { joinHisOwnNoticeboard } from '../Auth/auth.methods';
+import { ObjectId } from 'mongodb'
 
 
 // ***************** allPendingAccount *******************************/
@@ -25,7 +26,7 @@ export const acceptPending = async (req: Request, res: Response) => {
 
     try {
         const pendingAccount = await PendingAccount.findById(id);
-        console.log(pendingAccount);
+        console.log('PendingAccount', pendingAccount);
         if (!pendingAccount) {
             return res.status(404).json({ message: "Pending account not found" });
         }
@@ -34,6 +35,7 @@ export const acceptPending = async (req: Request, res: Response) => {
         }
 
         const name = pendingAccount.name;
+        const pendingAccountId = pendingAccount.id;
         const username = pendingAccount.username;
         const password = pendingAccount.password;
         const phone = pendingAccount.phone;
@@ -44,8 +46,8 @@ export const acceptPending = async (req: Request, res: Response) => {
 
         try {
             // Check if email is taken or not
-            if (email) {
-                return res.status(404).json({ message: "Pending account not found" });
+            if (!email) {
+                return res.status(404).json({ message: "Email not found" });
             }
             const firebase = await admin.auth().getUserByEmail(email!);
             if (!firebase) return res.status(401).json({ message: "User not found" });
@@ -68,6 +70,7 @@ export const acceptPending = async (req: Request, res: Response) => {
         }
 
         // Check if phone number is already used
+
         if (phone) {
             const phoneNumberExists = await Account.findOne({ phone });
             if (phoneNumberExists) {
@@ -76,20 +79,32 @@ export const acceptPending = async (req: Request, res: Response) => {
         }
 
         // Create user
-        const createNewAccount = new Account({ id, name, username, password, phone, email, EIIN, googleSignIn });
-        createNewAccount.save();
+        const objectId = new ObjectId(pendingAccountId)
+        const createNewAccount = new Account({ id: objectId, name, username, password, email, EIIN, googleSignIn });
+        // Check if the phone field is set and not undefined
+        if (phone !== undefined) {
+            createNewAccount.phone = phone;
+        }
+
+        const ceated = await createNewAccount.save();
+        console.log('created account  : ' + ceated)
+
+
 
         // Update the pending account
         pendingAccount.isAccept = true;
         await pendingAccount.save();
 
-        const error = await joinHisOwnNoticeboard(id, id);
-        if (error) {
-            console.log(error);
+        //
+        // Join His owen noticeboard
+        const result = await joinHisOwnNoticeboard(objectId);
+        if (result) {
+            return res.status(500).json(result);
+        } else {
             res.status(200).json({ message: "Account created successfully", createNewAccount });
         }
 
-        res.status(200).json({ message: "Account created successfully", createNewAccount });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error accepting pending request" });

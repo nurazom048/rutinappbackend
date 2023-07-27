@@ -40,7 +40,7 @@ const accountSchema: Schema<IAccount> = new Schema<IAccount>({
   },
   phone: {
     type: String,
-    unique: true,
+    required: false,
   },
   image: String,
   coverImage: String,
