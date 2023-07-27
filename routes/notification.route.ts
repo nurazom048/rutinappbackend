@@ -22,9 +22,9 @@ const upload = multer({
 
 
 // router.get("/", verifyToken, upload.single('image'), createNotification);
-router.post("/notification", upload.single('image'), createNotification);
-router.patch("/notification/:notificationId", deleteNotification);
-router.get("/notification/", getAllNotifications);
+router.post("/", upload.single('image'), createNotification);
+router.patch("/:notificationId", deleteNotification);
+router.get("", getAllNotifications);
 router.get("/oneSignal", onesignal);
 
 

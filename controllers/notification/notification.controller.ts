@@ -88,7 +88,6 @@ export const deleteNotification = async (req: Request, res: Response) => {
 export const getAllNotifications = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10; // Adjust the limit as per your requirements
-
     try {
         const totalCount = await Notification.countDocuments();
         const totalPages = Math.ceil(totalCount / limit);
