@@ -53,10 +53,12 @@ app.post('/priode/add/:routineID',
     add_priode,
 ); // add priode
 app.delete('/priode/remove/:priode_id',
+    verifyToken,
     permission_remove_priode,
     delete_priode
 );// remove period
-app.put('/priode/eddit/:priode_id',
+app.put('/priode/edit/:priodeId',
+    verifyToken,
     permission_edit_priode,
     edit_priode,
 );

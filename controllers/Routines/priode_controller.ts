@@ -110,16 +110,13 @@ export const delete_priode = async (req: any, res: Response) => {
 //************  edit priode ***************** */
 export const edit_priode = async (req: any, res: Response) => {
   const { start_time, end_time } = req.body;
-  const { rutin_id, priode_id } = req.params;
+  const { rutin_id, priodeId } = req.params;
 
   try {
-    // // Check if the routine exists
-    // const existingRoutine = await Routine.findOne({ _id: rutin_id });
-    // if (!existingRoutine) return res.status(404).send({ message: 'Routine not found' });
 
     // Find the priode to be edited
-    const priode = await Priode.findOne({ _id: priode_id });
-    if (!priode) return res.status(404).send({ message: 'Priode not found' });
+    const priode = await Priode.findOne({ _id: priodeId });
+    if (!priode) return res.status(404).send({ message: 'Priode not found', id: priodeId });
 
     // Update the priode start and end time
     priode.start_time = start_time;

@@ -42,6 +42,8 @@ export const acceptPending = async (req: Request, res: Response) => {
         const email = pendingAccount.email;
         const EIIN = pendingAccount.EIIN;
         const googleSignIn = pendingAccount.googleSignIn;
+        const account_type = pendingAccount.account_type;
+
 
 
         try {
@@ -80,7 +82,16 @@ export const acceptPending = async (req: Request, res: Response) => {
 
         // Create user
         const objectId = new ObjectId(pendingAccountId)
-        const createNewAccount = new Account({ id: objectId, name, username, password, email, EIIN, googleSignIn });
+        const createNewAccount = new Account({
+            id: objectId,
+            name,
+            username,
+            password,
+            email,
+            EIIN,
+            account_type,
+            googleSignIn,
+        });
         // Check if the phone field is set and not undefined
         if (phone !== undefined) {
             createNewAccount.phone = phone;

@@ -97,6 +97,7 @@ export const permission_remove_priode = async (req: any, res: Response, next: Ne
 // permission_remove_priode
 export const permission_edit_priode = async (req: any, res: Response, next: NextFunction) => {
   const { priodeId } = req.params;
+  const { id } = req.user;
 
   try {
 
@@ -113,7 +114,7 @@ export const permission_edit_priode = async (req: any, res: Response, next: Next
 
 
     // 2. Check permission is owner or captain
-    const routineMember = await RoutineMember.findOne({ RutineID: routineID, memberID: req.user.id });
+    const routineMember = await RoutineMember.findOne({ RutineID: routineID, memberID: id });
     if (!routineMember?.owner && !routineMember?.captain!) {
       return res.status(401).json({ message: "You don't have permission to edit priode" });
     }
