@@ -1,29 +1,7 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importStar(require("mongoose"));
+const mongoose_1 = require("mongoose");
+const mongodb_connection_1 = require("../../connection/mongodb.connection");
 const summarySchema = new mongoose_1.Schema({
     ownerId: {
         type: mongoose_1.Schema.Types.ObjectId,
@@ -50,37 +28,5 @@ const summarySchema = new mongoose_1.Schema({
         default: Date.now,
     },
 });
-const Summary = mongoose_1.default.model('Summary', summarySchema);
+const Summary = mongodb_connection_1.RoutineDB.model('Summary', summarySchema);
 exports.default = Summary;
-// const mongoose = require('mongoose');
-// const Schema = mongoose.Schema;
-// const SummarySchema = new Schema({
-//     ownerId: {
-//         type: Schema.Types.ObjectId,
-//         ref: 'Account',
-//         required: true
-//     },
-//     text: {
-//         type: String,
-//         required: [true, 'text is required']
-//     },
-//     imageLinks: {
-//         type: [String]
-//     },
-//     routineId: {
-//         type: Schema.Types.ObjectId,
-//         ref: 'Routine',
-//         required: true
-//     },
-//     classId: {
-//         type: Schema.Types.ObjectId,
-//         ref: 'Class',
-//         required: true
-//     },
-//     createdAt: {
-//         type: Date,
-//         default: Date.now
-//     }
-// });
-// const Summary = mongoose.model('Summary', SummarySchema);
-// module.exports = Summary;

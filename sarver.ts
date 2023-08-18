@@ -53,6 +53,8 @@ app.use((req: Request, res: Response) => {
 });
 
 const port = process.env.PORT || 3000;
+console.log("port")
+console.log(port)
 
 
 //mongodb connection
@@ -62,9 +64,9 @@ import { NoticeDB, maineDB, RoutineDB, NotificationDB } from './connection/mongo
 Promise.all([maineDB, NoticeDB, RoutineDB, NotificationDB])
   .then(() => {
     app.listen(port, () => {
-      console.log("****server started********");
+      console.log("****server started********"); // git ignore fixed
     });
   })
   .catch((error) => {
-    console.error('Error connecting to databases:', error);
+    console.error('Error connecting to databases:' + port, error);
   });

@@ -5,8 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const router = express_1.default.Router();
-const varifitoken_1 = require("../controllers/Auth/helper/varifitoken");
 const multer_1 = __importDefault(require("multer"));
+const oneSignalNotification_controller_1 = require("../controllers/notification/oneSignalNotification.controller");
 const notification_controller_1 = require("../controllers/notification/notification.controller");
 // Set up multer with the storage
 const upload = (0, multer_1.default)({
@@ -15,6 +15,14 @@ const upload = (0, multer_1.default)({
     //   fileSize: 5 * 1024 * 1024 // 5 MB limit
     // }
 });
-//... create....///
-router.get("/", varifitoken_1.verifyToken, upload.single('image'), notification_controller_1.createNotification);
+//****************************************************************************/
+//
+//........................... Notification ...................................//
+//
+//****************************************************************************/
+// router.get("/", verifyToken, upload.single('image'), createNotification);
+router.post("/", upload.single('image'), notification_controller_1.createNotification);
+router.patch("/:notificationId", notification_controller_1.deleteNotification);
+router.get("", notification_controller_1.getAllNotifications);
+router.get("/oneSignal", oneSignalNotification_controller_1.onesignal);
 exports.default = router;

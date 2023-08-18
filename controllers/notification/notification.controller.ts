@@ -75,7 +75,7 @@ export const deleteNotification = async (req: Request, res: Response) => {
         }
 
         // Remove the notification from the database
-        await notification.remove();
+        await notification.deleteOne();
 
         res.status(200).json({ message: 'Notification deleted successfully' });
     } catch (error: any) {

@@ -11,6 +11,7 @@ const mongodbUri_Production_NotificationDB = process.env.MONGODB_URI_PRODUCTION_
 
 // Connect to the test project
 export const maineDB = mongoose.createConnection(mongodbUri_Production_Maine_DB)
+console.log('db url' + mongodbUri_Production_Maine_DB)
 // connect Notice DB
 export const NoticeDB = mongoose.createConnection(mongodbUri_Production_Notice_DB);
 // connect routineDB

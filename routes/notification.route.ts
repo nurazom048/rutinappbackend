@@ -2,8 +2,8 @@ import express from 'express';
 const router = express.Router();
 import { verifyToken } from "../controllers/Auth/helper/varifitoken";
 import multer from 'multer';
-import { createNotification, getAllNotifications, deleteNotification, } from '../controllers/notification/notification.controller';
 import { onesignal } from '../controllers/notification/oneSignalNotification.controller';
+import { createNotification, getAllNotifications, deleteNotification, } from '../controllers/notification/notification.controller';
 
 // Set up multer with the storage
 const upload = multer({

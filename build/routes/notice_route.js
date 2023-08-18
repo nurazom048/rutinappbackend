@@ -8,6 +8,7 @@ const router = express_1.default.Router();
 const varifitoken_1 = require("../controllers/Auth/helper/varifitoken");
 const multer_1 = __importDefault(require("multer"));
 const notice_controller_1 = require("../controllers/NoticeBoard/notice_controller");
+const notice_middleware_1 = require("../controllers/NoticeBoard/middleware/notice.middleware");
 // Set up multer with the storage
 const upload = (0, multer_1.default)({
     //limits: { fileSize: 11 * 1024 * 1024 }
@@ -20,7 +21,7 @@ const upload = (0, multer_1.default)({
     // },
 });
 //.. create update delete
-router.route("/add/").post(varifitoken_1.verifyToken, upload.single('pdf_file'), notice_controller_1.addNotice); // add notice 
+router.route("/add/").post(varifitoken_1.verifyToken, notice_middleware_1.checkAccountType, upload.single('pdf_file'), notice_controller_1.addNotice); // add notice 
 router.route("/:noticeId").delete(varifitoken_1.verifyToken, notice_controller_1.deleteNotice); //... delete notice
 // get notice
 //******     check status   ********/ 
