@@ -1,5 +1,5 @@
 
-import mongoose, { Document, Schema, Model } from 'mongoose';
+import mongoose, { Document, Schema, Model, mongo } from 'mongoose';
 import { AccountType } from './Account.Model';
 import { maineDB } from '../../../connection/mongodb.connection';
 
@@ -7,6 +7,7 @@ import { maineDB } from '../../../connection/mongodb.connection';
 
 
 interface IPendingAccount extends Document {
+  // accountId: mongoose.Types.ObjectId,
   isAccept: boolean;
   email: string;
   username: string;
@@ -25,6 +26,11 @@ interface IPendingAccount extends Document {
 }
 
 const pendingAccountSchema: Schema<IPendingAccount> = new Schema<IPendingAccount>({
+  // accountId: {
+  //   type: Schema.Types.ObjectId,
+  //   ref: 'Account',
+
+  // },
   isAccept: {
     type: Boolean,
     default: false,
