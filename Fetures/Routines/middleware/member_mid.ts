@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 // Models
 import Routine from '../models/routine.models';
 import RoutineMember from '../models/routineMembers.Model';
-import Priode from '../models/priode.Models';
+import { printD, printError } from '../../../utils/utils';
+import PriodeModel from '../models/priode.Models';
 
 
 export const peremption_add_member = async (req: any, res: Response, next: NextFunction) => {
@@ -57,11 +58,10 @@ export const permission_add_Pride = async (req: any, res: Response, next: NextFu
 // permission_remove_priode
 export const permission_remove_priode = async (req: any, res: Response, next: NextFunction) => {
   const { priodeId } = req.params;
-
   try {
 
     // 1. Find Routine and Priode
-    const priode = await Priode.findById(priodeId);
+    const priode = await PriodeModel.findById(priodeId);
     if (!priode) return res.status(404).json({ message: "Priode not found" });
     const routineID = priode.rutin_id;
 
@@ -102,7 +102,7 @@ export const permission_edit_priode = async (req: any, res: Response, next: Next
   try {
 
     // 1. Find Routine and Priode
-    const priode = await Priode.findById(priodeId);
+    const priode = await PriodeModel.findById(priodeId);
     if (!priode) return res.status(404).json({ message: "Priode not found" });
     const routineID = priode.rutin_id;
 

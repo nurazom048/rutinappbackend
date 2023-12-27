@@ -23,10 +23,9 @@ import { Peremption_To_delete_Routine } from '../middleware/routines.middleware'
 //
 //
 //****************************************************************************/
-//
-//............................... Routine.....................................//
-//
+//............................... Routine...................................../
 //****************************************************************************/
+
 app.post("/create", verifyToken, createRoutine);// for create routine
 app.delete("/:id", verifyToken, Peremption_To_delete_Routine, deleteRoutine); // delete routine
 
@@ -42,9 +41,7 @@ app.route("/save/routines").post(verifyToken, save_routines); //... Show save ro
 app.post('/save_unsave/:routineId', verifyToken, save_and_unsave_routine); // 2
 
 //****************************************************************************/
-//
 //............................... Priode.....................................//
-//
 //****************************************************************************/
 app.post('/priode/add/:routineID',
     verifyToken,
@@ -52,7 +49,7 @@ app.post('/priode/add/:routineID',
     permission_add_Pride,
     add_priode,
 ); // add priode
-app.delete('/priode/remove/:priode_id',
+app.delete('/priode/remove/:priodeId',
     verifyToken,
     permission_remove_priode,
     delete_priode
@@ -70,9 +67,7 @@ app.get('/priode/find/:priode_id', find_priode_by_id);
 
 
 //****************************************************************************/
-//
 //............................... Members and captain.........................//
-//
 //****************************************************************************/
 
 //....... Captain .....//

@@ -8,13 +8,13 @@ dotenv_1.default.config();
 const express_1 = __importDefault(require("express"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const cors_1 = __importDefault(require("cors"));
-const auth_route_1 = __importDefault(require("./routes/auth_route"));
-const routine_routes_1 = __importDefault(require("./routes/routine_routes"));
-const class_route_1 = __importDefault(require("./routes/class_route"));
-const summary_route_1 = __importDefault(require("./routes/summary_route"));
-const account_route_1 = __importDefault(require("./routes/account_route"));
-const notice_route_1 = __importDefault(require("./routes/notice_route"));
-const notification_route_1 = __importDefault(require("./routes/notification.route"));
+const auth_route_1 = __importDefault(require("./Fetures/Account/routes/auth_route"));
+const routine_routes_1 = __importDefault(require("./Fetures/Routines/routes/routine_routes"));
+const class_route_1 = __importDefault(require("./Fetures/Routines/routes/class_route"));
+const summary_route_1 = __importDefault(require("./Fetures/Routines/routes/summary_route"));
+const account_route_1 = __importDefault(require("./Fetures/Account/routes/account_route"));
+const notice_route_1 = __importDefault(require("./Fetures/Notice_Fetures/routes/notice_route"));
+const notification_route_1 = __importDefault(require("./Fetures/Notification_Fetures/routes/notification.route"));
 const app = (0, express_1.default)();
 // Middleware
 app.use(body_parser_1.default.json());
@@ -54,7 +54,7 @@ const mongodb_connection_1 = require("./connection/mongodb.connection");
 Promise.all([mongodb_connection_1.maineDB, mongodb_connection_1.NoticeDB, mongodb_connection_1.RoutineDB, mongodb_connection_1.NotificationDB])
     .then(() => {
     app.listen(port, () => {
-        console.log("****server started********");
+        console.log("****server started********"); // git ignore fixed
     });
 })
     .catch((error) => {

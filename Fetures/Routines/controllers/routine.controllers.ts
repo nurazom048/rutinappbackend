@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 
 // Models
 import Account from '../../Account/models/Account.Model';
-
 import Routine from '../models/routine.models';
 import RoutineMember from '../models/routineMembers.Model';
 import Summary from '../models/save_summary.model';
@@ -25,6 +24,8 @@ const storage = getStorage();
 // routine firebase
 import { deleteSummariesFromFirebaseBaseOnRoutineID } from '../firebase/summary.firebase';
 import { getClasses } from '../helper/class.helper';
+import mongoose from 'mongoose';
+import { maineDB } from '../../../connection/mongodb.connection';
 
 
 const getRoutineData = async (rutin_id: any) => {
@@ -59,67 +60,79 @@ const getRoutineData = async (rutin_id: any) => {
 };
 
 
+//*******************************************************************************/
+//--------------------------------- createRoutine  ------------------------------/
+//*******************************************************************************/
 
-
-
-//********** createRoutine   ************* */
 export const createRoutine = async (req: any, res: Response) => {
-  const { name } = req.body;
-  console.log(req.body);
-
-  // Log the user who is creating the routine
-  const ownerId = req.user.id;
+  const session = await maineDB.startSession();
+  session.startTransaction();
 
   try {
-    // Check if a routine with the given name already exists for the user
-    const existingRoutine = await Routine.findOne({ name, ownerid: ownerId });
-    if (existingRoutine) return res.status(500).send({ message: "Routine already created with this name" });
 
-    // Check the number of existing routines for the user
+    const { name } = req.body;
+    const ownerId = req.user.id;
+
+    // Check if a routine with the same name and owner already exists
+    const existingRoutine = await Routine.findOne({ name, ownerid: ownerId });
+    if (existingRoutine) {
+      return res.status(400).json({ message: 'Routine already created with this name' });
+    }
+
+    // Check routine count
     const routineCount = await Routine.countDocuments({ ownerid: ownerId });
     if (routineCount >= 20) {
       return res.status(400).json({ message: 'You can only create up to 20 routines' });
     }
 
-
-
-    // Create a new routine object
+    // Step 1: Create a new routine object
     const routine = new Routine({ name, ownerid: ownerId });
-    const routineMember = new RoutineMember({ RutineID: routine._id, memberID: ownerId, owner: true }); // Create a new RoutineMember instance
 
-    // Save the routine object to the database
-    const createdRoutine = await routine.save();
+    // Step 2: Create a new RoutineMember instance
+    const routineMember = new RoutineMember({ RutineID: routine._id, memberID: ownerId, owner: true });
 
-    // Update the user's routines array with the new routine ID
+    // Step 3: Save the routine object to the database
+    const createdRoutine = await routine.save({ session });
+
+    // Step 4: Update the user's routines array with the new routine ID
     const updatedUser = await Account.findOneAndUpdate(
       { _id: ownerId },
       { $push: { routines: createdRoutine._id } },
-      { new: true }
+      { new: true, session }
     );
 
-    await routineMember.save(); // Wait for the routineMember instance to be saved
+    // Step 5: Wait for the routineMember instance to be saved
+    await routineMember.save({ session });
 
-    // Send a success response with the new routine and updated user object
-    res.status(200).json({ message: "Routine created successfully", routine: createdRoutine, user: updatedUser, routineMember });
-  } catch (error: any) {
-    console.error(error);
-    // Handle the error and send an appropriate response
-    res.status(500).json({ message: "Failed to create routine", error: error.message });
+    // Step 6: Commit the transaction
+    await session.commitTransaction();
+
+    // Step 7: Send a success response with the new routine and updated user object
+    res.status(200).json({ message: 'Routine created successfully', routine: createdRoutine, user: updatedUser, routineMember });
+  } catch (error) {
+    // Handle errors and abortTransition
+    console.error('Error creating routine:', error);
+
+    // Rollback the transaction
+    await session.abortTransaction();
+    res.status(500).json({ message: 'Routine creation failed', error });
+  } finally {
+    await session.endSession();
   }
 };
 
-
-
-//*******   deleteRoutine   ***** */
+//*******************************************************************************/
+//--------------------------------- deleteRoutine  ------------------------------/
+//*******************************************************************************/
 
 export const deleteRoutine = async (req: any, res: Response) => {
   const { id } = req.params;
 
+  const session = await maineDB.startSession();
+  session.startTransaction();
+
   try {
-
-
-    // Delete summaries from MongoDB and firebase
-    const routineID = id;
+    // Delete summaries from MongoDB and Firebase
     await deleteSummariesFromFirebaseBaseOnRoutineID(id);
 
     // Delete the classes and save their IDs
@@ -130,30 +143,38 @@ export const deleteRoutine = async (req: any, res: Response) => {
     for (let i = 0; i < deletedClassIDList.length; i++) {
       const classId = deletedClassIDList[i];
       // Delete the class
-      await Classes.findByIdAndRemove(findClassesWhichShouldBeDeleted[i].id);
+      await Classes.findByIdAndRemove(findClassesWhichShouldBeDeleted[i].id, { session });
     }
 
-    await Weekday.deleteMany({ routine_id: id });
-    await Priode.deleteMany({ rutin_id: id });
-    await RoutineMember.deleteMany({ RutineID: id });
-    await SaveRoutine.deleteMany({ routineID: id })
+    await Weekday.deleteMany({ routine_id: id }, { session });
+    await Priode.deleteMany({ rutin_id: id }, { session });
+    await RoutineMember.deleteMany({ RutineID: id }, { session });
+    await SaveRoutine.deleteMany({ routineID: id }, { session });
 
     // Delete the routine
-    await Routine.findByIdAndRemove(id);
+    await Routine.findByIdAndRemove(id, { session });
 
-    res.status(200).json({ message: "Routine deleted successfully" });
+    // Commit the transaction
+    await session.commitTransaction();
+
+    res.status(200).json({ message: 'Routine deleted successfully' });
   } catch (error: any) {
+    // Handle errors and abortTransition
     console.error(error);
-    res.status(500).json({ message: "Error deleting routine" });
+
+    // Rollback the transaction
+    await session.abortTransaction();
+    session.endSession();
+
+    res.status(500).json({ message: 'Error deleting routine', error });
+  } finally {
+    await session.endSession();
   }
 };
+//*******************************************************************************/
+//--------------------------------- search Routine  ------------------------------/
+//*******************************************************************************/
 
-
-
-
-
-
-//**************** search_routine***********************************/
 export const search_routine = async (req: any, res: Response) => {
   const { src } = req.query; // get the value of 'src' from the query parameters
   const page = parseInt(req.query.page) || 1;
@@ -205,11 +226,9 @@ export const search_routine = async (req: any, res: Response) => {
 };
 
 
-//*********************************************************** */
-//
-//..... Save and unsave  Routine  &  show save routine .......//
-//
-//*********************************************************** */
+//***************************************************************************************/
+//--------------------Save and unsave  Routine  &  show save routine --------------------/
+//**************************************************************************************/
 
 export const save_and_unsave_routine = async (req: any, res: Response) => {
   const { routineId } = req.params;
@@ -382,7 +401,7 @@ export const current_user_status = async (req: any, res: Response) => {
 
 
 
-///.... joined rutins ......///
+///.... joined Routine ......///
 export const joined_routine = async (req: any, res: Response) => {
   const { id } = req.user;
 

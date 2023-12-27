@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const verifyToken = async (req: any, res: Response, next: NextFunction) => {
+  // console.log('verifyToken', req.headers);
   try {
     const tokenArray = req.headers.authorization.split(' ');
     const token = tokenArray[tokenArray.length - 1];

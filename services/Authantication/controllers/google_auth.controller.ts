@@ -9,6 +9,7 @@ import bcrypt from 'bcrypt';
 import { generateUniqUsername } from './auth.methods';
 import { generateAuthToken, generateRefreshToken } from '../../../services/Authantication/helper/Jwt.helper';
 import PendingAccount from '../../../Fetures/Account/models/pending_account.model';
+import { printD, printError } from '../../../utils/utils';
 dotenv.config();
 // // Firebase admin sdk from Firebase config
 // const serviceAccount = require('../../admin.sdk');
@@ -21,13 +22,6 @@ dotenv.config();
 // const firebaseApp = require('../../config/firebase.config');
 // const auth = getAuth(firebaseApp);
 
-
-//******************************************************* */
-//
-//...........Continue With google ........................//
-//
-//******************************************************* *//
-
 interface DecodedToken {
     user_id: string;
     name: string;
@@ -36,16 +30,24 @@ interface DecodedToken {
     displayName: string;
     // Add other properties if needed
 }
+//****************************************************************************************************/
+// --------------------------------- Continue With Google --------------------------------------------/
+//****************************************************************************************************/
+
 
 export const continueWithGoogle = async (req: Request, res: Response) => {
     const { googleAuthToken, account_type } = req.body;
-
+    printD("----------------------------------------------------googleAuthToken")
+    printD(googleAuthToken)
 
     try {
+
         // Step 1: Verify the Google Auth Token
         // const token = googleAuthToken;
 
         let decodedToken;
+        let userId;
+
         try {
             decodedToken = jwt.decode(googleAuthToken) as DecodedToken;
 
@@ -57,15 +59,15 @@ export const continueWithGoogle = async (req: Request, res: Response) => {
         }
 
         //console.log(decodedToken)
-        const userId = decodedToken.user_id;
+        const objectIdValue = new mongoose.Types.ObjectId(decodedToken.user_id);
+        userId = objectIdValue;
         const name = decodedToken.name as any;
         const image = decodedToken.picture as any;
         const userEmail = decodedToken.email as any;
         const displayName = decodedToken.displayName as string;
 
-        //............................................................................................//
-        //............................... login............. .......................................//
-        //............................................................................................//
+        // --------------------------------- Continue With Google --------------------------------------------/
+
 
         // If pending then go to pending page
 
@@ -108,14 +110,14 @@ export const continueWithGoogle = async (req: Request, res: Response) => {
             return res.status(401).json({ message: "Email already exists" });
         }
 
-        //............................................................................................//
-        //............................... Sign Up............. .......................................//
-        //............................................................................................//
+
+
+        // -----------------------------------------  Sign Up ------------------------------------------------/
 
         if (!userId || !name || !username || !userEmail) {
             return res.status(400).json({ message: "Please fill the form" });
         }
-        // step: Chak if ths is academy or not
+        // step: Check if ths is academy or not
         if (account_type == 'academy') {
             // Call the createPendingRequest function
             const response = await createPendingRequest(req, res, decodedToken);
@@ -124,10 +126,16 @@ export const continueWithGoogle = async (req: Request, res: Response) => {
 
 
         // Step 3: Create user in MongoDB
-        const account = new Account({ id: userId, name, image, username, email: userEmail, googleSignIn: true });
+        const account = new Account({
+            id: userId,
+            name, image,
+            username,
+            email: userEmail,
+            googleSignIn: true
+        });
 
         // Step 4: Update user in Firebase
-        await admin.auth().updateUser(userId, {
+        await admin.auth().updateUser(userId.toString(), {
             email: userEmail,
             displayName: displayName,
             emailVerified: true,
@@ -143,15 +151,22 @@ export const continueWithGoogle = async (req: Request, res: Response) => {
         res.setHeader('x-refresh-token', refreshToken);
 
 
-        res.status(200).json({ message: "Login successful", token: authToken, account: account });
+        res.status(200).json({
+            message: "Login successful",
+            token: authToken,
+            account: account
+        });
     } catch (error) {
-        console.error("Error processing Google Auth Token:", error);
+        console.error("************************");
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-//............................................................................................//
-//............................... createPendingRequest........................................//
-//............................................................................................//
+
+//****************************************************************************************************/
+// --------------------------------- createPendingRequest --------------------------------------------/
+//****************************************************************************************************/
+
+
 
 const createPendingRequest = async (req: Request, res: Response, decodedToken: any) => {
     const { account_type, EIIN, contractInfo } = req.body;

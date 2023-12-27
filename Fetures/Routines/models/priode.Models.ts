@@ -29,7 +29,7 @@ const priodeModelSchema: Schema<IPriodeModel> = new Schema<IPriodeModel>({
     },
 });
 
-const PriodeModel: Model<IPriodeModel> = RoutineDB.model<IPriodeModel>('priodModel', priodeModelSchema);
+const PriodeModel: Model<IPriodeModel> = RoutineDB.model<IPriodeModel>('priodeModel', priodeModelSchema);
 
 
 

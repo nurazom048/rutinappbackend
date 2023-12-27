@@ -3,9 +3,9 @@ import { Request, Response, NextFunction } from 'express';
 
 // imports models
 import Class from '../models/class.model';
-import Priode from '../models/priode.Models';
 import Routine from '../models/routine.models';
 import Weekday from '../models/weakday.Model';
+import PriodeModel from '../models/priode.Models';
 
 
 // WEEKDAY validation
@@ -39,8 +39,8 @@ export const validateWeekdayMiddleware = async (req: any, res: Response, next: N
     }
 
     // Period not created validations
-    const findEnd = await Priode.findOne({ rutin_id: classFind.rutin_id, priode_number: start });
-    const findStartPriod = await Priode.findOne({ rutin_id: classFind.rutin_id, priode_number: end });
+    const findEnd = await PriodeModel.findOne({ rutin_id: classFind.rutin_id, priode_number: start });
+    const findStartPriod = await PriodeModel.findOne({ rutin_id: classFind.rutin_id, priode_number: end });
     if (!findEnd) {
       return res.status(404).send({ message: `${end} period is not created` });
     }
