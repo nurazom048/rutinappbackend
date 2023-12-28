@@ -6,6 +6,7 @@ import express, { Request, Response } from 'express';
 import { initializeApp, getApp } from 'firebase/app';
 const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = require('firebase/storage');
 import { firebaseConfig } from "../../../config/firebase/firebase_storage";
+import Routine from '../../Routines/models/routine.models';
 const storage = getStorage();
 
 // Initialize Firebase
@@ -176,24 +177,24 @@ export const view_my_account = async (req: any, res: Response) => {
 
 
 //....view others Account...//
-
 export const view_others_Account = async (req: any, res: Response) => {
-
   const { username } = req.params;
+  console.log(username);
 
   try {
     const user = await Account.findOne({ username }, { password: 0 })
       .populate({
         path: 'routines Saved_routines',
+        model: Routine,
         options: {
           sort: { createdAt: -1 },
         },
         populate: {
           path: 'ownerid',
+          model: 'Account',
           select: 'name username image coverImage',
         },
       });
-
 
     if (!user) return res.status(404).json({ message: "User id not found " });
 
@@ -204,7 +205,6 @@ export const view_others_Account = async (req: any, res: Response) => {
     res.status(500).json({ message: "Error getting routines" });
   }
 };
-
 
 
 // *****************     changePassword      *******************************/

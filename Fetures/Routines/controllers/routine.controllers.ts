@@ -127,6 +127,8 @@ export const createRoutine = async (req: any, res: Response) => {
 
 export const deleteRoutine = async (req: any, res: Response) => {
   const { id } = req.params;
+  const requestUserID = req.user.id;
+
 
   const session = await maineDB.startSession();
   session.startTransaction();
@@ -150,7 +152,8 @@ export const deleteRoutine = async (req: any, res: Response) => {
     await Priode.deleteMany({ rutin_id: id }, { session });
     await RoutineMember.deleteMany({ RutineID: id }, { session });
     await SaveRoutine.deleteMany({ routineID: id }, { session });
-
+    // Pull out the routine ID from the owner's routines array
+    await Account.updateOne({ _id: requestUserID }, { $pull: { routines: id } }, { session });
     // Delete the routine
     await Routine.findByIdAndRemove(id, { session });
 

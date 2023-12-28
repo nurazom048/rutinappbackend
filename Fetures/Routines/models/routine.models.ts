@@ -1,4 +1,3 @@
-
 import mongoose, { Document, Schema, Model } from 'mongoose';
 import { RoutineDB } from '../../../connection/mongodb.connection';
 
@@ -20,10 +19,9 @@ const routineSchema: Schema<IRoutine> = new Schema<IRoutine>({
   },
   ownerid: {
     type: Schema.Types.ObjectId,
-    ref: 'Account',
+    ref: 'Account', // Assuming 'Account' is the name you used for the 'Account' model
     required: true,
   },
-
   cap10s: [{
     type: Schema.Types.ObjectId,
     ref: 'Account',
@@ -43,12 +41,7 @@ const routineSchema: Schema<IRoutine> = new Schema<IRoutine>({
 }, { timestamps: true });
 
 const Routine: Model<IRoutine> = RoutineDB.model<IRoutine>('Routine', routineSchema);
+// Register the 'Routine' model with Mongoose
+Routine; // Add this line to register the model
 
 export default Routine;
-
-
-
-
-
-
-

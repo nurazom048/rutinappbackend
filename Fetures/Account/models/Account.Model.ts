@@ -1,6 +1,7 @@
 
 import mongoose, { Document, Schema, Model } from 'mongoose';
 import { maineDB } from '../../../connection/mongodb.connection';
+import { RoutineDB } from '../../../connection/mongodb.connection';
 
 export const  enum AccountType {
   User = 'user',
@@ -43,10 +44,6 @@ const accountSchema: Schema<IAccount> = new Schema<IAccount>({
   },
   image: String,
   coverImage: String,
-  Saved_routines: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Routine',
-  }],
   password: String,
   osUserID: String,
   account_type: {
@@ -56,6 +53,10 @@ const accountSchema: Schema<IAccount> = new Schema<IAccount>({
     default: AccountType.User,
   },
   routines: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Routine',
+  }],
+  Saved_routines: [{
     type: Schema.Types.ObjectId,
     ref: 'Routine',
   }],

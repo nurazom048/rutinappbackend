@@ -27,7 +27,10 @@ import { Peremption_To_delete_Routine } from '../middleware/routines.middleware'
 //****************************************************************************/
 
 app.post("/create", verifyToken, createRoutine);// for create routine
-app.delete("/:id", verifyToken, Peremption_To_delete_Routine, deleteRoutine); // delete routine
+app.delete("/:id",
+    verifyToken,
+    Peremption_To_delete_Routine,
+    deleteRoutine,); // delete routine
 
 app.post("/home/:userID", verifyToken, homeFeed); /// feed {user can see her uploaded routines}
 app.post("/home", verifyToken, homeFeed); /// feed {user can see her uploaded routines and joined routines}
