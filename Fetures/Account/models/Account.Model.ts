@@ -26,7 +26,6 @@ interface IAccount extends Document {
 }
 
 const accountSchema: Schema<IAccount> = new Schema<IAccount>({
-
   username: {
     type: String,
     required: true,

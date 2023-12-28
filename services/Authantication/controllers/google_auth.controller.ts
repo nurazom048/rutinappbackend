@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
 import Account from '../../../Fetures/Account/models/Account.Model';
 import jwt from 'jsonwebtoken';
-import admin from 'firebase-admin';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import mongoose from 'mongoose';
+import mongoose, { ObjectId, isObjectIdOrHexString, isValidObjectId } from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import { generateUniqUsername } from './auth.methods';
@@ -11,43 +9,56 @@ import { generateAuthToken, generateRefreshToken } from '../../../services/Autha
 import PendingAccount from '../../../Fetures/Account/models/pending_account.model';
 import { printD, printError } from '../../../utils/utils';
 dotenv.config();
+
 // // Firebase admin sdk from Firebase config
-// const serviceAccount = require('../../admin.sdk');
-// // const serviceAccountCredentials = JSON.stringify(serviceAccount);
-// admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
-
+// Firebase admin sdk from Firebase config
+import admin from 'firebase-admin';
+const serviceAccount = require('../../../config/firebase/admin.sdk');
 
 // Firebase auth from Firebase config
-// const firebaseApp = require('../../config/firebase.config');
-// const auth = getAuth(firebaseApp);
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+const firebaseApp = require('../../../config/firebase/firebase.config');
+const auth = getAuth(firebaseApp);
 
-interface DecodedToken {
-    user_id: string;
-    name: string;
-    picture: string;
-    email: string;
-    displayName: string;
-    // Add other properties if needed
-}
+
+
+
+
 //****************************************************************************************************/
 // --------------------------------- Continue With Google --------------------------------------------/
 //****************************************************************************************************/
 
 
+interface DecodedToken {
+
+    user_id: string;
+    name: string;
+    picture: string;
+    iss: string;
+    aud: string;
+    auth_time: number;
+    sub: string;
+    iat: number;
+    exp: number;
+    email: string;
+    email_verified: boolean;
+    firebase: {
+        identities: { [provider: string]: any[]; email: any[] };
+        sign_in_provider: string;
+    };
+}
+
 export const continueWithGoogle = async (req: Request, res: Response) => {
     const { googleAuthToken, account_type } = req.body;
-    printD("----------------------------------------------------googleAuthToken")
-    printD(googleAuthToken)
+
+
 
     try {
-
         // Step 1: Verify the Google Auth Token
         // const token = googleAuthToken;
 
         let decodedToken;
-        let userId;
-
         try {
             decodedToken = jwt.decode(googleAuthToken) as DecodedToken;
 
@@ -58,16 +69,19 @@ export const continueWithGoogle = async (req: Request, res: Response) => {
             return res.status(500).json({ message: 'No Token Found' });
         }
 
-        //console.log(decodedToken)
-        const objectIdValue = new mongoose.Types.ObjectId(decodedToken.user_id);
-        userId = objectIdValue;
+
+        const userId = decodedToken.user_id;
         const name = decodedToken.name as any;
         const image = decodedToken.picture as any;
         const userEmail = decodedToken.email as any;
-        const displayName = decodedToken.displayName as string;
+        const displayName = decodedToken.name as string;
 
-        // --------------------------------- Continue With Google --------------------------------------------/
 
+
+
+        //............................................................................................//
+        //............................... login............. .......................................//
+        //............................................................................................//
 
         // If pending then go to pending page
 
@@ -110,36 +124,35 @@ export const continueWithGoogle = async (req: Request, res: Response) => {
             return res.status(401).json({ message: "Email already exists" });
         }
 
-
-
-        // -----------------------------------------  Sign Up ------------------------------------------------/
+        //............................................................................................//
+        //............................... Sign Up............. .......................................//
+        //............................................................................................//
 
         if (!userId || !name || !username || !userEmail) {
             return res.status(400).json({ message: "Please fill the form" });
         }
-        // step: Check if ths is academy or not
+        // step: Chak if ths is academy or not
         if (account_type == 'academy') {
             // Call the createPendingRequest function
             const response = await createPendingRequest(req, res, decodedToken);
             return res.status(201).json(response);
         }
 
-
         // Step 3: Create user in MongoDB
-        const account = new Account({
-            id: userId,
-            name, image,
-            username,
-            email: userEmail,
-            googleSignIn: true
-        });
+        const account = new Account({ name, image, username, email: userEmail, googleSignIn: true });
 
         // Step 4: Update user in Firebase
-        await admin.auth().updateUser(userId.toString(), {
+        await admin.auth().deleteUser(userId.toString());
+        admin.auth().createUser({
+            uid: account.id || account._id,
+            displayName: name,
+            photoURL: image,
             email: userEmail,
-            displayName: displayName,
             emailVerified: true,
-        });
+
+
+        })
+
         await account.save();
 
         // Create a new auth token and refresh token
@@ -151,22 +164,15 @@ export const continueWithGoogle = async (req: Request, res: Response) => {
         res.setHeader('x-refresh-token', refreshToken);
 
 
-        res.status(200).json({
-            message: "Login successful",
-            token: authToken,
-            account: account
-        });
+        res.status(200).json({ message: "Login successful", token: authToken, account: account });
     } catch (error) {
-        console.error("************************");
+        console.error("Error processing Google Auth Token:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-
-//****************************************************************************************************/
-// --------------------------------- createPendingRequest --------------------------------------------/
-//****************************************************************************************************/
-
-
+//............................................................................................//
+//............................... createPendingRequest........................................//
+//............................................................................................//
 
 const createPendingRequest = async (req: Request, res: Response, decodedToken: any) => {
     const { account_type, EIIN, contractInfo } = req.body;
@@ -195,4 +201,3 @@ const createPendingRequest = async (req: Request, res: Response, decodedToken: a
 
     return { message: "Request sent successfully", createdAccount, firebaseAuthCreate };
 };
-
