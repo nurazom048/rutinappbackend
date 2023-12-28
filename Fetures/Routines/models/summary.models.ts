@@ -15,6 +15,7 @@ const summarySchema: Schema<ISummary> = new Schema<ISummary>({
     type: Schema.Types.ObjectId,
     ref: 'Account',
     required: true,
+
   },
   text: {
     type: String,

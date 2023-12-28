@@ -22,6 +22,7 @@ import bcrypt from 'bcrypt';
 import { generateAuthToken, generateRefreshToken } from '../helper/Jwt.helper';
 import PendingAccount from '../../../Fetures/Account/models/pending_account.model';
 import Account from '../../../Fetures/Account/models/Account.Model';
+import { maineDB } from '../../../connection/mongodb.connection';
 
 //*********** loginAccount **********/
 export const loginAccount = async (req: Request, res: any) => {
@@ -117,56 +118,45 @@ export const loginAccount = async (req: Request, res: any) => {
   }
 };
 
-export const createAccount = async (req: Request, res: any) => {
-  console.log(req.body);
-  const { name, username, password, phone, email, account_type, EIIN, contractInfo } = req.body;
 
+
+
+
+//**********************************************************************************************/
+// --------------------------------- Create Account --------------------------------------------/
+//**********************************************************************************************/
+
+export const createAccount = async (req: Request, res: Response) => {
+
+
+  //start a session
+  const session = await maineDB.startSession();
+  session.startTransaction();
   try {
-    // Validation
-    if (!email) {
-      return res.status(400).json({ message: "Must have email or phone number" });
-    }
-    if (!name || !username || !password) {
-      return res.status(400).json({ message: "Please fill the form" });
-    }
+    const { name, username, password, phone, email, account_type, EIIN, contractInfo } = req.body;
 
-    // Check if email is already taken
-    const emailAlreadyUsed = await Account.findOne({ email });
-    if (emailAlreadyUsed) {
-      return res.status(400).json({ message: "Email already taken" });
-    }
-
-    // Check if username is already taken
-    const usernameAlreadyTaken = await Account.findOne({ username });
-    if (usernameAlreadyTaken) {
-      return res.status(400).json({ message: "Username already taken" });
-    }
-
-    // Check if phone number is already used
-    if (phone) {
-      const phoneNumberExists = await Account.findOne({ phone });
-      if (phoneNumberExists) {
-        return res.status(400).json({ message: "Phone number already exists" });
-      }
-    }
-
-    //! if academy move to pending request to create new account
+    // i checked validation by a middleware
+    // if academy move to pending request to create a new account
     if (account_type === 'academy') {
-      // Call the createPendingRequest function
-      const any = await createPendingRequest(req, res);
-      return res.status(200).json(any);
+      const result = await createPendingRequest(req, res, session);
+      await session.commitTransaction();
+      session.endSession();
+      return res.status(200).json(result);
     } else {
-      //Encrypt the new password
+      // Encrypt the new password
       const hashedPassword = await bcrypt.hash(password, 10);
       const account = new Account({ name, username, password: hashedPassword, phone, email });
 
       // Check if email is taken or not
       try {
-
         await admin.auth().getUserByEmail(account.email!.toString());
+        await session.abortTransaction();
+        session.endSession();
         return res.status(401).json({ message: "Email is already taken" });
       } catch (error: any) {
         if (error.code as String !== 'auth/user-not-found') {
+          await session.abortTransaction();
+          session.endSession();
           return res.status(500).json({ message: "Error checking email availability" });
         }
       }
@@ -181,41 +171,47 @@ export const createAccount = async (req: Request, res: any) => {
 
       const createdAccount = await account.save();
 
+      await session.commitTransaction();
+
       // Send any
-      res.status(200).json({ message: "Account created successfully", createdAccount, firebaseAuthCreate });
+      return res.status(200).json({ message: "Account created successfully", createdAccount, firebaseAuthCreate });
     }
   } catch (error: any) {
     console.error(error);
+    await session.abortTransaction();
+
     if (error.code === "auth/invalid-email") {
-      res.status(400).json({ message: "Invalid email" });
+      return res.status(400).json({ message: "Invalid email" });
     } else if (error.code === "auth/email-already-in-use") {
-      res.status(400).json({ message: "Email already taken" });
+      return res.status(400).json({ message: "Email already taken" });
     } else if (error.code === "auth/weak-password") {
-      res.status(400).json({ message: "Weak password" });
+      return res.status(400).json({ message: "Weak password" });
     } else {
-      res.status(500).json({ message: `Error creating account: ${error.message}` });
+      return res.status(500).json({ message: `Error creating account: ${error.message}` });
     }
+  } finally {
+    session.endSession();
+
   }
 };
 
-/////////////////////
 // Create the createPendingRequest function
-const createPendingRequest = async (req: Request, res: Response) => {
+const createPendingRequest = async (req: Request, res: Response, session: mongoose.ClientSession) => {
   const { name, username, password, phone, email, account_type, EIIN, contractInfo } = req.body;
 
   if (!EIIN) return { message: 'EIIN Number is required' };
   if (!contractInfo) return { message: 'contractInfo is required' };
 
-  const emailAlreadyUsed = await PendingAccount.findOne({ email });
+  const emailAlreadyUsed = await PendingAccount.findOne({ email }).session(session);
   if (emailAlreadyUsed) {
     return { message: "Request already pending with this email" };
   }
 
-  const EIINAlreadyUsed = await PendingAccount.findOne({ EIIN });
+  const EIINAlreadyUsed = await PendingAccount.findOne({ EIIN }).session(session);
   if (EIINAlreadyUsed) {
     return { message: "Request already pending with this EIIN" };
   }
-  //Encrypt the new password
+  // Encrypt the new password
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const account = new PendingAccount({
@@ -237,12 +233,10 @@ const createPendingRequest = async (req: Request, res: Response) => {
     emailVerified: false,
   });
 
-  const createdAccount = await account.save();
+  const createdAccount = await account.save({ session });
 
   return { message: "Request sent successfully", createdAccount, firebaseAuthCreate };
 };
-
-
 
 
 

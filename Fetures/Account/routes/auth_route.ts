@@ -3,11 +3,15 @@ import { verifyToken } from "../../../services/Authantication/helper/varifitoken
 import { createAccount, loginAccount } from '../../../services/Authantication/controllers/auth_controllers';
 import { allPendingAccount, acceptPending } from "../../../services/Authantication/controllers/pending_account.controller";
 import { continueWithGoogle } from '../../../services/Authantication/controllers/google_auth.controller';
+import validateAccountCreation from '../middleware/account.middleware';
 
 const app = express();
 
 // 1
-app.post("/create", createAccount);
+app.post("/create",
+    validateAccountCreation,
+    createAccount,
+);
 app.post("/login", loginAccount);
 //app.delete("/delete/:id", verifyToken, deleteAccount);
 

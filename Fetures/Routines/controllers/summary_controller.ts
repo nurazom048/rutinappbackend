@@ -7,7 +7,6 @@ import Summary from '../models/summary.models';
 import RoutineMember from '../models/routineMembers.Model';
 import SaveSummary from '../models/save_summary.model';
 
-
 // firebase
 import { summaryImageUploader } from '../firebase/summary.firebase';
 
@@ -77,59 +76,20 @@ export const create_summary = async (req: any, res: Response) => {
   }
 };
 
-// Remove Summary
-export const remove_summary = async (req: any, res: Response) => {
-  const { summary_id } = req.params;
-  const { id } = req.user;
+//*****************************************************************************/
+//--------------------------Socket IO chat ------------------------------------/
+//*****************************************************************************/
+//
 
-  try {
-    let isCaptain = false;
-
-    // Find the summary to be removed
-    const findSummary = await Summary.findById(summary_id);
-    if (!findSummary) {
-      return res.status(404).json({ message: 'Summary not found' });
-    }
-
-    // Find the routine to check permission
-    const routine = await Routine.findOne({ _id: findSummary.routineId });
-    if (!routine) {
-      return res.status(404).json({ message: "Routine not found" });
-    }
-
-    // Check if the user is a captain
-    const isCaptainFind = await RoutineMember.findOne({ memberID: req.user.id, RutineID: findSummary.routineId, captain: true });
-    if (isCaptainFind) {
-      isCaptain = true;
-    }
-
-    // Only summary owner, routine owner, or captains can delete
-    const deletePermission = findSummary.ownerId !== id || routine.ownerid == id || isCaptain;
-    if (!deletePermission) {
-      return res.status(403).json({ message: "You don't have permission to delete" });
-    }
-
-    // Step 1: Delete the summary from Firebase storage
-    for (const imageLink of findSummary.imageLinks ?? []) {
-      const fileRef = ref(storage, imageLink);
-      await deleteObject(fileRef);
-    }
-    // Step 3: Delete associated save records
-    await SaveSummary.deleteMany({ summaryId: summary_id });
-    // Step 2: Delete the summary from MongoDB
-    await Summary.findByIdAndDelete(summary_id);
+import http from 'http';
+import path from 'path';
+const io = require("socket.io");
 
 
 
-    return res.status(200).json({ message: "Summary deleted successfully" });
-  } catch (error: any) {
-    console.log('From delete summary');
-    console.log(error);
-    return res.status(400).json({ message: error.message });
-  }
-};
 
 
+//
 //************ Get class summary list *************** */
 export const get_class_summary_list = async (req: any, res: Response) => {
   const { class_id } = req.params;
@@ -348,5 +308,57 @@ export const saveUnsaveSummary = async (req: any, res: Response) => {
     }
   } catch (error: any) {
     return res.status(500).json({ message: error.message });
+  }
+};
+
+// Remove Summary
+export const remove_summary = async (req: any, res: Response) => {
+  const { summary_id } = req.params;
+  const { id } = req.user;
+
+  try {
+    let isCaptain = false;
+
+    // Find the summary to be removed
+    const findSummary = await Summary.findById(summary_id);
+    if (!findSummary) {
+      return res.status(404).json({ message: 'Summary not found' });
+    }
+
+    // Find the routine to check permission
+    const routine = await Routine.findOne({ _id: findSummary.routineId });
+    if (!routine) {
+      return res.status(404).json({ message: "Routine not found" });
+    }
+
+    // Check if the user is a captain
+    const isCaptainFind = await RoutineMember.findOne({ memberID: req.user.id, RutineID: findSummary.routineId, captain: true });
+    if (isCaptainFind) {
+      isCaptain = true;
+    }
+
+    // Only summary owner, routine owner, or captains can delete
+    const deletePermission = findSummary.ownerId !== id || routine.ownerid == id || isCaptain;
+    if (!deletePermission) {
+      return res.status(403).json({ message: "You don't have permission to delete" });
+    }
+
+    // Step 1: Delete the summary from Firebase storage
+    for (const imageLink of findSummary.imageLinks ?? []) {
+      const fileRef = ref(storage, imageLink);
+      await deleteObject(fileRef);
+    }
+    // Step 3: Delete associated save records
+    await SaveSummary.deleteMany({ summaryId: summary_id });
+    // Step 2: Delete the summary from MongoDB
+    await Summary.findByIdAndDelete(summary_id);
+
+
+
+    return res.status(200).json({ message: "Summary deleted successfully" });
+  } catch (error: any) {
+    console.log('From delete summary');
+    console.log(error);
+    return res.status(400).json({ message: error.message });
   }
 };

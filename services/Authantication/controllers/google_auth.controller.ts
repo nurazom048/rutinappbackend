@@ -10,24 +10,6 @@ import PendingAccount from '../../../Fetures/Account/models/pending_account.mode
 import { printD, printError } from '../../../utils/utils';
 dotenv.config();
 
-// // Firebase admin sdk from Firebase config
-
-// Firebase admin sdk from Firebase config
-import admin from 'firebase-admin';
-const serviceAccount = require('../../../config/firebase/admin.sdk');
-
-// Firebase auth from Firebase config
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-const firebaseApp = require('../../../config/firebase/firebase.config');
-const auth = getAuth(firebaseApp);
-
-
-
-
-
-//****************************************************************************************************/
-// --------------------------------- Continue With Google --------------------------------------------/
-//****************************************************************************************************/
 
 
 interface DecodedToken {
@@ -48,6 +30,24 @@ interface DecodedToken {
         sign_in_provider: string;
     };
 }
+
+
+// Firebase admin sdk from Firebase config
+import admin from 'firebase-admin';
+const serviceAccount = require('../../../config/firebase/admin.sdk');
+
+// Firebase auth from Firebase config
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+const firebaseApp = require('../../../config/firebase/firebase.config');
+const auth = getAuth(firebaseApp);
+
+
+
+
+
+//****************************************************************************************************/
+// --------------------------------- Continue With Google --------------------------------------------/
+//****************************************************************************************************/
 
 export const continueWithGoogle = async (req: Request, res: Response) => {
     const { googleAuthToken, account_type } = req.body;
