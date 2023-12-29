@@ -191,7 +191,7 @@ export const view_others_Account = async (req: any, res: Response) => {
         },
         populate: {
           path: 'ownerid',
-          model: 'Account',
+          model: Account,
           select: 'name username image coverImage',
         },
       });

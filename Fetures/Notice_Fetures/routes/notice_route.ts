@@ -33,9 +33,10 @@ router.route("/add/").post(
     verifyToken, checkAccountType, upload.single('pdf_file'),
     addNotice
 );// add notice 
-router.route("/:noticeId").delete(
-    verifyToken, deleteNotice,
-);//... delete notice
+router.route("/:noticeId")
+    .delete(verifyToken,
+        deleteNotice,
+    );//... delete notice
 
 // get notice
 

@@ -21,6 +21,8 @@ const storage = getStorage();
 
 import { uploadFileToFirebaseAndGetDownloadUrl } from "../firebase/norice_board.firebase";
 import { v4 as uuidv4 } from 'uuid';
+import { model } from 'mongoose';
+import { printD } from '../../../utils/utils';
 
 
 /// make a add to 
@@ -77,17 +79,19 @@ export const addNotice = async (req: any, res: Response) => {
         });
         const savedNotice = await notice.save();
 
-
         const NotificationMember = await NoticeBoardMember
             .find({ academyID: id, notificationOn: true })
-            .populate('memberID', 'osUserID')
+            .populate({
+                path: 'memberID',
+                select: 'osUserID', // Specify the fields you want to select
+                model: Account,
+            })
             .exec();
-
-        console.log(NotificationMember);
 
         const oneSignalUserId = NotificationMember
             .map((member: any) => member.memberID.osUserID)
             .filter((osUserId: string) => osUserId !== '' && osUserId !== undefined);
+
 
         console.log("oneSignalUserId");
         console.log(oneSignalUserId);
@@ -110,6 +114,8 @@ export const addNotice = async (req: any, res: Response) => {
 export const deleteNotice = async (req: any, res: Response) => {
     const { noticeId } = req.params;
     const { id } = req.user;
+    const session = await Notice.startSession();
+    session.startTransaction();
 
     try {
         // Step 1: Find Account and check permission
@@ -117,26 +123,43 @@ export const deleteNotice = async (req: any, res: Response) => {
         if (!findAccount) return res.status(404).json({ message: 'Account not found' });
 
         // Step 2: Find the notice
+
         const notice = await Notice.findById(noticeId);
         if (!notice) return res.status(404).json({ message: 'Notice not found' });
 
         // Step 3: Check if the notice belongs to the user
-        if (notice.academyID !== findAccount.id.toString()) {
+        if (notice!.academyID!.toString() !== findAccount._id.toString()) {
             return res.status(403).json({ message: 'You do not have permission to delete this notice' });
         }
 
         // Step 4: Delete notice from MongoDB
-        await Notice.findByIdAndDelete(noticeId);
+        await Notice.findByIdAndDelete(noticeId).session(session);
 
         // Step 5: Delete notice file from Firebase Storage
         const storage = getStorage();
         const pdfRef = ref(storage, notice.pdf);
-        await deleteObject(pdfRef);
 
+        try {
+            await deleteObject(pdfRef);
+        } catch (storageError) {
+            console.error('Error deleting notice file from Firebase Storage:', storageError);
+            // Handle storage error if needed
+        }
+
+        await session.commitTransaction();
+
+        // Return 204 No Content status for a successful deletion
         res.status(200).json({ message: 'Notice deleted successfully' });
     } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ message: error.message });
+        console.error('Error deleting notice:', error);
+
+        // Rollback the transaction
+        await session.abortTransaction();
+
+        res.status(500).json({ message: 'Error deleting notice', error: error.message });
+    } finally {
+        session.endSession();
+
     }
 };
 
@@ -291,6 +314,7 @@ export const recentNoticeByAcademeID = async (req: any, res: Response) => {
             .limit(limit)
             .populate({
                 path: 'academyID',
+                model: Account,
                 select: 'name username image',
             })
             .sort({ time: -1 });
@@ -318,7 +342,7 @@ export const current_user_status = async (req: any, res: Response) => {
     try {
         const { academyID } = req.params;
         const { id } = req.user;
-        console.log(academyID)
+        printD("academyID  " + academyID)
 
         let isOwner = false;
         let activeStatus = "not_joined";
@@ -326,7 +350,7 @@ export const current_user_status = async (req: any, res: Response) => {
         let notificationOn = false;
 
         // Find the NoticeBoard to check user status
-        const noticeBoard = await Account.findOne({ id: academyID });
+        const noticeBoard = await Account.findOne({ _id: academyID });
         if (!noticeBoard) {
             return res.json({ message: "NoticeBoard not found" });
         }
@@ -336,7 +360,7 @@ export const current_user_status = async (req: any, res: Response) => {
             academyID: academyID,
             memberID: id
         });
-        console.log(foundMember);
+        // console.log(foundMember);
 
         if (foundMember) {
             activeStatus = "joined";

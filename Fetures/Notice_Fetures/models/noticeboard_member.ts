@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema, Model } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 import { NoticeDB } from '../../../connection/mongodb.connection';
 
 interface INoticeBoardMember extends Document {
@@ -25,5 +25,4 @@ const NoticeBoardMemberSchema: Schema<INoticeBoardMember> = new Schema<INoticeBo
 });
 
 
-// export default NoticeBoardMember;
 export default NoticeDB.model('NoticeBoardMember', NoticeBoardMemberSchema);
