@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveUnsaveSummary = exports.summary_status = exports.update_summary = exports.get_class_summary_list = exports.remove_summary = exports.create_summary = void 0;
+exports.remove_summary = exports.saveUnsaveSummary = exports.summary_status = exports.update_summary = exports.get_class_summary_list = exports.create_summary = void 0;
 // Models
 const Account_Model_1 = __importDefault(require("../../Account/models/Account.Model"));
 const routine_models_1 = __importDefault(require("../models/routine.models"));
@@ -80,51 +80,8 @@ const create_summary = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.create_summary = create_summary;
-// Remove Summary
-const remove_summary = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    const { summary_id } = req.params;
-    const { id } = req.user;
-    try {
-        let isCaptain = false;
-        // Find the summary to be removed
-        const findSummary = yield summary_models_1.default.findById(summary_id);
-        if (!findSummary) {
-            return res.status(404).json({ message: 'Summary not found' });
-        }
-        // Find the routine to check permission
-        const routine = yield routine_models_1.default.findOne({ _id: findSummary.routineId });
-        if (!routine) {
-            return res.status(404).json({ message: "Routine not found" });
-        }
-        // Check if the user is a captain
-        const isCaptainFind = yield routineMembers_Model_1.default.findOne({ memberID: req.user.id, RutineID: findSummary.routineId, captain: true });
-        if (isCaptainFind) {
-            isCaptain = true;
-        }
-        // Only summary owner, routine owner, or captains can delete
-        const deletePermission = findSummary.ownerId !== id || routine.ownerid == id || isCaptain;
-        if (!deletePermission) {
-            return res.status(403).json({ message: "You don't have permission to delete" });
-        }
-        // Step 1: Delete the summary from Firebase storage
-        for (const imageLink of (_a = findSummary.imageLinks) !== null && _a !== void 0 ? _a : []) {
-            const fileRef = ref(storage, imageLink);
-            yield deleteObject(fileRef);
-        }
-        // Step 3: Delete associated save records
-        yield save_summary_model_1.default.deleteMany({ summaryId: summary_id });
-        // Step 2: Delete the summary from MongoDB
-        yield summary_models_1.default.findByIdAndDelete(summary_id);
-        return res.status(200).json({ message: "Summary deleted successfully" });
-    }
-    catch (error) {
-        console.log('From delete summary');
-        console.log(error);
-        return res.status(400).json({ message: error.message });
-    }
-});
-exports.remove_summary = remove_summary;
+const io = require("socket.io");
+//
 //************ Get class summary list *************** */
 const get_class_summary_list = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { class_id } = req.params;
@@ -313,3 +270,48 @@ const saveUnsaveSummary = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.saveUnsaveSummary = saveUnsaveSummary;
+// Remove Summary
+const remove_summary = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { summary_id } = req.params;
+    const { id } = req.user;
+    try {
+        let isCaptain = false;
+        // Find the summary to be removed
+        const findSummary = yield summary_models_1.default.findById(summary_id);
+        if (!findSummary) {
+            return res.status(404).json({ message: 'Summary not found' });
+        }
+        // Find the routine to check permission
+        const routine = yield routine_models_1.default.findOne({ _id: findSummary.routineId });
+        if (!routine) {
+            return res.status(404).json({ message: "Routine not found" });
+        }
+        // Check if the user is a captain
+        const isCaptainFind = yield routineMembers_Model_1.default.findOne({ memberID: req.user.id, RutineID: findSummary.routineId, captain: true });
+        if (isCaptainFind) {
+            isCaptain = true;
+        }
+        // Only summary owner, routine owner, or captains can delete
+        const deletePermission = findSummary.ownerId !== id || routine.ownerid == id || isCaptain;
+        if (!deletePermission) {
+            return res.status(403).json({ message: "You don't have permission to delete" });
+        }
+        // Step 1: Delete the summary from Firebase storage
+        for (const imageLink of (_a = findSummary.imageLinks) !== null && _a !== void 0 ? _a : []) {
+            const fileRef = ref(storage, imageLink);
+            yield deleteObject(fileRef);
+        }
+        // Step 3: Delete associated save records
+        yield save_summary_model_1.default.deleteMany({ summaryId: summary_id });
+        // Step 2: Delete the summary from MongoDB
+        yield summary_models_1.default.findByIdAndDelete(summary_id);
+        return res.status(200).json({ message: "Summary deleted successfully" });
+    }
+    catch (error) {
+        console.log('From delete summary');
+        console.log(error);
+        return res.status(400).json({ message: error.message });
+    }
+});
+exports.remove_summary = remove_summary;

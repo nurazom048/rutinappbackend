@@ -18,6 +18,7 @@ const Jwt_helper_1 = require("./Jwt.helper");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const verifyToken = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    // console.log('verifyToken', req.headers);
     try {
         const tokenArray = req.headers.authorization.split(' ');
         const token = tokenArray[tokenArray.length - 1];

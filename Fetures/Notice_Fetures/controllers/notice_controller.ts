@@ -256,6 +256,7 @@ export const recentNotice = async (req: any, res: Response) => {
     const { id } = req.user;
     const { page = 1, limit = 10 } = req.query;
 
+
     try {
         const allJoinedNoticeBaord = await NoticeBoardMember.find({ memberID: id }).select('-_id academyID');
         const academyIDs = allJoinedNoticeBaord.map((item: any) => item.academyID);

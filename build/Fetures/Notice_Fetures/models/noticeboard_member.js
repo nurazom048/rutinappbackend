@@ -18,5 +18,4 @@ const NoticeBoardMemberSchema = new mongoose_1.Schema({
         required: true,
     },
 });
-// export default NoticeBoardMember;
 exports.default = mongodb_connection_1.NoticeDB.model('NoticeBoardMember', NoticeBoardMemberSchema);

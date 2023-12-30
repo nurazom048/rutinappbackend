@@ -30,4 +30,6 @@ const routineSchema = new mongoose_1.Schema({
         }],
 }, { timestamps: true });
 const Routine = mongodb_connection_1.RoutineDB.model('Routine', routineSchema);
+// Register the 'Routine' model with Mongoose
+Routine; // Add this line to register the model
 exports.default = Routine;

@@ -27,6 +27,7 @@ initializeApp(firebase_stroage.firebaseConfig); // Initialize Firebase
 const storage = getStorage();
 const norice_board_firebase_1 = require("../firebase/norice_board.firebase");
 const uuid_1 = require("uuid");
+const utils_1 = require("../../../utils/utils");
 /// make a add to 
 //?_______________________________________________________________________________________!//
 ///......... write code to add notice to notice bode 
@@ -76,9 +77,12 @@ const addNotice = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const savedNotice = yield notice.save();
         const NotificationMember = yield noticeboard_member_1.default
             .find({ academyID: id, notificationOn: true })
-            .populate('memberID', 'osUserID')
+            .populate({
+            path: 'memberID',
+            select: 'osUserID',
+            model: Account_Model_1.default,
+        })
             .exec();
-        console.log(NotificationMember);
         const oneSignalUserId = NotificationMember
             .map((member) => member.memberID.osUserID)
             .filter((osUserId) => osUserId !== '' && osUserId !== undefined);
@@ -100,6 +104,8 @@ exports.addNotice = addNotice;
 const deleteNotice = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { noticeId } = req.params;
     const { id } = req.user;
+    const session = yield notice_1.default.startSession();
+    session.startTransaction();
     try {
         // Step 1: Find Account and check permission
         const findAccount = yield Account_Model_1.default.findById(id);
@@ -110,20 +116,33 @@ const deleteNotice = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (!notice)
             return res.status(404).json({ message: 'Notice not found' });
         // Step 3: Check if the notice belongs to the user
-        if (notice.academyID !== findAccount.id.toString()) {
+        if (notice.academyID.toString() !== findAccount._id.toString()) {
             return res.status(403).json({ message: 'You do not have permission to delete this notice' });
         }
         // Step 4: Delete notice from MongoDB
-        yield notice_1.default.findByIdAndDelete(noticeId);
+        yield notice_1.default.findByIdAndDelete(noticeId).session(session);
         // Step 5: Delete notice file from Firebase Storage
         const storage = getStorage();
         const pdfRef = ref(storage, notice.pdf);
-        yield deleteObject(pdfRef);
+        try {
+            yield deleteObject(pdfRef);
+        }
+        catch (storageError) {
+            console.error('Error deleting notice file from Firebase Storage:', storageError);
+            // Handle storage error if needed
+        }
+        yield session.commitTransaction();
+        // Return 204 No Content status for a successful deletion
         res.status(200).json({ message: 'Notice deleted successfully' });
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ message: error.message });
+        console.error('Error deleting notice:', error);
+        // Rollback the transaction
+        yield session.abortTransaction();
+        res.status(500).json({ message: 'Error deleting notice', error: error.message });
+    }
+    finally {
+        session.endSession();
     }
 });
 exports.deleteNotice = deleteNotice;
@@ -250,6 +269,7 @@ const recentNoticeByAcademeID = (req, res) => __awaiter(void 0, void 0, void 0, 
             .limit(limit)
             .populate({
             path: 'academyID',
+            model: Account_Model_1.default,
             select: 'name username image',
         })
             .sort({ time: -1 });
@@ -274,13 +294,13 @@ const current_user_status = (req, res) => __awaiter(void 0, void 0, void 0, func
     try {
         const { academyID } = req.params;
         const { id } = req.user;
-        console.log(academyID);
+        (0, utils_1.printD)("academyID  " + academyID);
         let isOwner = false;
         let activeStatus = "not_joined";
         let isSave = false;
         let notificationOn = false;
         // Find the NoticeBoard to check user status
-        const noticeBoard = yield Account_Model_1.default.findOne({ id: academyID });
+        const noticeBoard = yield Account_Model_1.default.findOne({ _id: academyID });
         if (!noticeBoard) {
             return res.json({ message: "NoticeBoard not found" });
         }
@@ -289,7 +309,7 @@ const current_user_status = (req, res) => __awaiter(void 0, void 0, void 0, func
             academyID: academyID,
             memberID: id
         });
-        console.log(foundMember);
+        // console.log(foundMember);
         if (foundMember) {
             activeStatus = "joined";
             // Check if the user is the owner

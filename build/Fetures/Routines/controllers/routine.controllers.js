@@ -31,6 +31,7 @@ const storage = (0, storage_1.getStorage)();
 // routine firebase
 const summary_firebase_1 = require("../firebase/summary.firebase");
 const class_helper_1 = require("../helper/class.helper");
+const mongodb_connection_1 = require("../../../connection/mongodb.connection");
 const getRoutineData = (rutin_id) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const routine = yield routine_models_1.default.findOne({ _id: rutin_id });
@@ -58,46 +59,62 @@ const getRoutineData = (rutin_id) => __awaiter(void 0, void 0, void 0, function*
         throw error;
     }
 });
-//********** createRoutine   ************* */
+//*******************************************************************************/
+//--------------------------------- createRoutine  ------------------------------/
+//*******************************************************************************/
 const createRoutine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name } = req.body;
-    console.log(req.body);
-    // Log the user who is creating the routine
-    const ownerId = req.user.id;
+    const session = yield mongodb_connection_1.maineDB.startSession();
+    session.startTransaction();
     try {
-        // Check if a routine with the given name already exists for the user
+        const { name } = req.body;
+        const ownerId = req.user.id;
+        // Check if a routine with the same name and owner already exists
         const existingRoutine = yield routine_models_1.default.findOne({ name, ownerid: ownerId });
-        if (existingRoutine)
-            return res.status(500).send({ message: "Routine already created with this name" });
-        // Check the number of existing routines for the user
+        if (existingRoutine) {
+            return res.status(400).json({ message: 'Routine already created with this name' });
+        }
+        // Check routine count
         const routineCount = yield routine_models_1.default.countDocuments({ ownerid: ownerId });
         if (routineCount >= 20) {
             return res.status(400).json({ message: 'You can only create up to 20 routines' });
         }
-        // Create a new routine object
+        // Step 1: Create a new routine object
         const routine = new routine_models_1.default({ name, ownerid: ownerId });
-        const routineMember = new routineMembers_Model_1.default({ RutineID: routine._id, memberID: ownerId, owner: true }); // Create a new RoutineMember instance
-        // Save the routine object to the database
-        const createdRoutine = yield routine.save();
-        // Update the user's routines array with the new routine ID
-        const updatedUser = yield Account_Model_1.default.findOneAndUpdate({ _id: ownerId }, { $push: { routines: createdRoutine._id } }, { new: true });
-        yield routineMember.save(); // Wait for the routineMember instance to be saved
-        // Send a success response with the new routine and updated user object
-        res.status(200).json({ message: "Routine created successfully", routine: createdRoutine, user: updatedUser, routineMember });
+        // Step 2: Create a new RoutineMember instance
+        const routineMember = new routineMembers_Model_1.default({ RutineID: routine._id, memberID: ownerId, owner: true });
+        // Step 3: Save the routine object to the database
+        const createdRoutine = yield routine.save({ session });
+        // Step 4: Update the user's routines array with the new routine ID
+        const updatedUser = yield Account_Model_1.default.findOneAndUpdate({ _id: ownerId }, { $push: { routines: createdRoutine._id } }, { new: true, session });
+        // Step 5: Wait for the routineMember instance to be saved
+        yield routineMember.save({ session });
+        // Step 6: Commit the transaction
+        yield session.commitTransaction();
+        // Step 7: Send a success response with the new routine and updated user object
+        res.status(200).json({ message: 'Routine created successfully', routine: createdRoutine, user: updatedUser, routineMember });
     }
     catch (error) {
-        console.error(error);
-        // Handle the error and send an appropriate response
-        res.status(500).json({ message: "Failed to create routine", error: error.message });
+        // Handle errors and abortTransition
+        console.error('Error creating routine:', error);
+        // Rollback the transaction
+        yield session.abortTransaction();
+        res.status(500).json({ message: 'Routine creation failed', error });
+    }
+    finally {
+        yield session.endSession();
     }
 });
 exports.createRoutine = createRoutine;
-//*******   deleteRoutine   ***** */
+//*******************************************************************************/
+//--------------------------------- deleteRoutine  ------------------------------/
+//*******************************************************************************/
 const deleteRoutine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
+    const requestUserID = req.user.id;
+    const session = yield mongodb_connection_1.maineDB.startSession();
+    session.startTransaction();
     try {
-        // Delete summaries from MongoDB and firebase
-        const routineID = id;
+        // Delete summaries from MongoDB and Firebase
         yield (0, summary_firebase_1.deleteSummariesFromFirebaseBaseOnRoutineID)(id);
         // Delete the classes and save their IDs
         const findClassesWhichShouldBeDeleted = yield class_model_1.default.find({ rutin_id: id });
@@ -106,23 +123,36 @@ const deleteRoutine = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         for (let i = 0; i < deletedClassIDList.length; i++) {
             const classId = deletedClassIDList[i];
             // Delete the class
-            yield class_model_1.default.findByIdAndRemove(findClassesWhichShouldBeDeleted[i].id);
+            yield class_model_1.default.findByIdAndRemove(findClassesWhichShouldBeDeleted[i].id, { session });
         }
-        yield weakday_Model_1.default.deleteMany({ routine_id: id });
-        yield priode_Models_1.default.deleteMany({ rutin_id: id });
-        yield routineMembers_Model_1.default.deleteMany({ RutineID: id });
-        yield save_routine_model_1.default.deleteMany({ routineID: id });
+        yield weakday_Model_1.default.deleteMany({ routine_id: id }, { session });
+        yield priode_Models_1.default.deleteMany({ rutin_id: id }, { session });
+        yield routineMembers_Model_1.default.deleteMany({ RutineID: id }, { session });
+        yield save_routine_model_1.default.deleteMany({ routineID: id }, { session });
+        // Pull out the routine ID from the owner's routines array
+        yield Account_Model_1.default.updateOne({ _id: requestUserID }, { $pull: { routines: id } }, { session });
         // Delete the routine
-        yield routine_models_1.default.findByIdAndRemove(id);
-        res.status(200).json({ message: "Routine deleted successfully" });
+        yield routine_models_1.default.findByIdAndRemove(id, { session });
+        // Commit the transaction
+        yield session.commitTransaction();
+        res.status(200).json({ message: 'Routine deleted successfully' });
     }
     catch (error) {
+        // Handle errors and abortTransition
         console.error(error);
-        res.status(500).json({ message: "Error deleting routine" });
+        // Rollback the transaction
+        yield session.abortTransaction();
+        session.endSession();
+        res.status(500).json({ message: 'Error deleting routine', error });
+    }
+    finally {
+        yield session.endSession();
     }
 });
 exports.deleteRoutine = deleteRoutine;
-//**************** search_routine***********************************/
+//*******************************************************************************/
+//--------------------------------- search Routine  ------------------------------/
+//*******************************************************************************/
 const search_routine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { src } = req.query; // get the value of 'src' from the query parameters
     const page = parseInt(req.query.page) || 1;
@@ -172,11 +202,9 @@ const search_routine = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.search_routine = search_routine;
-//*********************************************************** */
-//
-//..... Save and unsave  Routine  &  show save routine .......//
-//
-//*********************************************************** */
+//***************************************************************************************/
+//--------------------Save and unsave  Routine  &  show save routine --------------------/
+//**************************************************************************************/
 const save_and_unsave_routine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { routineId } = req.params;
     const { saveCondition } = req.body;
@@ -328,7 +356,7 @@ const current_user_status = (req, res) => __awaiter(void 0, void 0, void 0, func
     }
 });
 exports.current_user_status = current_user_status;
-///.... joined rutins ......///
+///.... joined Routine ......///
 const joined_routine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.user;
     const page = parseInt(req.query.page) || 1;

@@ -29,6 +29,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const Jwt_helper_1 = require("../helper/Jwt.helper");
 const pending_account_model_1 = __importDefault(require("../../../Fetures/Account/models/pending_account.model"));
 const Account_Model_1 = __importDefault(require("../../../Fetures/Account/models/Account.Model"));
+const mongodb_connection_1 = require("../../../connection/mongodb.connection");
 //*********** loginAccount **********/
 const loginAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, password, phone, email, osUserID } = req.body;
@@ -115,51 +116,38 @@ const loginAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.loginAccount = loginAccount;
+//**********************************************************************************************/
+// --------------------------------- Create Account --------------------------------------------/
+//**********************************************************************************************/
 const createAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(req.body);
-    const { name, username, password, phone, email, account_type, EIIN, contractInfo } = req.body;
+    //start a session
+    const session = yield mongodb_connection_1.maineDB.startSession();
+    session.startTransaction();
     try {
-        // Validation
-        if (!email) {
-            return res.status(400).json({ message: "Must have email or phone number" });
-        }
-        if (!name || !username || !password) {
-            return res.status(400).json({ message: "Please fill the form" });
-        }
-        // Check if email is already taken
-        const emailAlreadyUsed = yield Account_Model_1.default.findOne({ email });
-        if (emailAlreadyUsed) {
-            return res.status(400).json({ message: "Email already taken" });
-        }
-        // Check if username is already taken
-        const usernameAlreadyTaken = yield Account_Model_1.default.findOne({ username });
-        if (usernameAlreadyTaken) {
-            return res.status(400).json({ message: "Username already taken" });
-        }
-        // Check if phone number is already used
-        if (phone) {
-            const phoneNumberExists = yield Account_Model_1.default.findOne({ phone });
-            if (phoneNumberExists) {
-                return res.status(400).json({ message: "Phone number already exists" });
-            }
-        }
-        //! if academy move to pending request to create new account
+        const { name, username, password, phone, email, account_type, EIIN, contractInfo } = req.body;
+        // i checked validation by a middleware
+        // if academy move to pending request to create a new account
         if (account_type === 'academy') {
-            // Call the createPendingRequest function
-            const any = yield createPendingRequest(req, res);
-            return res.status(200).json(any);
+            const result = yield createPendingRequest(req, res, session);
+            yield session.commitTransaction();
+            session.endSession();
+            return res.status(200).json(result);
         }
         else {
-            //Encrypt the new password
+            // Encrypt the new password
             const hashedPassword = yield bcrypt_1.default.hash(password, 10);
             const account = new Account_Model_1.default({ name, username, password: hashedPassword, phone, email });
             // Check if email is taken or not
             try {
                 yield firebase_admin_1.default.auth().getUserByEmail(account.email.toString());
+                yield session.abortTransaction();
+                session.endSession();
                 return res.status(401).json({ message: "Email is already taken" });
             }
             catch (error) {
                 if (error.code !== 'auth/user-not-found') {
+                    yield session.abortTransaction();
+                    session.endSession();
                     return res.status(500).json({ message: "Error checking email availability" });
                 }
             }
@@ -171,44 +159,48 @@ const createAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 emailVerified: false,
             });
             const createdAccount = yield account.save();
+            yield session.commitTransaction();
             // Send any
-            res.status(200).json({ message: "Account created successfully", createdAccount, firebaseAuthCreate });
+            return res.status(200).json({ message: "Account created successfully", createdAccount, firebaseAuthCreate });
         }
     }
     catch (error) {
         console.error(error);
+        yield session.abortTransaction();
         if (error.code === "auth/invalid-email") {
-            res.status(400).json({ message: "Invalid email" });
+            return res.status(400).json({ message: "Invalid email" });
         }
         else if (error.code === "auth/email-already-in-use") {
-            res.status(400).json({ message: "Email already taken" });
+            return res.status(400).json({ message: "Email already taken" });
         }
         else if (error.code === "auth/weak-password") {
-            res.status(400).json({ message: "Weak password" });
+            return res.status(400).json({ message: "Weak password" });
         }
         else {
-            res.status(500).json({ message: `Error creating account: ${error.message}` });
+            return res.status(500).json({ message: `Error creating account: ${error.message}` });
         }
+    }
+    finally {
+        session.endSession();
     }
 });
 exports.createAccount = createAccount;
-/////////////////////
 // Create the createPendingRequest function
-const createPendingRequest = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const createPendingRequest = (req, res, session) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, username, password, phone, email, account_type, EIIN, contractInfo } = req.body;
     if (!EIIN)
         return { message: 'EIIN Number is required' };
     if (!contractInfo)
         return { message: 'contractInfo is required' };
-    const emailAlreadyUsed = yield pending_account_model_1.default.findOne({ email });
+    const emailAlreadyUsed = yield pending_account_model_1.default.findOne({ email }).session(session);
     if (emailAlreadyUsed) {
         return { message: "Request already pending with this email" };
     }
-    const EIINAlreadyUsed = yield pending_account_model_1.default.findOne({ EIIN });
+    const EIINAlreadyUsed = yield pending_account_model_1.default.findOne({ EIIN }).session(session);
     if (EIINAlreadyUsed) {
         return { message: "Request already pending with this EIIN" };
     }
-    //Encrypt the new password
+    // Encrypt the new password
     const hashedPassword = yield bcrypt_1.default.hash(password, 10);
     const account = new pending_account_model_1.default({
         name,
@@ -227,7 +219,7 @@ const createPendingRequest = (req, res) => __awaiter(void 0, void 0, void 0, fun
         password: password,
         emailVerified: false,
     });
-    const createdAccount = yield account.save();
+    const createdAccount = yield account.save({ session });
     return { message: "Request sent successfully", createdAccount, firebaseAuthCreate };
 });
 // //***********   deleteAccount       **********/

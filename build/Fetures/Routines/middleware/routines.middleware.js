@@ -15,9 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Peremption_To_delete_Routine = exports.validateWeekdayMiddleware = void 0;
 // imports models
 const class_model_1 = __importDefault(require("../models/class.model"));
-const priode_Models_1 = __importDefault(require("../models/priode.Models"));
 const routine_models_1 = __importDefault(require("../models/routine.models"));
 const weakday_Model_1 = __importDefault(require("../models/weakday.Model"));
+const priode_Models_1 = __importDefault(require("../models/priode.Models"));
 // WEEKDAY validation
 const validateWeekdayMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { classID } = req.params;

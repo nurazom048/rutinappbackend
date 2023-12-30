@@ -13,19 +13,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.find_priode_by_id = exports.all_priode = exports.edit_priode = exports.delete_priode = exports.add_priode = void 0;
-// Models
-const priode_Models_1 = __importDefault(require("../models/priode.Models"));
 // Helper
 const priode_helper_1 = require("../helper/priode.helper");
 const routine_models_1 = __importDefault(require("../models/routine.models"));
 const weakday_Model_1 = __importDefault(require("../models/weakday.Model"));
 const validation_error_1 = require("../../../utils/validation_error");
-//************  add Priode *************** */
+const priode_Models_1 = __importDefault(require("../models/priode.Models"));
+const mongodb_connection_1 = require("../../../connection/mongodb.connection");
+//*******************************************************************************/
+//--------------------------------- add Priode     ------------------------------/
+//*******************************************************************************/
 const add_priode = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { start_time, end_time } = req.body;
     const { routineID } = req.params;
     try {
-        console.log(routineID);
+        console.log("routineID: " + routineID);
         // Check if the routine exists
         const existingRoutine = yield routine_models_1.default.findById(routineID);
         if (!existingRoutine)
@@ -53,60 +55,74 @@ const add_priode = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.add_priode = add_priode;
-//************  delete Priode *************** */
+//*******************************************************************************/
+//--------------------------------- Delete Priode  ------------------------------/
+//*******************************************************************************/
 const delete_priode = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { priode_id } = req.params;
+    const { priodeId } = req.params;
+    const session = yield mongodb_connection_1.maineDB.startSession();
+    session.startTransaction();
     try {
         // Find the priode to be deleted and its associated routine
-        const priode = yield priode_Models_1.default.findById(priode_id);
+        const priode = yield priode_Models_1.default.findById(priodeId).session(session);
+        console.log(priode);
         if (!priode) {
             return res.status(404).send({ message: 'Priode not found' });
         }
-        // console.log(priode);
         // Check if the priode is being used in a weekday
-        const weekdayUsing = yield weakday_Model_1.default.findOne({
+        const isPriodeUsedInWeekday = yield weakday_Model_1.default.findOne({
             routine_id: priode.rutin_id,
             $or: [
                 { start: { $in: [priode.priode_number] } },
                 { end: { $in: [priode.priode_number] } },
             ],
-        });
-        if (weekdayUsing) {
+        }).session(session);
+        if (isPriodeUsedInWeekday) {
             return res.status(400).send({ message: 'You cannot delete this period because it is now used on other classes' });
         }
         // Calculate the mid array
         const routineID = priode.rutin_id;
         const mid = yield (0, priode_helper_1.calculateMidArray)(routineID);
-        // console.log(mid)
         // Check if priode.priode_number is within valid weekday numbers
         if (mid.includes(priode.priode_number)) {
             return res.status(400).send({ message: 'You cannot delete this period because it is now used on other classes' });
         }
         // Delete the priode
         yield priode.deleteOne();
-        // Update the priode numbers of the remaining priode in the routine
-        const remainingPriode = yield priode_Models_1.default.find({ rutin_id: priode.rutin_id })
-            .sort({ priode_number: 'asc' });
-        let priodeNumber = 1;
-        for (let i = 0; i < remainingPriode.length; i++) {
-            const currPriode = remainingPriode[i];
-            if (currPriode.priode_number !== priodeNumber) {
-                currPriode.priode_number = priodeNumber;
+        // Update the priode numbers of the remaining priodes in the routine
+        const remainingPriodes = yield priode_Models_1.default.find({ rutin_id: priode.rutin_id })
+            .sort({ priode_number: 'asc' }).session(session);
+        for (let i = 0; i < remainingPriodes.length; i++) {
+            const currPriode = remainingPriodes[i];
+            const newPriodeNumber = i + 1;
+            if (currPriode.priode_number !== newPriodeNumber) {
+                currPriode.priode_number = newPriodeNumber;
                 yield currPriode.save();
             }
-            priodeNumber++;
         }
+        // Commit the transaction
+        yield session.commitTransaction();
         res.status(200).send({ message: 'Priode deleted', deleted: priode });
     }
     catch (error) {
+        // Handle errors and abortTransition
+        console.error(error);
+        // Rollback the transaction
+        yield session.abortTransaction();
         res.status(500).send({ message: error.message });
+    }
+    finally {
+        yield session.endSession();
     }
 });
 exports.delete_priode = delete_priode;
-//************  edit priode ***************** */
+//*******************************************************************************/
+//--------------------------------- Edit Priode  --------------------------------/
+//*******************************************************************************/
 const edit_priode = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { start_time, end_time } = req.body;
     const { rutin_id, priodeId } = req.params;
+    console.log("Edit Priode");
     try {
         // Find the priode to be edited
         const priode = yield priode_Models_1.default.findOne({ _id: priodeId });
@@ -126,7 +142,9 @@ const edit_priode = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.edit_priode = edit_priode;
-//************ all priode  *************** */
+//*******************************************************************************/
+//---------------------------------All priode  --------------------------------/
+//*******************************************************************************/
 const all_priode = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { routineID } = req.params;
     // console.log(`rutin_id: ${routineID}`);
@@ -140,7 +158,9 @@ const all_priode = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.all_priode = all_priode;
-//************ find priode by id  *************** */
+//*******************************************************************************/
+//-----------------------------  Find priode by id -------------------------------/
+//*******************************************************************************/
 const find_priode_by_id = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { priode_id } = req.params;
     try {

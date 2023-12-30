@@ -20,10 +20,6 @@ const accountSchema = new mongoose_1.Schema({
     },
     image: String,
     coverImage: String,
-    Saved_routines: [{
-            type: mongoose_1.Schema.Types.ObjectId,
-            ref: 'Routine',
-        }],
     password: String,
     osUserID: String,
     account_type: {
@@ -33,6 +29,10 @@ const accountSchema = new mongoose_1.Schema({
         default: "user" /* AccountType.User */,
     },
     routines: [{
+            type: mongoose_1.Schema.Types.ObjectId,
+            ref: 'Routine',
+        }],
+    Saved_routines: [{
             type: mongoose_1.Schema.Types.ObjectId,
             ref: 'Routine',
         }],

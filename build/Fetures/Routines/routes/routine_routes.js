@@ -21,9 +21,7 @@ const routines_middleware_1 = require("../middleware/routines.middleware");
 //
 //
 //****************************************************************************/
-//
-//............................... Routine.....................................//
-//
+//............................... Routine...................................../
 //****************************************************************************/
 app.post("/create", varifitoken_1.verifyToken, routine_controllers_1.createRoutine); // for create routine
 app.delete("/:id", varifitoken_1.verifyToken, routines_middleware_1.Peremption_To_delete_Routine, routine_controllers_1.deleteRoutine); // delete routine
@@ -36,21 +34,17 @@ app.get('/search', routine_controllers_1.search_routine);
 app.route("/save/routines").post(varifitoken_1.verifyToken, routine_controllers_1.save_routines); //... Show save routine
 app.post('/save_unsave/:routineId', varifitoken_1.verifyToken, routine_controllers_1.save_and_unsave_routine); // 2
 //****************************************************************************/
-//
 //............................... Priode.....................................//
-//
 //****************************************************************************/
 app.post('/priode/add/:routineID', varifitoken_1.verifyToken, priode_validation_1.periodModelValidation, // check all the required parameters
 member_mid_1.permission_add_Pride, priode_controller_1.add_priode); // add priode
-app.delete('/priode/remove/:priode_id', varifitoken_1.verifyToken, member_mid_1.permission_remove_priode, priode_controller_1.delete_priode); // remove period
+app.delete('/priode/remove/:priodeId', varifitoken_1.verifyToken, member_mid_1.permission_remove_priode, priode_controller_1.delete_priode); // remove period
 app.put('/priode/edit/:priodeId', varifitoken_1.verifyToken, member_mid_1.permission_edit_priode, priode_controller_1.edit_priode);
 //
 app.get('/all_priode/:routineID', priode_controller_1.all_priode);
 app.get('/priode/find/:priode_id', priode_controller_1.find_priode_by_id);
 //****************************************************************************/
-//
 //............................... Members and captain.........................//
-//
 //****************************************************************************/
 //....... Captain .....//
 app.post('/cap10/add/', varifitoken_1.verifyToken, captens_controller_1.addCaptain);

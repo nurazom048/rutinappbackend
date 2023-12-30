@@ -22,7 +22,8 @@ const upload = (0, multer_1.default)({
 });
 //.. create update delete
 router.route("/add/").post(varifitoken_1.verifyToken, notice_middleware_1.checkAccountType, upload.single('pdf_file'), notice_controller_1.addNotice); // add notice 
-router.route("/:noticeId").delete(varifitoken_1.verifyToken, notice_controller_1.deleteNotice); //... delete notice
+router.route("/:noticeId")
+    .delete(varifitoken_1.verifyToken, notice_controller_1.deleteNotice); //... delete notice
 // get notice
 //******     check status   ********/ 
 router.route("/status/:academyID").post(varifitoken_1.verifyToken, notice_controller_1.current_user_status);

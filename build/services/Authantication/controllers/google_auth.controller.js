@@ -15,12 +15,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.continueWithGoogle = void 0;
 const Account_Model_1 = __importDefault(require("../../../Fetures/Account/models/Account.Model"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const auth_methods_1 = require("./auth.methods");
 const Jwt_helper_1 = require("../../../services/Authantication/helper/Jwt.helper");
 const pending_account_model_1 = __importDefault(require("../../../Fetures/Account/models/pending_account.model"));
 dotenv_1.default.config();
+// Firebase admin sdk from Firebase config
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
+const serviceAccount = require('../../../config/firebase/admin.sdk');
+// Firebase auth from Firebase config
+const auth_1 = require("firebase/auth");
+const firebaseApp = require('../../../config/firebase/firebase.config');
+const auth = (0, auth_1.getAuth)(firebaseApp);
+//****************************************************************************************************/
+// --------------------------------- Continue With Google --------------------------------------------/
+//****************************************************************************************************/
 const continueWithGoogle = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { googleAuthToken, account_type } = req.body;
     try {
@@ -36,12 +45,11 @@ const continueWithGoogle = (req, res) => __awaiter(void 0, void 0, void 0, funct
         if (!decodedToken) {
             return res.status(500).json({ message: 'No Token Found' });
         }
-        //console.log(decodedToken)
         const userId = decodedToken.user_id;
         const name = decodedToken.name;
         const image = decodedToken.picture;
         const userEmail = decodedToken.email;
-        const displayName = decodedToken.displayName;
+        const displayName = decodedToken.name;
         //............................................................................................//
         //............................... login............. .......................................//
         //............................................................................................//
@@ -90,11 +98,14 @@ const continueWithGoogle = (req, res) => __awaiter(void 0, void 0, void 0, funct
             return res.status(201).json(response);
         }
         // Step 3: Create user in MongoDB
-        const account = new Account_Model_1.default({ id: userId, name, image, username, email: userEmail, googleSignIn: true });
+        const account = new Account_Model_1.default({ name, image, username, email: userEmail, googleSignIn: true });
         // Step 4: Update user in Firebase
-        yield firebase_admin_1.default.auth().updateUser(userId, {
+        yield firebase_admin_1.default.auth().deleteUser(userId.toString());
+        firebase_admin_1.default.auth().createUser({
+            uid: account.id || account._id,
+            displayName: name,
+            photoURL: image,
             email: userEmail,
-            displayName: displayName,
             emailVerified: true,
         });
         yield account.save();

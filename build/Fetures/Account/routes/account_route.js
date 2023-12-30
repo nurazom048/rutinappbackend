@@ -15,6 +15,9 @@ const upload = (0, multer_1.default)({
     //   fileSize: 5 * 1024 * 1024 // 5 MB limit
     // }
 });
+//**********************************************************************************************/
+// --------------------------------- Account Routes --------------------------------------------/
+//**********************************************************************************************/
 //... Edit account....///
 router.post("/eddit", varifitoken_1.verifyToken, upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'image', maxCount: 1 }]), account_controllers_1.edit_account);
 router.post("/eddit/changepassword/", varifitoken_1.verifyToken, account_controllers_1.changePassword);

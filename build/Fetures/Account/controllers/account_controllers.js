@@ -19,6 +19,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const app_1 = require("firebase/app");
 const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = require('firebase/storage');
 const firebase_storage_1 = require("../../../config/firebase/firebase_storage");
+const routine_models_1 = __importDefault(require("../../Routines/models/routine.models"));
 const storage = getStorage();
 // Initialize Firebase
 (0, app_1.initializeApp)(firebase_storage_1.firebaseConfig);
@@ -157,15 +158,18 @@ exports.view_my_account = view_my_account;
 //....view others Account...//
 const view_others_Account = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username } = req.params;
+    console.log(username);
     try {
         const user = yield Account_Model_1.default.findOne({ username }, { password: 0 })
             .populate({
             path: 'routines Saved_routines',
+            model: routine_models_1.default,
             options: {
                 sort: { createdAt: -1 },
             },
             populate: {
                 path: 'ownerid',
+                model: Account_Model_1.default,
                 select: 'name username image coverImage',
             },
         });

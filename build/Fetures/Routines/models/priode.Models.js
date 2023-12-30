@@ -21,5 +21,5 @@ const priodeModelSchema = new mongoose_1.Schema({
         required: true,
     },
 });
-const PriodeModel = mongodb_connection_1.RoutineDB.model('priodModel', priodeModelSchema);
+const PriodeModel = mongodb_connection_1.RoutineDB.model('priodeModel', priodeModelSchema);
 exports.default = PriodeModel;
