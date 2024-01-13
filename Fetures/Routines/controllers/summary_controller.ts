@@ -6,6 +6,8 @@ import Class from '../models/class.model';
 import Summary from '../models/summary.models';
 import RoutineMember from '../models/routineMembers.Model';
 import SaveSummary from '../models/save_summary.model';
+import { printD } from '../../../utils/utils';
+import { RoutineDB, maineDB } from '../../../connection/mongodb.connection';
 
 // firebase
 import { summaryImageUploader } from '../firebase/summary.firebase';
@@ -247,26 +249,30 @@ export const summary_status = async (req: any, res: Response) => {
     return res.status(500).json({ message: error.message });
   }
 };
-//**************** save unsave summary***************** */
+//*************************************************************************************/
+//--------------------------------- saveUnsaveSummary ----------------------------------/
+//*************************************************************************************/
+
+
 export const saveUnsaveSummary = async (req: any, res: Response) => {
   try {
-    const { id: userId } = req.user;
     const { save, summaryId } = req.body;
 
     // Find the summary by ID
     const foundSummary = await Summary.findById(summaryId);
+    console.log('Summary found:', foundSummary);
     if (!foundSummary) {
       return res.status(404).json({ message: 'Summary not found' });
     }
 
+
     const query = {
-      summaryId,
+      summaryId: foundSummary._id,
       routineId: foundSummary.routineId,
-      savedByAccountId: userId,
-      classId: foundSummary.classId,
-
-
+      savedByAccountId: req.user.id,
+      classID: foundSummary.classId,
     };
+
 
     switch (save) {
       case 'true':
@@ -285,18 +291,29 @@ export const saveUnsaveSummary = async (req: any, res: Response) => {
         return res.status(200).json({
           message: 'Summary saved successfully',
           save: true,
-          savedSummary
+          savedSummary,
         });
 
       case 'false':
         // Find the saved summary by summary ID and user ID
-        const ifsvaed = await SaveSummary.findOne(query);
-        if (!ifsvaed) {
+        const ifSaved = await SaveSummary.findOne(
+          {
+            summaryId: foundSummary._id,
+            routineId: foundSummary.routineId,
+            savedByAccountId: req.user.id,
+          });
+        console.log('Found Summary to Unsave:', ifSaved); // Add logging for debugging
+
+        if (!ifSaved) {
           return res.status(404).json({ message: 'Saved summary not found' });
         }
 
         // Remove the saved summary
-        await SaveSummary.findOneAndDelete(query);
+        await SaveSummary.findOneAndDelete({
+          summaryId: foundSummary._id,
+          routineId: foundSummary.routineId,
+          savedByAccountId: req.user.id,
+        });
 
         return res.status(200).json({
           message: 'Summary unsaved successfully',
@@ -307,14 +324,18 @@ export const saveUnsaveSummary = async (req: any, res: Response) => {
         return res.status(400).json({ message: 'Save condition is required' });
     }
   } catch (error: any) {
+    console.error('Error:', error); // Add logging for debugging
     return res.status(500).json({ message: error.message });
   }
 };
-
-// Remove Summary
+//*************************************************************************************/
+//--------------------------------- Remove Summary ----------------------------------/
+//*************************************************************************************/
 export const remove_summary = async (req: any, res: Response) => {
   const { summary_id } = req.params;
   const { id } = req.user;
+  const session = await RoutineDB.startSession();
+  session.startTransaction();
 
   try {
     let isCaptain = false;
@@ -332,7 +353,7 @@ export const remove_summary = async (req: any, res: Response) => {
     }
 
     // Check if the user is a captain
-    const isCaptainFind = await RoutineMember.findOne({ memberID: req.user.id, RutineID: findSummary.routineId, captain: true });
+    const isCaptainFind = await RoutineMember.findOne({ memberID: req.user.id, RutineID: findSummary.routineId, captain: true, });
     if (isCaptainFind) {
       isCaptain = true;
     }
@@ -343,22 +364,27 @@ export const remove_summary = async (req: any, res: Response) => {
       return res.status(403).json({ message: "You don't have permission to delete" });
     }
 
-    // Step 1: Delete the summary from Firebase storage
+    // Step 1: Delete associated save records
+    await SaveSummary.deleteMany({ summaryId: summary_id }).session(session);
+
+    // Step 2: Delete the summary from MongoDB
+    await Summary.findByIdAndDelete(summary_id).session(session);
+    // Step 3: Delete the summary from Firebase storage
     for (const imageLink of findSummary.imageLinks ?? []) {
       const fileRef = ref(storage, imageLink);
       await deleteObject(fileRef);
     }
-    // Step 3: Delete associated save records
-    await SaveSummary.deleteMany({ summaryId: summary_id });
-    // Step 2: Delete the summary from MongoDB
-    await Summary.findByIdAndDelete(summary_id);
 
-
+    await session.commitTransaction();
 
     return res.status(200).json({ message: "Summary deleted successfully" });
   } catch (error: any) {
     console.log('From delete summary');
     console.log(error);
+    await session.abortTransaction();
     return res.status(400).json({ message: error.message });
+  } finally {
+    session.endSession();
   }
 };
+

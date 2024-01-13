@@ -11,6 +11,7 @@ interface ISaveSummary extends Document {
 
 const saveSummarySchema: Schema<ISaveSummary> = new Schema<ISaveSummary>({
   summaryId: {
+
     type: Schema.Types.ObjectId,
     ref: 'Summary',
     required: true,
