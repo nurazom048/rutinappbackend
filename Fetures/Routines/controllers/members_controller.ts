@@ -58,7 +58,7 @@ export const removeMember = async (req: any, res: Response) => {
     const ifMemberFound = await RoutineMember.findOne({ memberID: member_ac._id, RutineID: routine });
     if (!ifMemberFound) return res.json({ message: "Member Already removed" });
 
-    const removeMember = RoutineMember.findByIdAndRemove(ifMemberFound._id);
+    const removeMember = await RoutineMember.findByIdAndDelete(ifMemberFound._id);
 
     // // Remove the member from the routine
     // routine.members = routine.members.filter((member) => member.toString() !== member_ac._id.toString());

@@ -145,7 +145,7 @@ export const deleteRoutine = async (req: any, res: Response) => {
     for (let i = 0; i < deletedClassIDList.length; i++) {
       const classId = deletedClassIDList[i];
       // Delete the class
-      await Classes.findByIdAndRemove(findClassesWhichShouldBeDeleted[i].id, { session });
+      await Classes.findByIdAndDelete(findClassesWhichShouldBeDeleted[i].id, { session });
     }
 
     await Weekday.deleteMany({ routine_id: id }, { session });
@@ -155,7 +155,7 @@ export const deleteRoutine = async (req: any, res: Response) => {
     // Pull out the routine ID from the owner's routines array
     await Account.updateOne({ _id: requestUserID }, { $pull: { routines: id } }, { session });
     // Delete the routine
-    await Routine.findByIdAndRemove(id, { session });
+    await Routine.findByIdAndDelete(id, { session });
 
     // Commit the transaction
     await session.commitTransaction();

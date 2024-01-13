@@ -123,7 +123,7 @@ const deleteRoutine = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         for (let i = 0; i < deletedClassIDList.length; i++) {
             const classId = deletedClassIDList[i];
             // Delete the class
-            yield class_model_1.default.findByIdAndRemove(findClassesWhichShouldBeDeleted[i].id, { session });
+            yield class_model_1.default.findByIdAndDelete(findClassesWhichShouldBeDeleted[i].id, { session });
         }
         yield weakday_Model_1.default.deleteMany({ routine_id: id }, { session });
         yield priode_Models_1.default.deleteMany({ rutin_id: id }, { session });
@@ -132,7 +132,7 @@ const deleteRoutine = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         // Pull out the routine ID from the owner's routines array
         yield Account_Model_1.default.updateOne({ _id: requestUserID }, { $pull: { routines: id } }, { session });
         // Delete the routine
-        yield routine_models_1.default.findByIdAndRemove(id, { session });
+        yield routine_models_1.default.findByIdAndDelete(id, { session });
         // Commit the transaction
         yield session.commitTransaction();
         res.status(200).json({ message: 'Routine deleted successfully' });

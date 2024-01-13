@@ -2,7 +2,10 @@ node_modules
 node_modules/
 .env
 env
-build/controllers
-build/method
-build/mid
+build/Fetures
+build/connection
+build/utils
+build/services
+build/sarver.js
+    
 

@@ -64,7 +64,7 @@ const removeMember = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const ifMemberFound = yield routineMembers_Model_1.default.findOne({ memberID: member_ac._id, RutineID: routine });
         if (!ifMemberFound)
             return res.json({ message: "Member Already removed" });
-        const removeMember = routineMembers_Model_1.default.findByIdAndRemove(ifMemberFound._id);
+        const removeMember = yield routineMembers_Model_1.default.findByIdAndDelete(ifMemberFound._id);
         // // Remove the member from the routine
         // routine.members = routine.members.filter((member) => member.toString() !== member_ac._id.toString());
         // const updated_routine = await routine.save();
