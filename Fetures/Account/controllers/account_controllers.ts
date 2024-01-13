@@ -21,6 +21,9 @@ const { auth } = require("firebase-admin");
 
 
 
+//**********************************************************************************************/
+// ---------------------------------Edit Account --------------------------------------------/
+//**********************************************************************************************/
 
 // Account controller to update the account with images
 
@@ -29,7 +32,6 @@ export const edit_account = async (req: any, res: Response) => {
   // console.log(req.files);
   // console.log("req.body");
   const { name, username, about, email } = req.body;
-
   try {
     const account = await Account.findOne({ _id: req.user.id });
     if (!account) {
@@ -68,7 +70,6 @@ export const edit_account = async (req: any, res: Response) => {
       const timestamp = Date.now();
       const filename = `${account.username}-${account.name}-${timestamp}-${profileImage.originalname}`;
       const metadata = { contentType: profileImage.mimetype };
-
       const profileImageRef = ref(storage, `images/profile/ID-${account.id}/profile/-${filename}`);
 
       await uploadBytes(profileImageRef, profileImage.buffer, metadata);
@@ -115,6 +116,13 @@ export const edit_account = async (req: any, res: Response) => {
     return res.status(500).json({ message: 'Failed to update account', error: err });
   }
 };
+
+
+
+
+
+
+
 //.......... Search Account ....//
 export const searchAccounts = async (req: any, res: Response) => {
   const { q: searchQuery = '', page = 1, limit = 10 } = req.query;
