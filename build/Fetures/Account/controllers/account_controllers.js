@@ -27,6 +27,9 @@ const storage = getStorage();
 const admin = require('firebase-admin');
 const { auth } = require("firebase-admin");
 // const { use } = require('../../routes/account_route');
+//**********************************************************************************************/
+// ---------------------------------Edit Account --------------------------------------------/
+//**********************************************************************************************/
 // Account controller to update the account with images
 const edit_account = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // console.log(req.body);
