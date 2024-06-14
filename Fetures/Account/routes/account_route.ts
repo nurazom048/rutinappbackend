@@ -19,7 +19,7 @@ const upload = multer({
 //... Edit account....///
 router.post("/eddit", verifyToken, upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'image', maxCount: 1 }]), edit_account);
 
-router.post("/eddit/changepassword/", verifyToken, changePassword);
+router.post("/edit/change_password/", verifyToken, changePassword);
 // later add security
 router.post("/eddit/forgotPassword/", forgetPassword);
 

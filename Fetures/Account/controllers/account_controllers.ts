@@ -214,28 +214,35 @@ export const view_others_Account = async (req: any, res: Response) => {
   }
 };
 
+//************************************************************************** */
+// ---------------------    changePassword   --------------------------------/
+//************************************************************************** */
 
-// *****************     changePassword      *******************************/
+
 export const changePassword = async (req: any, res: Response) => {
   const { id } = req.user;
   const { oldPassword, newPassword } = req.body;
 
   try {
-    // Find the account by ID
+    // Step 1: Find the account by ID
     const account = await Account.findById(id);
     if (!account) {
       return res.status(400).json({ message: "Account not found" });
     }
 
-    // Compare old password
+    // Ensure the password is defined
+    if (!account.password) {
+      return res.status(400).json({ message: "Password not set for this account" });
+    }
 
-    // Compare passwords
-    const passwordMatch = bcrypt.compare(oldPassword, account.password!);
-    if (!passwordMatch && oldPassword != account.password) {
+    // Step 2: Compare old password
+    const passwordMatch = await bcrypt.compare(oldPassword, account.password);
+    if (!passwordMatch) {
       return res.status(400).json({ message: "Old password is incorrect" });
     }
 
-
+    // Step 3: Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Update the password on Firebase
     await auth().updateUser(account.id, {
@@ -243,19 +250,16 @@ export const changePassword = async (req: any, res: Response) => {
     });
 
     // Update the password in MongoDB
-    account.password = newPassword;
+    account.password = hashedPassword;
     await account.save();
 
-    // Send response
+    // Step 4: Send response
     res.status(200).json({ message: "Password changed successfully" });
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ message: "Error changing password" });
   }
 };
-
-
-
 
 
 // *****************     forgetPassword      *******************************/
