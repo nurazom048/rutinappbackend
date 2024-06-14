@@ -22,10 +22,12 @@ import { weekdayValidation } from '../validation/weekday.validation';
 //
 // 3
 app.post('/:routineID/addclass',
-    verifyToken, classValidation, validateClassBookingAndPeremption,
+    verifyToken,
+    classValidation,
+    validateClassBookingAndPeremption,
     create_class,
 );
-app.post('/eddit/:class_id', verifyToken, edit_class);
+app.post('/edit/:class_id', verifyToken, classValidation, edit_class);
 app.delete('/delete/:class_id', verifyToken, delete_class);
 
 //

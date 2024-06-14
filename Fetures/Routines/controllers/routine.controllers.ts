@@ -362,7 +362,6 @@ export const current_user_status = async (req: any, res: Response) => {
       memberCount,
       notificationOn
     });
-
     res.status(200).json({
       isOwner,
       isCaptain,
@@ -371,9 +370,9 @@ export const current_user_status = async (req: any, res: Response) => {
       memberCount,
       notificationOn
     });
-  } catch (error: any) {
-    console.log(error)
-    res.status(500).json({ message: error.message });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error });
   }
 };
 

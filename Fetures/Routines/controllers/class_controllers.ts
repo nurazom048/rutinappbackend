@@ -11,7 +11,7 @@ import Account from '../../Account/models/Account.Model';
 
 // routine firebase and helper
 import { deleteSummariesFromFirebaseBaseOnClassId } from '../firebase/summary.firebase';
-import { getClasses, getNotificationClasses } from '../helper/class.helper';
+import { getClasses } from '../helper/class.helper';
 import { handleValidationError } from '../../../utils/validation_error';
 import { printD } from '../../../utils/utils';
 
@@ -316,45 +316,41 @@ export const findclass = async (req: any, res: Response) => {
   }
 };
 
-//************ all class *************** */
+
+//*********************************************************************** */
+//------------------------- class Notification Time -----------------------//
+//*********************************************************************** */
+
+
 export const classNotification = async (req: any, res: Response) => {
   const { id } = req.user;
 
   try {
-    //TODO:notificatin callss
-    // // find all the routines where notification is on
-    // const findRoutines = await RoutineMember.find({ memberID: id });
-    // if (!findRoutines) {
-    //   return res.status(404).send(findRoutines);
-    // }
-    // const filteredRoutineIds: string[] = [];
-    // findRoutines.forEach((routine: any) => {
-    //   if (routine.RutineID) {
-    //     filteredRoutineIds.push(routine.RutineID);
-    //   }
-    // });
+    // Step 1: Get all routine IDs where the user is a member
+    const findRoutines = await RoutineMember.find({ memberID: id });
+    if (!findRoutines) {
+      return res.status(404).send({ message: 'No routines found for the user' });
+    }
 
+    // Convert ObjectId to string and filter out null/undefined routine IDs
+    const filteredRoutineIds = findRoutines
+      .map(routine => routine.RutineID?.toString())
+      .filter(Boolean);
 
-    // const routines = await Routine.find({ _id: { $in: filteredRoutineIds } });
-    // if (!routines) return res.status(404).send({ message: 'Routines not found' });
+    // Step 2: Find weekdays associated with the routine IDs and populate class_id and routine_id
+    const allDaysWithNull = await Weekday.find({ routine_id: { $in: filteredRoutineIds } })
+      .populate({
+        path: 'class_id',
+        select: '-weekday' // Exclude the 'weekday' field from the populated 'class_id' object
+      });
 
+    // Filter out weekdays that do not have a valid class_id
+    const allDays = allDaysWithNull.filter(weekday => weekday.class_id !== null);
 
-    // // Find priodes
-    // // Get class by Weekday
-    // const allDayWithNull = await Weekday.find({ routine_id: { $in: filteredRoutineIds } }).populate('class_id');
-    // const allDay = allDayWithNull.filter((weekday: any) => weekday.class_id !== null);
-    // // console.log({ allday: allDay });
+    // Step 3: Send response with the filtered weekdays
+    res.send({ allClassForNotification: allDays });
 
-    // // add start time and end time with it 
-    // const allClass = await getNotificationClasses(allDay, priodes)
-    // const filteredClasses = allClass.filter((classItem: any) => classItem.start_time && classItem.end_time);
-
-
-    // // console.log({ notificationOnClasses: filteredClasses });
-    // res.send({ notificationOnClasses: filteredClasses });
-
-
-  } catch (error: any) {
+  } catch (error) {
     console.error(error);
     res.status(500).send({ message: 'Server Error', notificationOnClasses: [] });
   }
