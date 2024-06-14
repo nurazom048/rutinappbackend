@@ -9,14 +9,13 @@ import {
 } from '../controllers/routine.controllers';
 //priode
 import { periodModelValidation, } from '../validation/priode.validation';
-import { add_priode, edit_priode, delete_priode, all_priode, find_priode_by_id, } from '../controllers/priode_controller';
 // Members
 import {
     addMember, removeMember, allMembers, notification_Off, notification_On,
     acceptRequest, rejectMember, allRequest, kickOut, leave, sendMemberRequest,
 } from '../controllers/members_controller';
 import { addCaptain, removeCaptain } from '../controllers/captens.controller';
-import { permission_add_Pride, permission_remove_priode, peremption_add_member, permission_edit_priode } from '../middleware/member_mid';
+import { permission_add_Pride, peremption_add_member } from '../middleware/member_mid';
 import { Peremption_To_delete_Routine } from '../middleware/routines.middleware';
 //
 //
@@ -42,32 +41,6 @@ app.post('/joined', verifyToken, joined_routine);
 app.get('/search', search_routine);
 app.route("/save/routines").post(verifyToken, save_routines); //... Show save routine
 app.post('/save_unsave/:routineId', verifyToken, save_and_unsave_routine); // 2
-
-//****************************************************************************/
-//............................... Priode.....................................//
-//****************************************************************************/
-app.post('/priode/add/:routineID',
-    verifyToken,
-    periodModelValidation,// check all the required parameters
-    permission_add_Pride,
-    add_priode,
-); // add priode
-app.delete('/priode/remove/:priodeId',
-    verifyToken,
-    permission_remove_priode,
-    delete_priode
-);// remove period
-app.put('/priode/edit/:priodeId',
-    verifyToken,
-    permission_edit_priode,
-    edit_priode,
-);
-
-//
-app.get('/all_priode/:routineID', all_priode);
-app.get('/priode/find/:priode_id', find_priode_by_id);
-
-
 
 //****************************************************************************/
 //............................... Members and captain.........................//

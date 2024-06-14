@@ -102,7 +102,7 @@ export const loginAccount = async (req: Request, res: any) => {
     const updated = await Account.findByIdAndUpdate(account._id, { password: hashedPassword, osUserID: osUserID, lastLoginTime: Date.now() }, { new: true });
 
     // Send any with token and account details
-    res.status(200).json({ message: "Login successful", token: authToken, account });
+    res.status(200).json({ message: "Login successful", Headers: res.headers, token: authToken, account });
   } catch (error: any) {
     console.error(error);
     if (error.code === "auth/wrong-password") {

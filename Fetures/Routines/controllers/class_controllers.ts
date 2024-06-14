@@ -7,28 +7,31 @@ import Class from '../models/class.model';
 import Weekday from '../models/weakday.Model';
 import RoutineMember from '../models/routineMembers.Model';
 import Account from '../../Account/models/Account.Model';
-import Priode from '../models/priode.Models';
 
 
 // routine firebase and helper
 import { deleteSummariesFromFirebaseBaseOnClassId } from '../firebase/summary.firebase';
 import { getClasses, getNotificationClasses } from '../helper/class.helper';
 import { handleValidationError } from '../../../utils/validation_error';
+import { printD } from '../../../utils/utils';
 
-//************   create class       *************** */
+
+//*******************************************************************************/
+//---------------------------------  create class   ------------------------------/
+//*******************************************************************************/
 export const create_class = async (req: any, res: Response) => {
-  // const { routineID } = req.params;
   const { name, subjectcode, instuctor_name } = req.body;
   const { start_time, end_time, room } = req.body;
-  const { routineID, weekday, start, end } = req.validateClassBookingAndPeremption;
+  const { routineID, weekday } = req.validateClassBookingAndPeremption;
 
   try {
     // create and save new class
     const newClass = new Class({
       name,
       subjectcode,
-      rutin_id: routineID,
+      routine_id: routineID,
       instuctor_name
+      ,
     });
     await newClass.save();
 
@@ -37,12 +40,12 @@ export const create_class = async (req: any, res: Response) => {
       class_id: newClass._id,
       routine_id: routineID,
       num: weekday,
-      start,
       room,
-      end,
       start_time,
-      end_time
+      end_time,
+
     });
+    printD('weekday' + newWeekday);
     await newWeekday.save();
 
 
@@ -58,12 +61,14 @@ export const create_class = async (req: any, res: Response) => {
 };
 
 
+//*******************************************************************************/
+//-------------------------------- -Add weekday to class ------------------------------/
+//*******************************************************************************/
 
-//,, Add weekday to class
 export const addWeekday = async (req: any, res: Response) => {
   // Come after middleware
   const { classID } = req.params;
-  const { num, room, start, end } = req.body;
+  const { num, room, start_time, end_time, start_time_2, end_time_2 } = req.body;
   console.log(req.body)
 
   try {
@@ -74,11 +79,13 @@ export const addWeekday = async (req: any, res: Response) => {
     // create and save new weekday
     const newWeekday = new Weekday({
       class_id: classID,
-      routine_id: classFind.rutin_id.toString(),
+      routine_id: classFind.routine_id.toString(),
       num,
       room: room,
-      start,
-      end
+      start_time,
+      end_time,
+      start_time_2,
+      end_time_2,
     });
     await newWeekday.save();
 
@@ -152,31 +159,25 @@ export const edit_class = async (req: any, res: Response) => {
 
 
   try {
-    // 1 chack class
+    // 1 check class
     const classs = await Class.findOne({ _id: class_id });
     if (!classs) return res.status(404).send({ message: 'Class not found' });
 
-    /// 2 chack rutin
-    const rutin = await Routine.findOne({ _id: classs.rutin_id });
-    if (!rutin) return res.status(404).send({ message: 'Routine not found' });
+    /// 2 check routine class
+    const routine = await Routine.findOne({ _id: classs.routine_id });
+    if (!routine) return res.status(404).send({ message: 'Routine not found' });
 
     // Check permission: owner or captain
-    const routineMember = await RoutineMember.findOne({ RutineID: classs.rutin_id, memberID: req.user.id });
+    const routineMember = await RoutineMember.findOne({ RutineID: classs.routine_id, memberID: req.user.id });
     if (!routineMember || (!routineMember.owner && !routineMember.captain)) {
       return res.status(401).json({ message: "Only captains and owners can update classes" });
     }
 
 
-    // 2  chack booking
-    // const isAllradyBooking = await Class.findOne({ weekday, start, rutin_id: rutin._id });
-    // if (isAllradyBooking) return res.status(404).send({ message: 'This week day and start time is already booked' });
-    // const isAllradyBookingEnd = await Class.findOne({ weekday, end, rutin_id: rutin._id });
-    // if (isAllradyBookingEnd) return res.status(404).send({ message: 'This week day and end time is already booked' });
-
 
     // 5 update 
     const updatedClass = await Class.findOneAndUpdate(
-      { _id: class_id, rutin_id: classs.rutin_id },
+      { _id: class_id, rutin_id: classs.routine_id },
       { name, room, subjectcode, start, end, weekday, start_time, end_time },
       { new: true }
     );
@@ -208,7 +209,7 @@ export const delete_class = async (req: any, res: Response) => {
     if (!classs) return res.status(404).send({ message: 'Class not found' });
 
     // Check if routine exists
-    const routine = await Routine.findById(classs.rutin_id);
+    const routine = await Routine.findById(classs.routine_id);
     if (!routine) return res.status(404).send({ message: 'Routine not found' });
     // Check permission
     if (routine.ownerid.toString() !== req.user.id)
@@ -254,17 +255,11 @@ export const allclass = async (req: any, res: Response) => {
 
   try {
     const routine = await Routine.findById(routineID);
-    if (!routine) return res.status(404).send('Routine not found');
+    if (!routine) return res.status(404).send('Routine not found')
 
+    //.. Get class By Weekday
 
-    // find period 
-    const priodes = await Priode.find({ rutin_id: routineID });
-
-    //.. Get class By Weakday
-    const allDayWithNull = await Weekday.find({ routine_id: routineID }).populate('class_id');
-    const allDay = allDayWithNull.filter((weekday: any) => weekday.class_id !== null);
-
-    // with null class id valu 
+    // with null class id vale 
     const SundayClassWithNull = await Weekday.find({ routine_id: routineID, num: 0 }).populate('class_id');
     const MondayClassWithNull = await Weekday.find({ routine_id: routineID, num: 1 }).populate('class_id');
     const TuesdayClassWithNull = await Weekday.find({ routine_id: routineID, num: 2 }).populate('class_id');
@@ -272,33 +267,21 @@ export const allclass = async (req: any, res: Response) => {
     const ThursdayClassWithNull = await Weekday.find({ routine_id: routineID, num: 4 }).populate('class_id');
     const FridayClassWithNull = await Weekday.find({ routine_id: routineID, num: 5 }).populate('class_id');
     const SaturdayClassWithNull = await Weekday.find({ routine_id: routineID, num: 6 }).populate('class_id');
-    // with out null valu
     // without null value
-    const SundayClass = SundayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const MondayClass = MondayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const TuesdayClass = TuesdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const WednesdayClass = WednesdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const ThursdayClass = ThursdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const FridayClass = FridayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const SaturdayClass = SaturdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
+    const Sunday = SundayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
+    const Monday = MondayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
+    const Tuesday = TuesdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
+    const Wednesday = WednesdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
+    const Thursday = ThursdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
+    const Friday = FridayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
+    const Saturday = SaturdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
 
-
-    // addd start time and end time with it 
-    const allClass = await getClasses(allDay, priodes)
-
-    const Sunday = await getClasses(SundayClass, priodes)
-    const Monday = await getClasses(MondayClass, priodes);
-    const Tuesday = await getClasses(TuesdayClass, priodes);
-    const Wednesday = await getClasses(WednesdayClass, priodes);
-    const Thursday = await getClasses(ThursdayClass, priodes);
-    const Friday = await getClasses(FridayClass, priodes);
-    const Saturday = await getClasses(SaturdayClass, priodes);
 
     //
-    const uniqClass = await Class.find({ rutin_id: routineID });
+    const uniqClass = await Class.find({ routine_id: routineID });
     const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
 
-    res.send({ _id: routine._id, rutin_name: routine.name, priodes, uniqClass: uniqClass, Classes: { allClass, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
+    res.send({ _id: routine._id, routine_name: routine.name, AllClass: uniqClass, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
 
   } catch (error: any) {
 
@@ -338,39 +321,37 @@ export const classNotification = async (req: any, res: Response) => {
   const { id } = req.user;
 
   try {
-
-    // find all the routines where notification is on
-    const findRoutines = await RoutineMember.find({ memberID: id });
-    if (!findRoutines) {
-      return res.status(404).send(findRoutines);
-    }
-    const filteredRoutineIds: string[] = [];
-    findRoutines.forEach((routine: any) => {
-      if (routine.RutineID) {
-        filteredRoutineIds.push(routine.RutineID);
-      }
-    });
-
-
-    const routines = await Routine.find({ _id: { $in: filteredRoutineIds } });
-    if (!routines) return res.status(404).send({ message: 'Routines not found' });
+    //TODO:notificatin callss
+    // // find all the routines where notification is on
+    // const findRoutines = await RoutineMember.find({ memberID: id });
+    // if (!findRoutines) {
+    //   return res.status(404).send(findRoutines);
+    // }
+    // const filteredRoutineIds: string[] = [];
+    // findRoutines.forEach((routine: any) => {
+    //   if (routine.RutineID) {
+    //     filteredRoutineIds.push(routine.RutineID);
+    //   }
+    // });
 
 
-    // Find priodes
-    const priodes = await Priode.find({ rutin_id: { $in: filteredRoutineIds } });
-    console.log(priodes)
-    // Get class by Weekday
-    const allDayWithNull = await Weekday.find({ routine_id: { $in: filteredRoutineIds } }).populate('class_id');
-    const allDay = allDayWithNull.filter((weekday: any) => weekday.class_id !== null);
-    // console.log({ allday: allDay });
-
-    // add start time and end time with it 
-    const allClass = await getNotificationClasses(allDay, priodes)
-    const filteredClasses = allClass.filter((classItem: any) => classItem.start_time && classItem.end_time);
+    // const routines = await Routine.find({ _id: { $in: filteredRoutineIds } });
+    // if (!routines) return res.status(404).send({ message: 'Routines not found' });
 
 
-    // console.log({ notificationOnClasses: filteredClasses });
-    res.send({ notificationOnClasses: filteredClasses });
+    // // Find priodes
+    // // Get class by Weekday
+    // const allDayWithNull = await Weekday.find({ routine_id: { $in: filteredRoutineIds } }).populate('class_id');
+    // const allDay = allDayWithNull.filter((weekday: any) => weekday.class_id !== null);
+    // // console.log({ allday: allDay });
+
+    // // add start time and end time with it 
+    // const allClass = await getNotificationClasses(allDay, priodes)
+    // const filteredClasses = allClass.filter((classItem: any) => classItem.start_time && classItem.end_time);
+
+
+    // // console.log({ notificationOnClasses: filteredClasses });
+    // res.send({ notificationOnClasses: filteredClasses });
 
 
   } catch (error: any) {

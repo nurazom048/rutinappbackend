@@ -5,7 +5,6 @@ import { Request, Response, NextFunction } from 'express';
 import Class from '../models/class.model';
 import Routine from '../models/routine.models';
 import Weekday from '../models/weakday.Model';
-import PriodeModel from '../models/priode.Models';
 
 
 // WEEKDAY validation
@@ -33,49 +32,49 @@ export const validateWeekdayMiddleware = async (req: any, res: Response, next: N
       return res.status(404).send({ message: 'Class not found' });
     }
 
-    const routine = await Routine.findOne({ _id: classFind.rutin_id });
+    const routine = await Routine.findOne({ _id: classFind.routine_id });
     if (!routine) {
       return res.status(404).send({ message: 'Routine not found' });
     }
 
     // Period not created validations
-    const findEnd = await PriodeModel.findOne({ rutin_id: classFind.rutin_id, priode_number: start });
-    const findStartPriod = await PriodeModel.findOne({ rutin_id: classFind.rutin_id, priode_number: end });
-    if (!findEnd) {
-      return res.status(404).send({ message: `${end} period is not created` });
-    }
-    if (!findStartPriod) {
-      return res.status(404).send({ message: `${start} period is not created` });
-    }
+    // const findEnd = await PriodeModel.findOne({ rutin_id: classFind.rutin_id, priode_number: start });
+    // const findStartPriod = await PriodeModel.findOne({ rutin_id: classFind.rutin_id, priode_number: end });
+    // if (!findEnd) {
+    //   return res.status(404).send({ message: `${end} period is not created` });
+    // }
+    // if (!findStartPriod) {
+    //   return res.status(404).send({ message: `${start} period is not created` });
+    // }
 
     // Validation to check booking
-    const startPriodeAlreadyBooked = await Weekday.findOne({ routine_id: classFind.rutin_id, num, start });
+    const startPriodeAlreadyBooked = await Weekday.findOne({ routine_id: classFind.routine_id, num, start });
     if (startPriodeAlreadyBooked) {
       return res.status(404).send({ message: 'Start period is already booked' });
     }
 
-    const endPriodeAlreadyBooked = await Weekday.findOne({ routine_id: classFind.rutin_id, num, end });
+    const endPriodeAlreadyBooked = await Weekday.findOne({ routine_id: classFind.routine_id, num, end });
     if (endPriodeAlreadyBooked) {
       return res.status(404).send({ message: 'End period is already booked' });
     }
 
-    // Check if any period is already booked within the range
-    const mid: number[] = [];
-    const allStart = await Weekday.find({ num });
-    const allEnd = await Weekday.find({ num }, { end: 1 });
+    // // Check if any period is already booked within the range
+    // const mid: number[] = [];
+    // const allStart = await Weekday.find({ num });
+    // const allEnd = await Weekday.find({ num }, { end: 1 });
 
-    for (let i = 0; i < allStart.length; i++) {
-      for (let j = allStart[i].start + 1; j < allEnd[i].end; j++) {
-        mid.push(j);
-      }
-    }
+    // for (let i = 0; i < allStart.length; i++) {
+    //   for (let j = allStart[i].start + 1; j < allEnd[i].end; j++) {
+    //     mid.push(j);
+    //   }
+    // }
 
-    if (mid.includes(start)) {
-      return res.status(400).send({ message: `${start} This period is already booked. All bookings up to ${mid}` });
-    }
-    if (mid.includes(end)) {
-      return res.status(400).send({ message: `This ${end} period is already booked. All bookings up to ${mid}` });
-    }
+    // if (mid.includes(start)) {
+    //   return res.status(400).send({ message: `${start} This period is already booked. All bookings up to ${mid}` });
+    // }
+    // if (mid.includes(end)) {
+    //   return res.status(400).send({ message: `This ${end} period is already booked. All bookings up to ${mid}` });
+    // }
 
     req.classFind = classFind;
     req.routine = routine;

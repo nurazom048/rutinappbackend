@@ -6,7 +6,6 @@ import Routine from '../models/routine.models';
 import RoutineMember from '../models/routineMembers.Model';
 import Summary from '../models/save_summary.model';
 import SaveSummaries from '../models/save_summary.model';
-import Priode from '../models/priode.Models';
 import Classes from '../models/class.model';
 import Weekday from '../models/weakday.Model';
 import SaveRoutine from '../models/save_routine.model';
@@ -25,92 +24,69 @@ const storage = getStorage();
 import { deleteSummariesFromFirebaseBaseOnRoutineID } from '../firebase/summary.firebase';
 import { getClasses } from '../helper/class.helper';
 import mongoose from 'mongoose';
-import { maineDB } from '../../../connection/mongodb.connection';
-
-
-const getRoutineData = async (rutin_id: any) => {
-  try {
-    const routine = await Routine.findOne({ _id: rutin_id });
-    if (!routine) throw new Error("Routine not found");
-
-    const priodes = await Priode.find({ rutin_id: rutin_id });
-
-    const SundayClass = await Weekday.find({ rutin_id, num: 0 }).populate('class_id');
-    const MondayClass = await Weekday.find({ rutin_id, num: 1 }).populate('class_id');
-    const TuesdayClass = await Weekday.find({ rutin_id, num: 2 }).populate('class_id');
-    const WednesdayClass = await Weekday.find({ rutin_id, num: 3 }).populate('class_id');
-    const ThursdayClass = await Weekday.find({ rutin_id, num: 4 }).populate('class_id');
-    const FridayClass = await Weekday.find({ rutin_id, num: 5 }).populate('class_id');
-    const SaturdayClass = await Weekday.find({ rutin_id, num: 6 }).populate('class_id');
-
-    const Sunday = await getClasses(SundayClass, priodes);
-    const Monday = await getClasses(MondayClass, priodes);
-    const Tuesday = await getClasses(TuesdayClass, priodes);
-    const Wednesday = await getClasses(WednesdayClass, priodes);
-    const Thursday = await getClasses(ThursdayClass, priodes);
-    const Friday = await getClasses(FridayClass, priodes);
-    const Saturday = await getClasses(SaturdayClass, priodes);
-
-    const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
-
-    return { _id: routine._id, rutin_name: routine.name, priodes, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner };
-  } catch (error: any) {
-    throw error;
-  }
-};
+import { maineDB, RoutineDB } from '../../../connection/mongodb.connection';
 
 
 //*******************************************************************************/
 //--------------------------------- createRoutine  ------------------------------/
 //*******************************************************************************/
-
 export const createRoutine = async (req: any, res: Response) => {
-  const session = await maineDB.startSession();
+  const session = await RoutineDB.startSession();
   session.startTransaction();
 
   try {
-
     const { name } = req.body;
     const ownerId = req.user.id;
+    console.log('creating routine');
 
     // Check if a routine with the same name and owner already exists
-    const existingRoutine = await Routine.findOne({ name, ownerid: ownerId });
+    const existingRoutine = await Routine.findOne({ name, ownerid: ownerId }).session(session);
     if (existingRoutine) {
+      await session.abortTransaction();
       return res.status(400).json({ message: 'Routine already created with this name' });
     }
 
     // Check routine count
-    const routineCount = await Routine.countDocuments({ ownerid: ownerId });
+    console.log(' Check routine count');
+    const routineCount = await Routine.countDocuments({ ownerid: ownerId }).session(session);
     if (routineCount >= 20) {
+      await session.abortTransaction();
       return res.status(400).json({ message: 'You can only create up to 20 routines' });
     }
+    console.log(' Step 1: Create a new routine object');
 
     // Step 1: Create a new routine object
     const routine = new Routine({ name, ownerid: ownerId });
+    console.log(' Step 2: Create a new RoutineMember instance');
 
     // Step 2: Create a new RoutineMember instance
     const routineMember = new RoutineMember({ RutineID: routine._id, memberID: ownerId, owner: true });
+    console.log(' Step 3: Save the routine object to the database');
 
     // Step 3: Save the routine object to the database
     const createdRoutine = await routine.save({ session });
+    console.log('step 4 update routine');
 
     // Step 4: Update the user's routines array with the new routine ID
     const updatedUser = await Account.findOneAndUpdate(
       { _id: ownerId },
       { $push: { routines: createdRoutine._id } },
-      { new: true, session }
-    );
+      { new: true }
+    )
+    console.log(' Step 5');
 
     // Step 5: Wait for the routineMember instance to be saved
     await routineMember.save({ session });
+    console.log(' Step 6');
 
     // Step 6: Commit the transaction
     await session.commitTransaction();
+    console.log(' Step 7');
 
     // Step 7: Send a success response with the new routine and updated user object
     res.status(200).json({ message: 'Routine created successfully', routine: createdRoutine, user: updatedUser, routineMember });
   } catch (error) {
-    // Handle errors and abortTransition
+    // Handle errors and abortTransaction
     console.error('Error creating routine:', error);
 
     // Rollback the transaction
@@ -149,7 +125,6 @@ export const deleteRoutine = async (req: any, res: Response) => {
     }
 
     await Weekday.deleteMany({ routine_id: id }, { session });
-    await Priode.deleteMany({ rutin_id: id }, { session });
     await RoutineMember.deleteMany({ RutineID: id }, { session });
     await SaveRoutine.deleteMany({ routineID: id }, { session });
     // Pull out the routine ID from the owner's routines array

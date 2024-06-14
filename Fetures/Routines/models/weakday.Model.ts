@@ -6,8 +6,10 @@ interface IWeekday extends Document {
     class_id: mongoose.Types.ObjectId;
     room: string;
     num: number;
-    start: number;
-    end: number;
+    start_time: Date;
+    end_time: Date;
+    start_time_2: Date;
+    end_time_2: Date;
 }
 
 const weekdaySchema: Schema<IWeekday> = new Schema<IWeekday>({
@@ -31,13 +33,22 @@ const weekdaySchema: Schema<IWeekday> = new Schema<IWeekday>({
         required: [true, 'Weekday number is required'],
         enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     },
-    start: {
-        type: Number,
-        required: [true, 'Start period is required'],
+    start_time: {
+        type: Date,
+        required: [true, 'Start Time is required'],
     },
-    end: {
-        type: Number,
-        required: [true, 'End period is required']
+    end_time: {
+        type: Date,
+        required: [true, 'end_time is required'],
+    },
+    //------ For Same class on second Shift -------- //
+    start_time_2: {
+        type: Date,
+        // required: [true, 'Start Time is required'],
+    },
+    end_time_2: {
+        type: Date,
+        /// required: [true, 'end_time is required'],
     },
 });
 

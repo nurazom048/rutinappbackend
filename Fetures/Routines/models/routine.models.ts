@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema, Model } from 'mongoose';
-import { RoutineDB } from '../../../connection/mongodb.connection';
+import { maineDB, RoutineDB } from '../../../connection/mongodb.connection';
 
 interface IRoutine extends Document {
   name: string;

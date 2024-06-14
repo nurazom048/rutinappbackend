@@ -34,7 +34,7 @@ export const create_summary = async (req: any, res: Response) => {
     // Step 1: Find class
     const findClass = await Class.findOne({ _id: class_id });
     if (!findClass) return res.status(404).send({ message: 'Class not found' });
-    const routineID = findClass.rutin_id;
+    const routineID = findClass.routine_id;
     // TODO onle member can upload summary
 
     // Step 2: Check MIME types of uploaded files

@@ -6,7 +6,7 @@ interface IClass extends Document {
   instuctor_name: string;
   subjectcode: string;
   weekday: mongoose.Types.ObjectId[];
-  rutin_id: mongoose.Types.ObjectId;
+  routine_id: mongoose.Types.ObjectId;
 }
 
 const classScheme: Schema<IClass> = new Schema<IClass>({
@@ -29,7 +29,7 @@ const classScheme: Schema<IClass> = new Schema<IClass>({
     ref: 'Weekday',
     required: true,
   }],
-  rutin_id: {
+  routine_id: {
     type: Schema.Types.ObjectId,
     ref: 'Routine',
     required: true,

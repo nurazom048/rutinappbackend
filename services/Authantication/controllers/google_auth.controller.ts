@@ -110,6 +110,7 @@ export const continueWithGoogle = async (req: Request, res: Response) => {
                 res.setHeader('Authorization', `Bearer ${authToken}`);
                 res.setHeader('x-refresh-token', refreshToken);
                 // send success response
+                console.log({ message: "Login successful", token: authToken, account: existUser });
                 return res.status(200).json({ message: "Login successful", token: authToken, account: existUser });
             }
         }
@@ -163,7 +164,7 @@ export const continueWithGoogle = async (req: Request, res: Response) => {
         res.setHeader('Authorization', `Bearer ${authToken}`);
         res.setHeader('x-refresh-token', refreshToken);
 
-
+        console.log({ message: "Login successful", token: authToken, account: account });
         res.status(200).json({ message: "Login successful", token: authToken, account: account });
     } catch (error) {
         console.error("Error processing Google Auth Token:", error);

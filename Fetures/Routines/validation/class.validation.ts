@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import Routine from '../models/routine.models';
 import RoutineMember from '../models/routineMembers.Model';
 import Weekday from '../models/weakday.Model';
-import Priode from '../models/priode.Models';
 
 export const classValidation = (req: Request, res: Response, next: NextFunction) => {
     console.log(req.body)
@@ -56,32 +55,16 @@ export const validateClassBookingAndPeremption = async (req: any, res: Response,
             return res.status(401).json({ message: "Only captains and owners can add classes" });
         }
 
-        // Validation 1: Check if priode exist
-        const findEnd = await Priode.findOne({ rutin_id: routineID, priode_number: start });
-        const findStartPriode = await Priode.findOne({ rutin_id: routineID, priode_number: end });
-        if (!findEnd) return res.status(404).send({ message: `${end} priode is not created` });
-        if (!findStartPriode) return res.status(404).send({ message: `${start} priode is not created` });
 
         // Validation 2: Check for booking
-        const startPriodeAlreadyBooked = await Weekday.findOne({ routine_id: routineID, num: weekday, start });
-        if (startPriodeAlreadyBooked) return res.status(404).send({ message: 'Start priode is already booked' });
-        const endPriodeAlreadyBooked = await Weekday.findOne({ routine_id: routineID, num: weekday, end });
-        if (endPriodeAlreadyBooked) return res.status(404).send({ message: 'End priode is already booked' });
+        // const startPriodeAlreadyBooked = await Weekday.findOne({ routine_id: routineID, num: weekday, start });
+        // if (startPriodeAlreadyBooked) return res.status(404).send({ message: 'Start priode is already booked' });
+        // const endPriodeAlreadyBooked = await Weekday.findOne({ routine_id: routineID, num: weekday, end });
+        // if (endPriodeAlreadyBooked) return res.status(404).send({ message: 'End priode is already booked' });
 
         // Find all the start and end priode in the given num
         const allStart = await Weekday.find({ routine_id: routineID, num: weekday }, { start: 1 });
         const allEnd = await Weekday.find({ routine_id: routineID, num: weekday }, { end: 1 });
-
-        const mid = [];
-        for (let i = 0; i < allStart.length; i++) {
-            for (let j = allStart[i].start + 1; j < allEnd[i].end; j++) {
-                mid.push(j);
-            }
-        }
-
-        // Check if the start or end priode are already booked in the middle
-        if (mid.includes(start)) return res.status(400).send({ message: `${start} This period is already booked up to ${mid}` });
-        if (mid.includes(end)) return res.status(400).send({ message: `This ${end} period is already booked up to ${mid}` });
 
 
         //

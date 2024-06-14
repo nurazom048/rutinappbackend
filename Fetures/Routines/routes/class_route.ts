@@ -17,7 +17,6 @@ import { classValidation, validateClassBookingAndPeremption } from "../validatio
 // Weekday
 import { verifyToken } from '../../../services/Authantication/helper/varifitoken';
 import { weekdayValidation } from '../validation/weekday.validation';
-import { validateWeekdayMiddleware } from '../middleware/routines.middleware';
 
 
 //
@@ -39,12 +38,12 @@ app.post('/notification', verifyToken, classNotification);
 
 //
 // weekday
-app.post('/weakday/add/:classID',
-    weekdayValidation, validateWeekdayMiddleware,
+app.post('/weekday/add/:classID',
+    weekdayValidation,
     addWeekday,
 );
 app.delete('/weakday/delete/:id/:classID', deleteWeekdayById);
 // show weekday by class
-app.get('/weakday/show/:class_id', allWeekdayInClass);
+app.get('/weekday/show/:class_id', allWeekdayInClass);
 
 export default app;
