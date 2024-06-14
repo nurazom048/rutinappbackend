@@ -12,7 +12,7 @@ import {
     addWeekday,
     allWeekdayInClass,
 } from "../controllers/class_controllers";
-import { classValidation, validateClassBookingAndPeremption } from "../validation/class.validation";
+import { classEditValidation, classValidation, validateClassBookingAndPeremption } from "../validation/class.validation";
 //
 // Weekday
 import { verifyToken } from '../../../services/Authantication/helper/varifitoken';
@@ -27,7 +27,7 @@ app.post('/:routineID/addclass',
     validateClassBookingAndPeremption,
     create_class,
 );
-app.post('/edit/:class_id', verifyToken, classValidation, edit_class);
+app.post('/edit/:class_id', verifyToken, classEditValidation, edit_class);
 app.delete('/delete/:class_id', verifyToken, delete_class);
 
 //
