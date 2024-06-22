@@ -8,7 +8,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node ./build/sarver.js",
-    "build": "tsc",
+    "build": "[my-framework] build --output public",
     "ts": "nodemon --exec ts-node sarver.ts"
   },
   "author": "",
