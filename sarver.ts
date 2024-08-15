@@ -5,13 +5,13 @@ import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import auth_route from './Fetures/Account/routes/auth_route';
-import routine_route from './Fetures/Routines/routes/routine_routes';
-import class_route from './Fetures/Routines/routes/class_route';
-import summary from './Fetures/Routines/routes/summary_route';
-import account from './Fetures/Account/routes/account_route';
-import notice from './Fetures/Notice_Fetures/routes/notice_route';
-import notification from './Fetures/Notification_Fetures/routes/notification.route';
+import auth_route from './Features/Account/routes/Features';
+import routine_route from './Features/Routines/routes/Features';
+import class_route from './Features/Routines/routes/class_route';
+import summary from './Features/Routines/routes/summary_route';
+import account from './Features/Account/routes/account_route';
+import notice from './Features/Notice_Features/routes/notice_route';
+import notification from './Features/Notification_Features/routes/notification.route';
 
 const app = express();
 

@@ -2,11 +2,11 @@ node_modules
 node_modules/
 .env
 env
-# build/Fetures
-# build/connection
-# build/utils
-# build/services
-# build/sarver.js
+build/Fetures
+build/connection
+build/utils
+build/services
+build/sarver.js
     
 
 .vercel
