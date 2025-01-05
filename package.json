@@ -33,6 +33,7 @@
     "node-fetch": "^2.6.12",
     "onesignal-node": "^3.4.0",
     "qs": "^6.11.2",
+    "socket.io": "^4.8.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
