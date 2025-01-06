@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import { Server } from 'socket.io';
 import http from 'http';
-
+import jwt, { Secret } from 'jsonwebtoken';
 // Import routes
 import auth_route from './Features/Account/routes/Features';
 import routine_route from './Features/Routines/routes/Features';
@@ -61,29 +61,85 @@ const port = 4000;
 
 // MongoDB connection
 import { NoticeDB, maineDB, RoutineDB, NotificationDB } from './connection/mongodb.connection';
+import { isTokenExpired } from './services/Authentication/helper/Jwt.helper';
 
 // Create HTTP server
 const server = http.createServer(app);
-
 // Initialize socket.io
 const io = new Server(server);
 
+
+
+// Middleware to authenticate socket connection
+io.use((socket, next) => {
+  try {
+    // Log the headers to inspect the structure
+    console.log('Socket handshake headers:', socket.handshake.headers);
+
+    // Access the Authorization header directly from the headers object
+    const authHeader = socket.handshake.headers['authorization']; // This should be 'Bearer token'
+
+    if (!authHeader) {
+      console.log('Authorization token missing.');
+      return next(new Error('Authentication error: Token missing.'));
+    }
+
+    // Split the 'Bearer token' string to extract the token
+    const tokenArray = authHeader.split(' ') ?? [];
+    const token = tokenArray[tokenArray.length - 1]; // Get the token part
+
+    if (!token) {
+      console.log('Authorization token missing.');
+      return next(new Error('Authentication error: Token missing.'));
+    }
+
+    // Verify if the token is expired
+    const isAuthTokenExpired = isTokenExpired(token, process.env.JWT_SECRET_KEY as Secret);
+
+    if (isAuthTokenExpired) {
+      console.log('Authorization token has expired.');
+      return next(new Error('Authentication error: Token expired.'));
+    }
+
+    // Decode the token to get user info
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as Secret); // Verify and decode the JWT token
+
+    console.log('Authenticated user:', decoded);
+
+    // Attach the decoded user to the socket for future use in events
+    (socket as any).user = decoded;
+
+    return next(); // Proceed to the connection handler if the token is valid
+  } catch (error) {
+    console.log('Error during token validation:', error);
+    return next(new Error('Authentication error: Token verification failed.'));
+  }
+});
+var soket;
 // Handle socket.io connections
 io.on('connection', (socket) => {
+  soket = socket;
   console.log('A user connected:', socket.id);
 
-  // Listen for chat messages from clients
-  socket.on('chat message', (msg) => {
-    console.log('Message received:', msg);
-    // Broadcast the message to all connected clients
-    io.emit('chat message', msg);
+  // Join a room
+  socket.on('join room', (room) => {
+    socket.join(room);
+    console.log(`User joined room: ${room}`);
   });
+
+  // Leave a room
+  socket.on('leave room', (room) => {
+    socket.leave(room);
+    console.log(`User left room: ${room}`);
+  });
+
 
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
 });
+export { io, soket };
 
 // Use Promise.all to wait for database connections to be established
 Promise.all([maineDB, NoticeDB, RoutineDB, NotificationDB])

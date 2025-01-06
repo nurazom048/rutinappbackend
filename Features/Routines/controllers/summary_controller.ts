@@ -67,6 +67,11 @@ export const create_summary = async (req: any, res: Response) => {
     const createdSummary = await summary.save();
     // console.log(createdSummary);
     // console.log(id);
+
+
+
+
+
     return res.status(201).json({
       message: 'Summary created successfully',
       summary: createdSummary,
@@ -76,14 +81,6 @@ export const create_summary = async (req: any, res: Response) => {
     return res.status(400).json({ message: error.message });
   }
 };
-
-//*****************************************************************************/
-//--------------------------Socket IO chat ------------------------------------/
-//*****************************************************************************/
-//
-
-import http from 'http';
-import path from 'path';
 
 
 
