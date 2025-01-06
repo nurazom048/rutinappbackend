@@ -115,10 +115,8 @@ io.use((socket, next) => {
     return next(new Error('Authentication error: Token verification failed.'));
   }
 });
-var soket;
 // Handle socket.io connections
 io.on('connection', (socket) => {
-  soket = socket;
   console.log('A user connected:', socket.id);
 
   // Join a room
@@ -138,8 +136,22 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
+  // chats 
+
+
+  socket.on('chat message', (data) => {
+    const { message, room } = data;
+
+    console.log(`Message received in room ${room}: ${message}`);
+
+    // Broadcast the message to the specific room
+    io.to(room).emit('chat message', {
+      socketMessage: 'Message save to db',
+      message: "Message received",
+      room: 'chat',
+    });
+  });
 });
-export { io, soket };
 
 // Use Promise.all to wait for database connections to be established
 Promise.all([maineDB, NoticeDB, RoutineDB, NotificationDB])
