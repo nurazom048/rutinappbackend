@@ -1,0 +1,112 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountType {
+  user
+  student
+  academy
+}
+
+enum imageStorageProvider {
+  firebase
+  aws
+  others
+}
+
+enum Day {
+  sat
+  sun
+  mon
+  tue
+  wed
+  thu
+  fri
+}
+
+model Account {
+  id                        String                @id @default(uuid())
+  username                  String                @unique
+  name                      String
+  about                     String?
+  email                     String                @unique
+  phone                     String                @unique
+  image                     String?
+  imageStorageProvider      imageStorageProvider? // Assuming `imageStorageProvider` is an enum or String
+  coverImage                String?
+  coverImageStorageProvider imageStorageProvider? // Assuming `coverImageStorageProvider` is an enum or String
+  password                  String?
+  accountType               AccountType           @default(user)
+  googleSignIn              Boolean               @default(false)
+  lastLoginTime             DateTime?
+  accountData               AccountData?          @relation("AccountDataOwner")
+  createdRoutines           Routine[]             @relation("AccountCreatedRoutines")
+  routineMemberships        RoutineMember[]       @relation("AccountRoutineMemberships")
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+}
+
+model AccountData {
+  id             String  @id @default(uuid())
+  accountID      Account @relation("AccountDataOwner", fields: [ownerAccountId], references: [id], onDelete: Cascade)
+  ownerAccountId String  @unique
+}
+
+model RoutineMember {
+  id             String   @id @default(uuid())
+  accountId      String // Account ID of the member
+  routineId      String // Routine ID
+  member         Account  @relation("AccountRoutineMemberships", fields: [accountId], references: [id])
+  routine        Routine  @relation("RoutineMembers", fields: [routineId], references: [id])
+  notificationOn Boolean  @default(false)
+  captain        Boolean  @default(false)
+  owner          Boolean  @default(false)
+  isSaved        Boolean  @default(false)
+  blacklist      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Routine {
+  id             String          @id @default(uuid())
+  routineName    String
+  routineOwner   Account         @relation("AccountCreatedRoutines", fields: [ownerAccountId], references: [id])
+  ownerAccountId String
+  routineMembers RoutineMember[] @relation("RoutineMembers") // Relation to RoutineMember
+  classes        Class[]         @relation("RoutineClasses") // Relation to Class
+  weekdays       Weekday[]       @relation("RoutineWeekdays") // Relation to Weekday
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Class {
+  id             String    @id @default(uuid()) // Primary key
+  name           String // Name of the class
+  instructorName String // Name of the instructor
+  subjectCode    String // Subject code for the class
+  routineId      String // Foreign key to Routine
+  routine        Routine   @relation("RoutineClasses", fields: [routineId], references: [id], onDelete: Cascade) // Relation to Routine
+  weekdays       Weekday[] @relation("ClassWeekdays") // Relation to Weekday
+  createdAt      DateTime  @default(now()) // Auto-generated timestamp for creation
+  updatedAt      DateTime  @updatedAt // Auto-generated timestamp for updates
+}
+
+model Weekday {
+  id        String   @id @default(uuid()) // Primary key
+  routineId String // Foreign key to Routine
+  routine   Routine  @relation("RoutineWeekdays", fields: [routineId], references: [id], onDelete: Cascade) // Relation to Routine
+  classId   String // Foreign key to Class
+  class     Class    @relation("ClassWeekdays", fields: [classId], references: [id], onDelete: Cascade) // Relation to Class
+  room      String // Room information
+  Day       Day // select day by enum
+  startTime DateTime // Start time for the first shift
+  endTime   DateTime // End time for the first shift
+  createdAt DateTime @default(now()) // Auto-generated timestamp for creation
+  updatedAt DateTime @updatedAt // Auto-generated timestamp for updates
+}
