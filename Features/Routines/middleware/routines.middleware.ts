@@ -107,3 +107,14 @@ export const Peremption_To_delete_Routine = async (req: any, res: Response, next
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+// Middleware to validate the request body for creating a routine
+export const createRoutineValidation = (req: Request, res: Response, next: NextFunction) => {
+  const { name } = req.body;
+
+  if (!name || typeof name !== "string" || name.trim() === "") {
+    return res.status(400).json({ message: "The 'name' field is required and must be a non-empty string." });
+  }
+
+  next(); // Proceed to the next middleware or route handler
+};

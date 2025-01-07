@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 import Account from '../../Account/models/Account.Model';
 import Routine from '../models/routine.models';
 import RoutineMember from '../models/routineMembers.Model';
+import prisma from '../../../prisma/prisma.clint';
 
 
 
@@ -184,17 +185,10 @@ export const allMembers = async (req: any, res: Response) => {
 };
 
 
-
-
-
-
-
-
-//**********  see all member in rutin    ************* */
+//**********  see all member in routine    ************* */
 export const allRequest = async (req: any, res: Response) => {
   const { routineID } = req.params;
 
-  // console.log(routineID);
 
   try {
     // Find the routine and  member 
@@ -399,73 +393,85 @@ export const kickOut = async (req: any, res: Response) => {
 };
 
 
+//***************************************************************************************/
+//----------------------------notification on/off --------------------------------------/
+//**************************************************************************************/
 
-// notification off
 
-export const notification_Off = async (req: any, res: Response) => {
-  const { routineID } = req.params;
-  const { id } = req.user;
+
+export const notification_On = async (req: any, res: Response) => {
+  const { routineId } = req.params; // Use camelCase for consistency
+  const { id: userId } = req.user; // Destructure `id` as `userId` for clarity
 
   try {
     // Find the routine by ID
-    const routine = await Routine.findById(routineID);
+    const routine = await prisma.routine.findUnique({ where: { id: routineId } });
     if (!routine) {
-      return res.json({ message: "Routine not found" });
+      return res.status(404).json({ message: "Routine not found" });
     }
 
     // Check if the user is a member of this routine
-    const isMember = await RoutineMember.findOne({ RutineID: routineID, memberID: id });
+    const isMember = await prisma.routineMember.findFirst({
+      where: { routineId, accountId: userId },
+    });
     if (!isMember) {
-      return res.json({ message: "You are not a member of this routine" });
+      return res.status(403).json({ message: "You are not a member of this routine" });
     }
 
-    // Check if the user has already turned on notifications
-    const isNotificationAllrayOff = await RoutineMember.findOne({ RutineID: routineID, memberID: id, notificationOn: false });
-    if (isNotificationAllrayOff) {
-      return res.json({ message: "Notifications are already turned off", notificationOn: false });
+    // Check if notifications are already turned on
+    if (isMember.notificationOn) {
+      return res
+        .status(200)
+        .json({ message: "Notifications are already turned on", notificationOn: true });
     }
 
-    // Update the notificationOn field to false for the user in the routine
-    await RoutineMember.findOneAndUpdate({ RutineID: routineID, memberID: id }, { notificationOn: false });
+    // Update the `notificationOn` field to `true`
+    await prisma.routineMember.update({
+      where: { id: isMember.id },
+      data: { notificationOn: true },
+    });
 
-    res.json({ message: "Notifications turned off", notificationOn: false });
+    res.status(200).json({ message: "Notifications turned on", notificationOn: true });
   } catch (error: any) {
     console.error(error);
-    res.json({ message: error.toString() });
+    res.status(500).json({ message: error.toString() });
   }
 };
-
-// notification on
-export const notification_On = async (req: any, res: Response) => {
-  const { routineID } = req.params;
-  const { id } = req.user;
+export const notification_Off = async (req: any, res: Response) => {
+  const { routineId } = req.params; // Use camelCase for consistency
+  const { id: userId } = req.user; // Destructure `id` as `userId` for clarity
 
   try {
     // Find the routine by ID
-    const routine = await Routine.findById(routineID);
+    const routine = await prisma.routine.findUnique({ where: { id: routineId } });
     if (!routine) {
-      return res.json({ message: "Routine not found" });
+      return res.status(404).json({ message: "Routine not found" });
     }
 
     // Check if the user is a member of this routine
-    const isMember = await RoutineMember.findOne({ RutineID: routineID, memberID: id });
+    const isMember = await prisma.routineMember.findFirst({
+      where: { routineId, accountId: userId },
+    });
     if (!isMember) {
-      return res.json({ message: "You are not a member of this routine" });
+      return res.status(403).json({ message: "You are not a member of this routine" });
     }
 
-    // Check if the user has already turned off notifications
-    const isNotificationOAlreadyOn = await RoutineMember.findOne({ RutineID: routineID, memberID: id, notificationOn: true });
-    if (isNotificationOAlreadyOn) {
-      return res.json({ message: "Notifications are already turned on", notificationOn: true });
+    // Check if notifications are already turned off
+    if (!isMember.notificationOn) {
+      return res
+        .status(200)
+        .json({ message: "Notifications are already turned off", notificationOn: false });
     }
 
-    // Update the notificationOn 
+    // Update the `notificationOn` field to `false`
+    await prisma.routineMember.update({
+      where: { id: isMember.id },
+      data: { notificationOn: false },
+    });
 
-    isMember.notificationOn = true;
-    isMember.save()
-    res.json({ message: "Notifications turned on", notificationOn: true });
+    res.status(200).json({ message: "Notifications turned off", notificationOn: false });
   } catch (error: any) {
     console.error(error);
-    res.json({ message: error.toString() });
+    res.status(500).json({ message: error.toString() });
   }
 };

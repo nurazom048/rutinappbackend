@@ -4,8 +4,8 @@ const app = express();
 // Routine
 import {
     createRoutine, deleteRoutine,
-    homeFeed, joined_routine, search_routine,
-    save_routines, routine_details, save_and_unsave_routine, current_user_status,
+    homeFeed, joined_routine, searchRoutine,
+    save_routines, save_and_unsave_routine, current_user_status,
 } from '../controllers/routine.controllers';
 //priode
 import { periodModelValidation, } from '../validation/priode.validation';
@@ -16,7 +16,7 @@ import {
 } from '../controllers/members_controller';
 import { addCaptain, removeCaptain } from '../controllers/captens.controller';
 import { permission_add_Pride, peremption_add_member } from '../middleware/member_mid';
-import { Peremption_To_delete_Routine } from '../middleware/routines.middleware';
+import { createRoutineValidation, Peremption_To_delete_Routine } from '../middleware/routines.middleware';
 //
 //
 //
@@ -25,7 +25,7 @@ import { Peremption_To_delete_Routine } from '../middleware/routines.middleware'
 //............................... Routine...................................../
 //****************************************************************************/
 
-app.post("/create", verifyToken, createRoutine);// for create routine
+app.post("/create", verifyToken, createRoutineValidation, createRoutine);// for create routine
 app.delete("/:id",
     verifyToken,
     Peremption_To_delete_Routine,
@@ -38,7 +38,7 @@ app.post("/home", verifyToken, homeFeed); /// feed {user can see her uploaded ro
 app.post('/joined', verifyToken, joined_routine);
 
 //.. search routine ...//
-app.get('/search', search_routine);
+app.get('/search', searchRoutine);
 app.route("/save/routines").post(verifyToken, save_routines); //... Show save routine
 app.post('/save_unsave/:routineId', verifyToken, save_and_unsave_routine); // 2
 
@@ -47,8 +47,8 @@ app.post('/save_unsave/:routineId', verifyToken, save_and_unsave_routine); // 2
 //****************************************************************************/
 
 //....... Captain .....//
-app.post('/cap10/add/', verifyToken, addCaptain);
-app.delete('/cap10/remove', verifyToken, removeCaptain);
+app.post('/captain/add', verifyToken, addCaptain);
+app.delete('/captain/remove', verifyToken, removeCaptain);
 
 //........... Add member .....//
 app.post('/member/add/:routineID/:username', verifyToken, peremption_add_member, addMember);
@@ -71,8 +71,7 @@ app.post('/notification/on/:routineID', verifyToken, notification_On);
 
 //.. check current status ...//
 app.post('/status/:routineId/', verifyToken, current_user_status);
-app.route("/details").post(routine_details);
-app.route("/details").post(verifyToken, routine_details);
+
 
 
 
