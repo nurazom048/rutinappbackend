@@ -17,6 +17,7 @@ import { printD } from '../../../utils/utils';
 import { RoutineDB } from '../../../connection/mongodb.connection';
 import SaveSummary from '../models/save_summary.model';
 import Summary from '../models/summary.models';
+import prisma from '../../../prisma/prisma.clint';
 
 
 //! firebase 
@@ -31,43 +32,52 @@ const storage = getStorage();
 //---------------------------------  create class   ------------------------------/
 //*******************************************************************************/
 export const create_class = async (req: any, res: Response) => {
-  const { name, subjectcode, instuctor_name } = req.body;
-  const { start_time, end_time, room } = req.body;
-  const { routineID, weekday } = req.validateClassBookingAndPeremption;
+  const { name, subjectCode, instructorName, startTime, endTime, room, weekday } = req.body;
+  const { routineId } = req.params;
 
   try {
-    // create and save new class
-    const newClass = new Class({
-      name,
-      subjectcode,
-      routine_id: routineID,
-      instuctor_name
-      ,
+    const result = await prisma.$transaction(async (prisma) => {
+      // Create the class
+      const createdClass = await prisma.class.create({
+        data: {
+          name,
+          subjectCode,
+          instructorName,
+          routineId,
+        },
+      });
+
+      // Create associated weekday
+      const createdWeekday = await prisma.weekday.create({
+        data: {
+          class: {
+            connect: { id: createdClass.id }, // Connect to the created class
+          },
+          routine: {
+            connect: { id: routineId }, // Connect to the routine
+          },
+          Day: weekday, // Enum or string for the day
+          room,
+          startTime,
+          endTime,
+        },
+      });
+
+      return { createdClass, createdWeekday };
     });
-    await newClass.save();
 
-    // create and save new weekday
-    const newWeekday = new Weekday({
-      class_id: newClass._id,
-      routine_id: routineID,
-      num: weekday,
-      room,
-      start_time,
-      end_time,
-
+    // Respond with the created class and weekday
+    return res.status(201).json({
+      message: "Class and weekday created successfully",
+      class: result.createdClass,
+      weekday: result.createdWeekday,
     });
-    printD('weekday' + newWeekday);
-    await newWeekday.save();
-
-
-    const updatedRoutine = await Routine.findOne({ _id: routineID });
-    res.send({ _id: newClass.id, class: newClass, message: 'Class added successfully', routine: updatedRoutine, newWeekday });
-
-    //
   } catch (error: any) {
-    console.log({ message: error.message });
-    if (!handleValidationError(res, error))
-      return res.status(500).send({ message: error.message });
+    console.error({ message: "Error creating class and weekday", error });
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 
@@ -279,49 +289,89 @@ export const show_weekday_classes = async (req: any, res: Response) => {
   }
 };
 
+//*********************************************************************************************/
+//---------------------------- Full Routine or All Class --------------------------------------/
+//*********************************************************************************************/
 
-//************ all class *************** */
-export const allclass = async (req: any, res: Response) => {
+export const allClass = async (req: any, res: Response) => {
+
   const { routineID } = req.params;
+  console.log(routineID);
 
   try {
-    const routine = await Routine.findById(routineID);
-    if (!routine) return res.status(404).send('Routine not found')
+    // Check if the routine exists
+    const routine = await prisma.routine.findUnique({
+      where: { id: routineID },
+      include: {
+        routineOwner: { // Include owner details in the routine query
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            image: true, // Include image if required
+          },
+        },
+      },
+    });
+    if (!routine) {
+      return res.status(404).json({ message: 'Routine not found' });
+    }
 
-    //.. Get class By Weekday
-
-    // with null class id vale 
-    const SundayClassWithNull = await Weekday.find({ routine_id: routineID, num: 0 }).populate('class_id');
-    const MondayClassWithNull = await Weekday.find({ routine_id: routineID, num: 1 }).populate('class_id');
-    const TuesdayClassWithNull = await Weekday.find({ routine_id: routineID, num: 2 }).populate('class_id');
-    const WednesdayClassWithNull = await Weekday.find({ routine_id: routineID, num: 3 }).populate('class_id');
-    const ThursdayClassWithNull = await Weekday.find({ routine_id: routineID, num: 4 }).populate('class_id');
-    const FridayClassWithNull = await Weekday.find({ routine_id: routineID, num: 5 }).populate('class_id');
-    const SaturdayClassWithNull = await Weekday.find({ routine_id: routineID, num: 6 }).populate('class_id');
-    // without null value
-    const Sunday = SundayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const Monday = MondayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const Tuesday = TuesdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const Wednesday = WednesdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const Thursday = ThursdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const Friday = FridayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
-    const Saturday = SaturdayClassWithNull.filter((weekday: any) => weekday.class_id !== null);
+    // Fetch all classes related to the routine without including weekdays or timestamps
+    const classes = await prisma.class.findMany({
+      where: { routineId: routineID },
+      select: {
+        id: true,
+        name: true,
+        instructorName: true,
+        subjectCode: true,
+        routineId: true,
+      }, // Exclude createdAt and updatedAt
+    });
 
 
-    //
-    const uniqClass = await Class.find({ routine_id: routineID });
-    const owner = await Account.findOne({ _id: routine.ownerid }, { name: 1, ownerid: 1, image: 1, username: 1 });
+    // Initialize weekdays structure for grouping
+    const weekdayClasses: { [key: string]: any[] } = { sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: [] };
+    // Group classes by weekdays
+    const classesWithWeekdays = await prisma.class.findMany({
+      where: { routineId: routineID },
+      include: {
+        weekdays: true, // Include weekdays for grouping
+      },
+    });
 
-    res.send({ _id: routine._id, routine_name: routine.name, AllClass: uniqClass, Classes: { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday }, owner });
+    classesWithWeekdays.forEach((classItem) => {
+      classItem.weekdays.forEach((weekday) => {
+        const dayKey = weekday.Day.toLowerCase(); // Get the day directly
 
-  } catch (error: any) {
+        if (weekdayClasses[dayKey]) {
+          // Use the class and weekday properties directly
+          weekdayClasses[dayKey].push({
+            ...classItem,
+            room: weekday.room,
+            startTime: weekday.startTime,
+            endTime: weekday.endTime,
+          });
+        } else {
+          console.warn(`Invalid weekday: ${weekday.Day} for class: ${classItem.id}`);
+        }
+      });
+    });
+    const { id, name, username, image } = routine.routineOwner;
 
-    console.error(error);
+    // Prepare the final response
+    const response = {
+      allClass: classes,
+      weekdayClasses,
+      owner: { id, name, username, image },
+    };
 
-    res.status(500).send('Server Error');
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error fetching classes:', error);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
-
 
 
 //************   edit_class       *************** */

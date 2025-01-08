@@ -6,13 +6,13 @@ import {
     deleteWeekdayById,
     delete_class,
     show_weekday_classes,
-    allclass,
+    allClass,
     findclass,
     classNotification,
     addWeekday,
     allWeekdayInClass,
 } from "../controllers/class_controllers";
-import { classEditValidation, classValidation, validateClassBookingAndPeremption } from "../validation/class.validation";
+import { cakedPermission, classEditValidation, classValidation } from "../validation/class.validation";
 //
 // Weekday
 import { verifyToken } from '../../../services/Authentication/helper/Authentication';
@@ -21,10 +21,10 @@ import { weekdayValidation } from '../validation/weekday.validation';
 
 //
 // 3
-app.post('/:routineID/addclass',
+app.post('/:routineId/addclass',
     verifyToken,
     classValidation,
-    validateClassBookingAndPeremption,
+    cakedPermission,
     create_class,
 );
 app.post('/edit/:class_id', verifyToken, classEditValidation, edit_class);
@@ -32,8 +32,8 @@ app.delete('/delete/:class_id', verifyToken, delete_class);
 
 //
 app.get('/:routineID/:weekday', show_weekday_classes);
-app.get('/:routineID/all/class', allclass);
-app.post('/:routineID/all/class', verifyToken, allclass);
+app.get('/:routineID/all/class', allClass);
+// app.post('/:routineID/all/class', verifyToken, allclass);
 app.get('/find/class/:class_id', findclass);
 // notification
 app.post('/notification', verifyToken, classNotification);
