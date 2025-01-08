@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import Routine from '../models/routine.models';
 import RoutineMember from '../models/routineMembers.Model';
 import Weekday from '../models/weakday.Model';
-import prisma from '../../../prisma/prisma.clint';
+import prisma from '../../../prisma/schema/prisma.clint';
 // Enum for weekdays
 // Enum for weekdays
 export enum Day {

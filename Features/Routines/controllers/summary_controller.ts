@@ -11,6 +11,7 @@ import { RoutineDB, maineDB } from '../../../connection/mongodb.connection';
 
 // firebase
 import { summaryImageUploader } from '../firebase/summary.firebase';
+import prisma from '../../../prisma/schema/prisma.clint';
 
 
 
@@ -22,20 +23,35 @@ initializeApp(firebase_storage.firebaseConfig); // Initialize Firebase
 // Get a reference to the Firebase storage bucket
 const storage = getStorage();
 
-//************   create summary        *************** *//
+//***************************************************************************************/
+//--------------------------- -add summary  --------------------------------------/
+//**************************************************************************************/
 
-// Create Summary
-export const create_summary = async (req: any, res: Response) => {
-  const { message, checkedType } = req.body;
+
+// Helper function to check file MIME types
+export const addSummary = async (req: any, res: Response) => {
+  const { message, checkedType } = req.body;  // Ensure message is passed in the body
   const { class_id } = req.params;
   const { id } = req.user;
 
   try {
-    // Step 1: Find class
-    const findClass = await Class.findOne({ _id: class_id });
-    if (!findClass) return res.status(404).send({ message: 'Class not found' });
-    const routineID = findClass.routine_id;
+    // Step 1: Check if the message is provided
+    if (!message || message.trim() === "" || (req.files.length === 0 && !checkedType)) {
+      return res.status(400).send({ message: 'Message is required, or at least one image must be uploaded.' });
+    }
+    // Step 2: Find the class
+    const findClass = await prisma.class.findUnique({
+      where: {
+        id: class_id,
+      },
+    });
 
+    if (!findClass) {
+      return res.status(404).send({ message: 'Class not found' });
+    }
+
+
+    const routineID = findClass.routineId;
     // Step 2: Check MIME types of uploaded files
     const allowedMimeTypes = ['image/jpeg', 'image/png']; // Add more allowed MIME types if needed
     // const invalidFiles = req.files.filter(file => !allowedMimeTypes.includes(file.mimetype));
@@ -54,37 +70,43 @@ export const create_summary = async (req: any, res: Response) => {
         routineID: routineID,
       });
 
-    // Step 3: Create instance
-    const summary = new Summary({
-      ownerId: id,
-      text: message,
-      imageLinks: downloadUrls,
-      routineId: routineID,
-      classId: findClass.id,
+    // Step 4: Perform database operations in a transaction
+    const createdSummary = await prisma.$transaction(async (tx) => {
+      const summary = await tx.summary.create({
+        data: {
+          ownerId: id,
+          text: message.trim() === "" && downloadUrls.length > 0 ? '' : message,  // Check if message is empty and if images exist
+          imageLinks: downloadUrls,
+          imageStorageProvider: 'firebase',
+          routineId: routineID,
+          classId: findClass.id,
+        },
+      });
+
+      // Update routine's updatedAt field
+      await tx.routine.update({
+        where: {
+          id: routineID,
+        },
+        data: {
+          updatedAt: new Date(), // Update the timestamp
+        },
+      });
+
+      return summary;
     });
 
-    // Step 4: Save and send response
-    const createdSummary = await summary.save();
-    // console.log(createdSummary);
-    // console.log(id);
-
-
-
-
-
+    // Step 5: Send response
     return res.status(201).json({
       message: 'Summary created successfully',
       summary: createdSummary,
-      downloadUrls,
+      // downloadUrls,
     });
   } catch (error: any) {
+    // Send detailed error response
     return res.status(400).json({ message: error.message });
   }
 };
-
-
-
-
 
 
 //

@@ -25,7 +25,7 @@ import { deleteSummariesFromFirebaseBaseOnRoutineID } from '../firebase/summary.
 import { getClasses } from '../helper/class.helper';
 import mongoose from 'mongoose';
 import { maineDB, RoutineDB } from '../../../connection/mongodb.connection';
-import prisma from '../../../prisma/prisma.clint'
+import prisma from '../../../prisma/schema/prisma.clint';
 
 //*******************************************************************************/
 //--------------------------------- createRoutine  ------------------------------/

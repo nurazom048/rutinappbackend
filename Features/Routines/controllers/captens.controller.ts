@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import Account from '../../Account/models/Account.Model';
 import Routine from '../models/routine.models';
 import RoutineMember from '../models/routineMembers.Model';
-import prisma from '../../../prisma/prisma.clint';
+import prisma from '../../../prisma/schema/prisma.clint';
 //***************************************************************************************/
 //--------------------------- -addCaptain  --------------------------------------/
 //**************************************************************************************/

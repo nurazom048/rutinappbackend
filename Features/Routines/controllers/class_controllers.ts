@@ -17,7 +17,7 @@ import { printD } from '../../../utils/utils';
 import { RoutineDB } from '../../../connection/mongodb.connection';
 import SaveSummary from '../models/save_summary.model';
 import Summary from '../models/summary.models';
-import prisma from '../../../prisma/prisma.clint';
+import prisma from '../../../prisma/schema/prisma.clint';
 
 
 //! firebase 
