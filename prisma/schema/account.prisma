@@ -1,0 +1,33 @@
+model AccountData {
+    id             String  @id @default(uuid())
+    accountID      Account @relation("AccountDataOwner", fields: [ownerAccountId], references: [id], onDelete: Cascade)
+    ownerAccountId String  @unique
+}
+
+model Account {
+    id                        String                @id @default(uuid()) // Unique identifier for the account
+    username                  String                @unique // Unique username for the account
+    name                      String // Name of the account holder
+    about                     String? // Optional about section
+    email                     String                @unique // Unique email for the account
+    phone                     String?               @unique // Optional unique phone number for the account
+    image                     String? // Optional image URL for the account
+    imageStorageProvider      imageStorageProvider? // Enum or string for image storage provider
+    coverImage                String? // Optional cover image URL for the account
+    coverImageStorageProvider imageStorageProvider? // Enum or string for cover image storage provider
+    password                  String? // Optional password for the account
+    accountType               AccountType           @default(user) // Default to user account type
+    googleSignIn              Boolean               @default(false) // Whether the account uses Google sign-in
+    lastLoginTime             DateTime? // Optional timestamp for the last login
+    accountData               AccountData?          @relation("AccountDataOwner") // Optional relation to AccountData model
+    createdRoutines           Routine[]             @relation("AccountCreatedRoutines") // Routines created by this account
+    routineMemberships        RoutineMember[]       @relation("AccountRoutineMemberships") // Memberships of the account in routines
+    savedRoutines             Routine[]             @relation("AccountSavedRoutines") // Routines saved by this account
+
+    createdAt DateTime @default(now()) // Timestamp when the account was created
+    updatedAt DateTime @updatedAt // Timestamp when the account was last updated
+
+    RoutinesJoinRequest RoutinesJoinRequest[] @relation("accountRoutinesJoinRequest")
+    Summary             Summary[]             @relation("createdSummary") //
+    saveSummary         Summary[]             @relation("savedSummary")
+}

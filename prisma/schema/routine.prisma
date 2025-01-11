@@ -1,0 +1,90 @@
+model RoutinesJoinRequest {
+    id               String  @id @default(uuid())
+    requestMessage   String?
+    requestedAccount Account @relation("accountRoutinesJoinRequest", fields: [accountIdBy], references: [id], onDelete: Cascade) // Cascade delete when the account is deleted
+
+    // Relation to the Routine the request is for
+    routineId String // ID of the routine the join request is for
+    routine   Routine @relation(fields: [routineId], references: [id], onDelete: Cascade) // Cascade delete when the routine is deleted
+
+    createdAt   DateTime @default(now())
+    accountIdBy String
+}
+
+model Weekday {
+    id        String   @id @default(uuid()) // Primary key
+    routineId String // Foreign key to Routine
+    routine   Routine  @relation("RoutineWeekdays", fields: [routineId], references: [id], onDelete: Cascade) // Relation to Routine
+    classId   String // Foreign key to Class
+    class     Class    @relation("ClassWeekdays", fields: [classId], references: [id], onDelete: Cascade) // Relation to Class
+    room      String // Room information
+    Day       Day // select day by enum
+    startTime DateTime // Start time for the first shift
+    endTime   DateTime // End time for the first shift
+    createdAt DateTime @default(now()) // Auto-generated timestamp for creation
+    updatedAt DateTime @updatedAt // Auto-generated timestamp for updates
+}
+
+model RoutineMember {
+    id             String   @id @default(uuid())
+    accountId      String // Account ID of the member
+    routineId      String // Routine ID
+    member         Account  @relation("AccountRoutineMemberships", fields: [accountId], references: [id])
+    routine        Routine  @relation("RoutineMembers", fields: [routineId], references: [id])
+    notificationOn Boolean  @default(false)
+    captain        Boolean  @default(false)
+    owner          Boolean  @default(false)
+    isSaved        Boolean  @default(false)
+    blacklist      Boolean  @default(false)
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+}
+
+model Routine {
+    id             String          @id @default(uuid()) // Unique identifier for the routine
+    routineName    String // Name of the routine
+    routineOwner   Account         @relation("AccountCreatedRoutines", fields: [ownerAccountId], references: [id]) // Relation to the account who created the routine
+    ownerAccountId String // ID of the account that created the routine
+    routineMembers RoutineMember[] @relation("RoutineMembers") // Members of the routine
+    classes        Class[]         @relation("RoutineClasses") // Classes associated with the routine
+    weekdays       Weekday[]       @relation("RoutineWeekdays") // Weekdays associated with the routine
+    createdAt      DateTime        @default(now()) // Timestamp when the routine was created
+    updatedAt      DateTime        @updatedAt // Timestamp when the routine was last updated
+
+    savedBy             Account[]             @relation("AccountSavedRoutines") // Accounts that saved the routine
+    accountId           String? // Optional ID of the account associated with the routine (if applicable)
+    RoutinesJoinRequest RoutinesJoinRequest[] // Requests to join the routine
+    Summary             Summary[]             @relation("RoutinesSummary")
+}
+
+model Class {
+    id             String    @id @default(uuid()) // Primary key
+    name           String
+    instructorName String
+    subjectCode    String
+    routineId      String // Foreign key to Routine
+    routine        Routine   @relation("RoutineClasses", fields: [routineId], references: [id], onDelete: Cascade) // Relation to Routine
+    weekdays       Weekday[] @relation("ClassWeekdays") // Relation to Weekday
+    createdAt      DateTime  @default(now()) // Auto-generated timestamp for creation
+    updatedAt      DateTime  @updatedAt // Auto-generated timestamp for updates
+    Summary        Summary[] @relation("classSummary")
+}
+
+model Summary {
+    id                   String                @id @default(uuid())
+    ownerId              String
+    text                 String
+    imageLinks           String[]
+    imageStorageProvider imageStorageProvider?
+    routineId            String
+    classId              String
+    createdAt            DateTime              @default(now())
+    updatedAt            DateTime              @updatedAt
+
+    // Relations
+    owner          Account  @relation("createdSummary", fields: [ownerId], references: [id], onDelete: Cascade)
+    routine        Routine  @relation("RoutinesSummary", fields: [routineId], references: [id], onDelete: Cascade)
+    class          Class    @relation("classSummary", fields: [classId], references: [id], onDelete: Cascade)
+    Account        Account? @relation("savedSummary", fields: [savedAccountId], references: [id])
+    savedAccountId String?
+}

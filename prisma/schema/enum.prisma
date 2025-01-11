@@ -1,0 +1,21 @@
+enum AccountType {
+    user
+    student
+    academy
+}
+
+enum imageStorageProvider {
+    firebase
+    aws
+    others
+}
+
+enum Day {
+    sat
+    sun
+    mon
+    tue
+    wed
+    thu
+    fri
+}

@@ -109,69 +109,89 @@ export const addSummary = async (req: any, res: Response) => {
 };
 
 
-//
-//************ Get class summary list *************** */
+//***************************************************************************************/
+//--------------------------- -Get class summary list  ----------------------------------/
+//**************************************************************************************/
+
+//## Here you can get saved summary or summary by class ID
+
 export const get_class_summary_list = async (req: any, res: Response) => {
   const { class_id } = req.params;
-  const { id } = req.user;
   const { page = 1, limit = 10 } = req.query;
-  // console.log(class_id)
-  // console.log(page)
+
   try {
-    let query: any = { classId: class_id };
-
+    // Note: If no class ID is provided, load saved summaries
     if (!class_id) {
-      // Step 1: find class
-      const findAccount = await Account.findOne({ _id: id });
-      if (!findAccount) return res.status(404).send({ message: 'Class not found' });
-
-      // Find saved summaries
-      const savedSummary = await SaveSummary.find({ savedByAccountId: id });
-
-      // Create an array with _id values
-      // const summaryIdArray = savedSummary.map(summary => summary.summaryId);
-      // console.log(summaryIdArray);
-      const summaryIdArray = savedSummary.map((summary: any) => summary.summaryId);
-
-
-      // Update the query to include the saved summaries
-      query = { _id: { $in: summaryIdArray } };
-    } else {
-      const classInstance = await Class.findOne({ _id: class_id });
-      if (!classInstance) return res.status(404).json({ message: 'Class not found' });
+      // TODO: Fetch saved summaries for the user
+      // You can implement logic to fetch saved summaries based on user ID here
+      // Example:
+      // const savedSummaries = await prisma.savedSummary.findMany({
+      //   where: { savedByAccountId: req.user.id },
+      //   include: {
+      //     summary: {
+      //       include: {
+      //         owner: {
+      //           select: {
+      //             id: true,
+      //             username: true,
+      //             name: true,
+      //             image: true,
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      // });
+      // return res.status(200).json({
+      //   message: 'Saved summaries fetched successfully',
+      //   summaries: savedSummaries,
+      // });
     }
 
-    const count = await Summary.countDocuments(query);
-    const summaries = await Summary.find(query, { __v: 0 })
-      .populate({
-        path: 'ownerId',
-        model: Account,
+    // Check if the class exists
+    const classInstance = await prisma.class.findUnique({
+      where: { id: class_id },
+    });
 
-        select: 'name username image'
-      })
-      .sort({ createdAt: -1 }) // Sort by createdAt field in descending order
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    if (!summaries) {
-      return res.status(404).json({ message: 'Not found' });
+    if (!classInstance) {
+      return res.status(404).json({ message: 'Class not found' });
     }
 
+    // Count total summaries for the class
+    const count = await prisma.summary.count({
+      where: { classId: class_id },
+    });
 
+    // Fetch summaries with pagination and include related owner details
+    const summaries = await prisma.summary.findMany({
+      where: { classId: class_id },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' }, // Sort summaries by creation date descending
+      skip: (page - 1) * parseInt(limit),
+      take: parseInt(limit),
+    });
 
+    // Send response directly with raw summaries
     return res.status(200).json({
+      message: 'Summaries fetched successfully',
+      summaries, // Return the summaries as-is
       currentPage: parseInt(page),
-      totalPages: Math.ceil(count / limit),
+      totalPages: Math.ceil(count / parseInt(limit)),
       totalCount: count,
-      message: 'All the summaries',
-      summaries: summaries,
-
     });
   } catch (error: any) {
-    return res.status(400).json({ message: error });
+    return res.status(400).json({ message: error.message || 'An error occurred' });
   }
 };
-
 
 
 
