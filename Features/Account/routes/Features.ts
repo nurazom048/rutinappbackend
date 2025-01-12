@@ -7,10 +7,7 @@ import { validateAccountCreation } from '../middleware/account.middleware';
 const app = express();
 
 // 1
-app.post("/create",
-    validateAccountCreation,
-    createAccount,
-);
+app.post("/create", validateAccountCreation, createAccount);
 app.post("/login", loginAccount);
 //app.delete("/delete/:id", verifyToken, deleteAccount);
 

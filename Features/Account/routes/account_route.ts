@@ -17,11 +17,10 @@ const upload = multer({
 // --------------------------------- Account Routes --------------------------------------------/
 //**********************************************************************************************/
 //... Edit account....///
-router.post("/eddit", verifyToken, upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'image', maxCount: 1 }]), edit_account);
-
+router.post("/edit", verifyToken, upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'image', maxCount: 1 }]), edit_account);
 router.post("/edit/change_password/", verifyToken, changePassword);
 // later add security
-router.post("/eddit/forgotPassword/", forgetPassword);
+router.post("/edit/forgotPassword/", forgetPassword);
 
 router.route("/").post(verifyToken, upload.single('image'), view_my_account);
 router.route("/:username").post(view_others_Account);
