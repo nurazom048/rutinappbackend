@@ -1,23 +1,26 @@
 model AccountData {
-    id             String  @id @default(uuid())
-    accountID      Account @relation("AccountDataOwner", fields: [ownerAccountId], references: [id], onDelete: Cascade)
-    ownerAccountId String  @unique
+    id                    String   @id @default(uuid())
+    accountID             Account  @relation("AccountDataOwner", fields: [ownerAccountId], references: [id], onDelete: Cascade)
+    ownerAccountId        String   @unique
+    googleSignIn          Boolean  @default(false) // Whether the account uses Google sign-in
+    email                 String   @unique // Unique email for the account
+    phone                 String?  @unique // Optional unique phone number for the account
+    password              String? // Optional password for the account
+    verificationDocuments String[]
+    oneSignalUserId       String?
 }
 
 model Account {
-    id                        String                @id @default(uuid()) // Unique identifier for the account
-    username                  String                @unique // Unique username for the account
-    name                      String // Name of the account holder
+    id                        String                @id @default(uuid())
+    username                  String                @unique
+    name                      String
     about                     String? // Optional about section
-    email                     String                @unique // Unique email for the account
-    phone                     String?               @unique // Optional unique phone number for the account
+    isVerified                Boolean               @default(false) // Corrected spelling from "isVarified"
     image                     String? // Optional image URL for the account
     imageStorageProvider      imageStorageProvider? // Enum or string for image storage provider
-    coverImage                String? // Optional cover image URL for the account
+    coverImage                String?
     coverImageStorageProvider imageStorageProvider? // Enum or string for cover image storage provider
-    password                  String? // Optional password for the account
     accountType               AccountType           @default(user) // Default to user account type
-    googleSignIn              Boolean               @default(false) // Whether the account uses Google sign-in
     lastLoginTime             DateTime? // Optional timestamp for the last login
     accountData               AccountData?          @relation("AccountDataOwner") // Optional relation to AccountData model
     createdRoutines           Routine[]             @relation("AccountCreatedRoutines") // Routines created by this account

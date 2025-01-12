@@ -5,12 +5,12 @@ import jwt, { Secret } from 'jsonwebtoken';
 import { printD } from '../../../utils/utils';
 
 
-export const generateAuthToken = (userId: Types.ObjectId, username: string): string => {
+export const generateAuthToken = (userId: string, username: string): string => {
   const token = jwt.sign({ id: userId.toString(), username: username }, process.env.JWT_SECRET_KEY!, { expiresIn: '1d' });
   return token;
 };
 
-export const generateRefreshToken = (userId: Types.ObjectId, username: string): string => {
+export const generateRefreshToken = (userId: string, username: string): string => {
   const token = jwt.sign({ id: userId.toString(), username: username }, process.env.REFRESH_TOKEN_SECRET!, { expiresIn: '2d' });
   return token;
 };

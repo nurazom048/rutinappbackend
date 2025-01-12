@@ -1,7 +1,8 @@
-// imports
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-dotenv.config();
+// // imports
+
+import mongoose from "mongoose";
+import dotenv from 'dotenv'
+dotenv.config
 
 // Connection Paths
 const mongodbUri_Production_Maine_DB = process.env.MONGODB_URI_PRODUCTION_PROJECT_MAIN_DB || '';
@@ -26,9 +27,3 @@ export const NotificationDB = mongoose.createConnection(mongodbUri_Production_No
 
 
 
-
-
-
-//
-// const mongodbUri_Test = process.env.MONGODB_URI_TEST_PROJECT || '';
-// const mongodbUri_Beta = process.env.MONGODB_URI_BETA_PROJECT || '';

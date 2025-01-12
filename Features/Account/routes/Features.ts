@@ -2,7 +2,7 @@ import express from 'express';
 import { createAccount, loginAccount } from '../../../services/Authentication/controllers/auth_controllers';
 import { allPendingAccount, acceptPending } from "../../../services/Authentication/controllers/pending_account.controller";
 import { continueWithGoogle } from '../../../services/Authentication/controllers/google_auth.controller';
-import validateAccountCreation from '../middleware/account.middleware';
+import { validateAccountCreation } from '../middleware/account.middleware';
 
 const app = express();
 

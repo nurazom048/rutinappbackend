@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import Account from '../models/Account.Model';
-
+import prisma from '../../../prisma/schema/prisma.clint';
 
 
 
@@ -9,39 +9,52 @@ import Account from '../models/Account.Model';
 
 
 //********************* validateAccountCreation  ********************************************************* */
+
 export const validateAccountCreation = async (req: Request, res: Response, next: NextFunction) => {
-    const { name, username, password, phone, email, account_type, EIIN, contractInfo } = req.body;
+    const { name, username, password, phone, email, accountType } = req.body;
 
-    // Validation
-    if (!email) {
-        return res.status(400).json({ message: "Must have email or phone number" });
+    if (!email && !phone) {
+        return res.status(400).json({ message: "Must provide email or phone number" });
     }
-    if (!name || !username || !password) {
-        return res.status(400).json({ message: "Please fill the form" });
-    }
-
-    // Check if email is already taken
-    const emailAlreadyUsed = await Account.findOne({ email });
-    if (emailAlreadyUsed) {
-        return res.status(400).json({ message: "Email already taken" });
+    if (!name || !username || !password || !accountType) {
+        return res.status(400).json({ message: "Please fill all required fields" });
     }
 
-    // Check if username is already taken
-    const usernameAlreadyTaken = await Account.findOne({ username });
-    if (usernameAlreadyTaken) {
-        return res.status(400).json({ message: "Username already taken" });
-    }
+    try {
+        // Check if email is already taken
+        if (email) {
+            const emailAlreadyTaken = await prisma.accountData.findUnique({
+                where: { email },
+            });
 
-    // Check if phone number is already used
-    if (phone) {
-        const phoneNumberExists = await Account.findOne({ phone });
-        if (phoneNumberExists) {
-            return res.status(400).json({ message: "Phone number already exists" });
+            if (emailAlreadyTaken) {
+                return res.status(400).json({ message: "Email already taken" });
+            }
         }
+
+        // Check if username is already taken
+        const usernameAlreadyTaken = await prisma.account.findUnique({
+            where: { username },
+        });
+
+        if (usernameAlreadyTaken) {
+            return res.status(400).json({ message: "Username already taken" });
+        }
+
+        // Check if phone number is already used
+        if (phone) {
+            const phoneNumberExists = await prisma.accountData.findUnique({
+                where: { phone },
+            });
+
+            if (phoneNumberExists) {
+                return res.status(400).json({ message: "Phone number already exists" });
+            }
+        }
+
+        next();  // Proceed to the next middleware if validation passes
+    } catch (error) {
+        console.error("Error validating account creation:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
-
-    // If all validations pass, move to the next middleware or route handler
-    next();
 };
-
-export default validateAccountCreation;
