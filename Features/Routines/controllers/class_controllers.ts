@@ -153,12 +153,12 @@ export const deleteWeekdayById = async (req: any, res: Response) => {
 
 export const allWeekdayInClass = async (req: any, res: Response) => {
 
-  const { class_id } = req.params;
+  const { ClassID } = req.params;
 
   try {
-    if (!class_id) return res.status(500).send({ message: "ClassId not found", weekdays: [] });
+    if (!ClassID) return res.status(500).send({ message: "ClassId not found", weekdays: [] });
     // 1 weekdays
-    const weekdays = await Weekday.find({ class_id: class_id });
+    const weekdays = await prisma.weekday.findMany({ where: { classId: ClassID } });
 
     res.send({ message: "All weekday in the class", weekdays });
   } catch (error: any) {
@@ -172,103 +172,100 @@ export const allWeekdayInClass = async (req: any, res: Response) => {
 //*************************************************************************/
 //-------------------------  edit_class   ---------------------------------/
 //*************************************************************************/
-
 export const edit_class = async (req: any, res: Response) => {
-  const { class_id } = req.params;
-  const { name, instuctor_name, subjectcode } = req.body;
+  const { classID } = req.params;
+  const { name, instructorName, subjectCode } = req.body;
 
   try {
-    // Step 1: Check if class exists
-    const classData = await Class.findById(class_id);
-    if (!classData) return res.status(404).send({ message: 'Class not found' });
 
-    // Step 2: Check if routine exists
-    const routine = await Routine.findById(classData.routine_id);
-    if (!routine) return res.status(404).send({ message: 'Routine not found' });
+    //  Update the class details
+    const updatedClass = await prisma.class.update({
+      where: { id: classID },
+      data: {
+        name,
+        instructorName,
+        subjectCode,
+      },
+    });
 
-    // Step 3: Check permission: owner or captain
-    const routineMember = await RoutineMember.findOne({ RutineID: classData.routine_id, memberID: req.user.id });
-    if (!routineMember || (!routineMember.captain && routine.ownerid.toString() !== req.user.id)) {
-      return res.status(401).json({ message: 'Only captains and owners can update classes' });
-    }
-
-    // Step 4: Update the class
-    const updatedClass = await Class.findByIdAndUpdate(
-      class_id,
-      { name, instuctor_name, subjectcode },
-      { new: true }
-    );
-
-    if (!updatedClass) return res.status(404).send({ message: 'Class not found after update attempt' });
-
-    // Step 5: Send success response
-    res.send({ class: updatedClass, message: 'Class updated successfully' });
+    // Step 5: Return updated class data
+    return res.status(200).json({
+      class: updatedClass,
+      message: 'Class updated successfully',
+    });
 
   } catch (error: any) {
     console.error('Error updating class:', error);
     res.status(500).send({ message: error.message });
   }
 };
+
 //**********************************************************************/
 //-------------------- Delete Class ------------------------------------//
 //**********************************************************************/
-export const delete_class = async (req: any, res: Response) => {
-  const { class_id } = req.params;
+
+export const remove_class = async (req: any, res: Response) => {
+  const { classID } = req.params;
   const { id } = req.user;
+
   console.log('Request to delete class');
 
-  const session = await RoutineDB.startSession();
-  session.startTransaction();
+  const session = await prisma.$transaction(async (tx) => {
+    try {
+      // Step 1: Find the class
+      const findClass = await tx.class.findUnique({
+        where: { id: classID },
+      });
+      if (!findClass) throw new Error('Class not found');
+
+      // Step 2: Check permission (find the routine)
+      const routine = await tx.routine.findUnique({
+        where: { id: findClass.routineId },
+      });
+      if (!routine) throw new Error('Routine not found');
+
+      // Step 3: Delete associated summaries
+      const summaries = await tx.summary.findMany({
+        where: { classId: classID },
+      });
+
+      // Delete summaries and their files from Firebase storage
+      for (const summary of summaries) {
+        for (const imageLink of summary.imageLinks ?? []) {
+          const fileRef = ref(storage, imageLink);
+          await deleteObject(fileRef);
+        }
+        await tx.summary.delete({
+          where: { id: summary.id },
+        });
+      }
+
+      // Step 4: Delete associated weekdays
+      await tx.weekday.deleteMany({
+        where: { classId: classID },
+      });
+
+      // Step 5: Delete the class
+      await tx.class.delete({
+        where: { id: classID },
+      });
+
+      return { message: 'Class deleted successfully' };
+    } catch (error) {
+      throw error; // Re-throw error to be caught by the outer try-catch
+    }
+  });
 
   try {
-    // Step 1: Find the class
-    const classData = await Class.findById(class_id);
-    if (!classData) return res.status(404).send({ message: 'Class not found' });
-
-    // Step 2: Check permission
-    const routine = await Routine.findById(classData.routine_id);
-    if (!routine) return res.status(404).send({ message: 'Routine not found' });
-
-    // Check if the user is the routine owner or a captain/member
-    const routineMember = await RoutineMember.findOne({ RutineID: classData.routine_id, memberID: id });
-    if (!routineMember || (!routineMember.captain && routine.ownerid.toString() !== id)) {
-      return res.status(403).send({ message: "You don't have permission to delete this class" });
-    }
-
-    // Step 3: Delete associated save summaries
-    await SaveSummary.deleteMany({ classId: class_id }).session(session);
-
-    // Step 4: Delete associated summaries
-    const summaries = await Summary.find({ classId: class_id }).session(session);
-    for (const summary of summaries) {
-      // Delete summary files from Firebase storage
-      for (const imageLink of summary.imageLinks ?? []) {
-        const fileRef = ref(storage, imageLink);
-        await deleteObject(fileRef);
-      }
-      // Delete the summary itself
-      await Summary.findByIdAndDelete(summary._id).session(session);
-    }
-
-    // Step 5: Delete weekdays associated with the class
-    await Weekday.deleteMany({ class_id: class_id }).session(session);
-
-    // Step 6: Delete the class
-    await Class.findByIdAndDelete(class_id).session(session);
-
-    await session.commitTransaction();
-
-    // Step 7: Send success response
-    res.send({ message: 'Class deleted successfully' });
-
-  } catch (error: any) {
-    await session.abortTransaction();
-    console.error('Error in delete_class:', error);
-    res.status(500).send({ message: error.message });
-  } finally {
-    session.endSession();
+    // Commit transaction and respond
+    res.send({ message: session.message });
+  } catch (error) {
+    console.error('Error in remove_class:', error);
+    res.status(500).send({ message: (error as any).message });
   }
 };
+
+
 
 //************ show_weekday_classes *************** */
 export const show_weekday_classes = async (req: any, res: Response) => {
@@ -374,25 +371,27 @@ export const allClass = async (req: any, res: Response) => {
 };
 
 
-//************   edit_class       *************** */
-export const findclass = async (req: any, res: Response) => {
-
-  const { class_id } = req.params;
-  console.log(class_id);
-
-
+//************   findClass       *************** */
+export const findClass = async (req: any, res: Response) => {
+  const { classID } = req.params;
+  console.log(classID + 'find class');
 
   try {
-    // 1 chack clases
-    const classs = await Class.findOne({ _id: class_id }, { weekday: 0, summary: 0, _v: 0 });
-    if (!classs) return res.status(404).send({ message: 'Class not found' });
-    // 2 cweekdays
-    const weekdays = await Weekday.find({ class_id });
-    res.status(200).send({ message: "All weekday in the class", classs, weekdays });
+    // step:1 find classes
+    const classes = await prisma.class.findFirst({ where: { id: classID } });
+    if (!classes) return res.status(404).send({ message: 'Class not found' });
 
-    //
+    // step:2 find weekday
+    const weekdays = await prisma.class.findFirst({ where: { id: classID } });
+    console.log({ message: "All weekday in the class", classes, weekdays })
+
+    // step:3 send response
+    res.status(200).send({ message: "All weekday in the class", classes, weekdays });
+
+
   } catch (error: any) {
     console.error(error);
+
     res.status(500).send({ message: 'Error updating class', weekdays: [] });
   }
 };

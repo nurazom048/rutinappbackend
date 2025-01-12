@@ -142,6 +142,13 @@ export const get_class_summary_list = async (req: any, res: Response) => {
       //     },
       //   },
       // });
+
+      /// and if class id loade summary where clasid == classid 
+
+
+
+
+
       // return res.status(200).json({
       //   message: 'Saved summaries fetched successfully',
       //   summaries: savedSummaries,

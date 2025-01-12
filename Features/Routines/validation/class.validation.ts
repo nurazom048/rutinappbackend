@@ -103,23 +103,23 @@ export const cakedPermission = async (req: any, res: Response, next: NextFunctio
 export const classEditValidation = (req: Request, res: Response, next: NextFunction) => {
     console.log(req.body)
     try {
-        const { name, instuctor_name, subjectcode, room, weekday } = req.body;
-        const { routineId } = req.params;
+        const { name, instructorName, subjectCode } = req.body;
+
 
         // Check if required fields are provided
         if (!name) {
             return res.status(400).send({ message: 'Validation failed: name is required' });
         }
-        if (!instuctor_name) {
-            return res.status(400).send({ message: 'Validation failed: instructor_name is required' });
+        if (!instructorName) {
+            return res.status(400).send({ message: 'Validation failed: instructorName is required' });
         }
-        if (!subjectcode) {
+        if (!subjectCode) {
             return res.status(400).send({ message: 'Validation failed: subjectcode is required' });
         }
 
         next();
     } catch (error) {
-        // Handle any errors that occur during validation
+
         res.status(500).send({ message: 'Internal server error' });
     }
 };
