@@ -108,7 +108,7 @@ export const acceptPending = async (req: Request, res: Response) => {
 
         //
         // Join His owen noticeboard
-        const result = await joinHisOwnNoticeboard(objectId);
+        const result = await joinHisOwnNoticeboard(id);
         if (result) {
             return res.status(500).json(result);
         } else {

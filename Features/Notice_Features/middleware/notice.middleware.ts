@@ -19,13 +19,13 @@ export const checkAccountType = async (req: any, res: Response, next: NextFuncti
         if (!id) {
             return res.status(401).json({ message: 'Authentication failed. Please log in again.' });
         }
+        // TODO: check account type
+        // // Step 1: Find account and check account type
+        // const account = await Account.findById(id);
 
-        // Step 1: Find account and check account type
-        const account = await Account.findById(id);
-
-        if (account?.account_type !== AccountType.Academy) {
-            return res.status(401).json({ message: 'Only Academy Can Upload Notice' });
-        }
+        // if (account?.account_type !== AccountType.Academy) {
+        //     return res.status(401).json({ message: 'Only Academy Can Upload Notice' });
+        // }
 
         next(); // Call next middleware if the account type is correct
     } catch (error) {

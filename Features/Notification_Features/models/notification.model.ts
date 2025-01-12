@@ -1,6 +1,6 @@
 
 import mongoose, { Document, Schema, Model } from 'mongoose';
-import { NotificationDB } from '../../../connection/mongodb.connection';
+import { NotificationDB } from '../../../prisma/mongodb.connection';
 
 enum NotificationType {
   Public = 'public',

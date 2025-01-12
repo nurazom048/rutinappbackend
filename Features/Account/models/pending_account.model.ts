@@ -1,7 +1,7 @@
 
 import mongoose, { Document, Schema, Model, mongo } from 'mongoose';
 import { AccountType } from './Account.Model';
-import { maineDB } from '../../../connection/mongodb.connection';
+import { maineDB } from '../../../prisma/mongodb.connection';
 
 
 

@@ -51,6 +51,11 @@ async function sendNotification(tokenIdList: string[], contents: string, heading
 // sendNotification(["5f018a24-8cba-408d-9a2a-27a63f8c7b26"], "Notification content", "Notification heading")
 //     .then(json => console.log(json))
 //     .catch(err => console.error('error:' + err));
+
+
+
+
+
 //******* Export*****/
 export const sendNotificationMethods = async (tokenIdList: string[], contents: string, heading: string) => {
     const apiUrl = 'https://onesignal.com/api/v1/notifications';

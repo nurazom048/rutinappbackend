@@ -28,15 +28,10 @@ const upload = multer({
     // },
 });
 
-//.. create update delete
-router.route("/add/").post(
-    verifyToken, checkAccountType, upload.single('pdf_file'),
-    addNotice
-);// add notice 
-router.route("/:noticeId")
-    .delete(verifyToken,
-        deleteNotice,
-    );//... delete notice
+// add notice 
+router.route("/add/").post(verifyToken, checkAccountType, upload.single('pdf_file'), addNotice);
+router.route("/:noticeId").delete(verifyToken, deleteNotice);//... Delete notice
+
 
 // get notice
 

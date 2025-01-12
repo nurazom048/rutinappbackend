@@ -1,6 +1,3 @@
-// Import necessary modules
-import dotenv from 'dotenv';
-dotenv.config();
 import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
@@ -8,6 +5,7 @@ import cors from 'cors';
 import { Server } from 'socket.io';
 import http from 'http';
 import jwt, { Secret } from 'jsonwebtoken';
+
 // Import routes
 import auth_route from './Features/Account/routes/Features';
 import routine_route from './Features/Routines/routes/Features';
@@ -61,7 +59,7 @@ app.use((req: Request, res: Response) => {
 const port = 4000;
 
 // MongoDB connection
-import { NoticeDB, maineDB, RoutineDB, NotificationDB } from './connection/mongodb.connection';
+import { NoticeDB, maineDB, RoutineDB, NotificationDB } from './prisma/mongodb.connection';
 import { isTokenExpired } from './services/Authentication/helper/Jwt.helper';
 
 // Create HTTP server

@@ -1,7 +1,7 @@
 
 import mongoose, { Document, Schema, Model } from 'mongoose';
-import { maineDB } from '../../../connection/mongodb.connection';
-import { RoutineDB } from '../../../connection/mongodb.connection';
+import { maineDB } from '../../../prisma/mongodb.connection';
+import { RoutineDB } from '../../../prisma/mongodb.connection';
 
 export const  enum AccountType {
   User = 'user',

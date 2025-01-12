@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema, Model } from 'mongoose';
-import { RoutineDB } from '../../../connection/mongodb.connection';
+import { RoutineDB } from '../../../prisma/mongodb.connection';
 
 
 interface IRoutineMember extends Document {

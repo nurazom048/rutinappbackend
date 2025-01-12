@@ -7,7 +7,7 @@ dotenv.config();
 // imports models
 import Account from '../../../Features/Account/models/Account.Model';
 import PendingAccount from '../../../Features/Account/models/pending_account.model';
-import NoticeBoardMember from "../../../Features/Notice_Features/models/noticeboard_member";
+import prisma from '../../../prisma/schema/prisma.clint';
 
 
 
@@ -30,35 +30,36 @@ export const generateUniqUsername = async (email: string): Promise<string> => {
     }
     return username;
 };
-//Methods: Generate Token
 
 
 /// join the academy user when he create academy account 
-
-export const joinHisOwnNoticeboard = async (id: any): Promise<any> => {
+export const joinHisOwnNoticeboard = async (id: string): Promise<any> => {
     try {
-        const account = await Account.findOne({ id: id });
-        if (!account) {
-            return { message: 'Academy not found ', id: id };
-        }
+        // Step 1: Check if the account exists
+        const account = await prisma.account.findUnique({ where: { id } });
+        if (!account) return { message: 'Academy not found', id };
 
-        const existingMember = await NoticeBoardMember.findOne({
-            academyID: id,
-            memberID: id,
+
+        // Step 2: Check if the user is already a member
+        const existingMember = await prisma.noticeBoardMember.findFirst({
+            where: {
+                accountId: id,
+                memberId: id,
+            },
         });
 
-        if (existingMember) {
-            return { message: 'You are already a member' };
-        }
+        if (existingMember) return { message: 'You are already a member' };
 
-        const newMember = new NoticeBoardMember({
-            academyID: id,
-            memberID: id,
+        // Step 3: Add user as a new member to their own noticeboard
+        const newMember = await prisma.noticeBoardMember.create({
+            data: {
+                accountId: id,
+                memberId: id,
+            },
         });
 
-        const added = await newMember.save();
-        console.log('added to noticeboard account  : ' + added)
-
+        console.log('Added to noticeboard account: ', newMember);
+        return { message: 'Successfully joined your own noticeboard', newMember };
     } catch (error: any) {
         console.error(error);
         return { message: error.message };

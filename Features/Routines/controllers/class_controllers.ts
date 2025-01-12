@@ -14,7 +14,7 @@ import { deleteSummariesFromFirebaseBaseOnClassId } from '../firebase/summary.fi
 import { getClasses } from '../helper/class.helper';
 import { handleValidationError } from '../../../utils/validation_error';
 import { printD } from '../../../utils/utils';
-import { RoutineDB } from '../../../connection/mongodb.connection';
+import { RoutineDB } from '../../../prisma/mongodb.connection';
 import SaveSummary from '../models/save_summary.model';
 import Summary from '../models/summary.models';
 import prisma from '../../../prisma/schema/prisma.clint';

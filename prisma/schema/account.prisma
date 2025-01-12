@@ -1,3 +1,7 @@
+import { AccountType,Day,imageStorageProvider } from "enum"
+import { Class,Routine,RoutineMember,RoutinesJoinRequest,Summary,Weekday} from "routine"
+import {Notice,rePublish,NoticeBoardMember } from "notice"
+
 model AccountData {
     id                    String   @id @default(uuid())
     accountID             Account  @relation("AccountDataOwner", fields: [ownerAccountId], references: [id], onDelete: Cascade)
@@ -23,14 +27,21 @@ model Account {
     accountType               AccountType           @default(user) // Default to user account type
     lastLoginTime             DateTime? // Optional timestamp for the last login
     accountData               AccountData?          @relation("AccountDataOwner") // Optional relation to AccountData model
-    createdRoutines           Routine[]             @relation("AccountCreatedRoutines") // Routines created by this account
-    routineMemberships        RoutineMember[]       @relation("AccountRoutineMemberships") // Memberships of the account in routines
-    savedRoutines             Routine[]             @relation("AccountSavedRoutines") // Routines saved by this account
 
-    createdAt DateTime @default(now()) // Timestamp when the account was created
-    updatedAt DateTime @updatedAt // Timestamp when the account was last updated
+    // routine
+    createdRoutines    Routine[]       @relation("AccountCreatedRoutines") // Routines created by this account
+    routineMemberships RoutineMember[] @relation("AccountRoutineMemberships") // Memberships of the account in routines
+    savedRoutines      Routine[]       @relation("AccountSavedRoutines") // Routines saved by this account
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     RoutinesJoinRequest RoutinesJoinRequest[] @relation("accountRoutinesJoinRequest")
     Summary             Summary[]             @relation("createdSummary") //
     saveSummary         Summary[]             @relation("savedSummary")
+
+    // notice
+    publishedNotice   Notice[]            @relation("publishedNotice")
+    rePublishedNotice rePublish[]         @relation("rePublishedNoticeCreator")
+    NoticeBoardMember NoticeBoardMember[] @relation("NoticeBoardMember")
 }

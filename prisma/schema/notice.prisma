@@ -1,0 +1,40 @@
+import { Account, Account, Account, Account } from "account"
+
+model NoticeBoardMember {
+    id             String  @id @default(uuid())
+    accountId      String
+    notificationOn Boolean @default(false) // Indicates whether notification is on/off for the member
+
+    memberId String // Member ID reference
+    account  Account @relation("NoticeBoardMember", fields: [memberId], references: [id]) // Relation to Account model
+}
+
+model Notice {
+    id String @id @default(uuid())
+
+    title       String
+    pdf         String?
+    description String?
+
+    publisherId String
+    Account     Account @relation("publishedNotice", fields: [publisherId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    rePublish rePublish[] @relation("rePublishedNotice")
+}
+
+model rePublish {
+    id               String @id @default(uuid())
+    republishedTitle String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    noticeId String?
+    Notice   Notice? @relation("rePublishedNotice", fields: [noticeId], references: [id], onDelete: Cascade)
+
+    rePublisherId String
+    Account       Account? @relation("rePublishedNoticeCreator", fields: [rePublisherId], references: [id], onDelete: Cascade)
+}

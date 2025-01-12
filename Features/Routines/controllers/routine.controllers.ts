@@ -24,7 +24,7 @@ const storage = getStorage();
 import { deleteSummariesFromFirebaseBaseOnRoutineID } from '../firebase/summary.firebase';
 import { getClasses } from '../helper/class.helper';
 import mongoose from 'mongoose';
-import { maineDB, RoutineDB } from '../../../connection/mongodb.connection';
+import { maineDB, RoutineDB } from '../../../prisma/mongodb.connection';
 import prisma from '../../../prisma/schema/prisma.clint';
 
 //*******************************************************************************/

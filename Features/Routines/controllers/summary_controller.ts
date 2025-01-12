@@ -7,7 +7,7 @@ import Summary from '../models/summary.models';
 import RoutineMember from '../models/routineMembers.Model';
 import SaveSummary from '../models/save_summary.model';
 import { printD } from '../../../utils/utils';
-import { RoutineDB, maineDB } from '../../../connection/mongodb.connection';
+import { RoutineDB, maineDB } from '../../../prisma/mongodb.connection';
 
 // firebase
 import { summaryImageUploader } from '../firebase/summary.firebase';
