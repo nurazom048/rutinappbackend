@@ -1,7 +1,7 @@
 
 import mongoose, { Document, Schema, Model, mongo } from 'mongoose';
-import { AccountType } from './Account.Model';
 import { maineDB } from '../../../prisma/mongodb.connection';
+import { AccountType } from '../../../utils/enum';
 
 
 
@@ -44,11 +44,7 @@ const pendingAccountSchema: Schema<IPendingAccount> = new Schema<IPendingAccount
     required: true,
     unique: true,
   },
-  EIIN: {
-    type: String,
-    required: true,
-    unique: true,
-  },
+
   address: String,
   name: String,
   about: String,
@@ -64,9 +60,9 @@ const pendingAccountSchema: Schema<IPendingAccount> = new Schema<IPendingAccount
   password: String,
   account_type: {
     type: String,
-    enum: [AccountType.User, AccountType.Student, AccountType.Academy],
+    enum: [AccountType.user, AccountType.student, AccountType.academy],
     required: true,
-    default: AccountType.User,
+    default: AccountType.user,
   },
   googleSignIn: {
     type: Boolean,

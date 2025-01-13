@@ -6,7 +6,6 @@ import Routine from '../models/routine.models';
 import Class from '../models/class.model';
 import Weekday from '../models/weakday.Model';
 import RoutineMember from '../models/routineMembers.Model';
-import Account from '../../Account/models/Account.Model';
 
 
 // routine firebase and helper

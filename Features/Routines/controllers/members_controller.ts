@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
 // Models
-import Account from '../../Account/models/Account.Model';
 import Routine from '../models/routine.models';
 import RoutineMember from '../models/routineMembers.Model';
 import prisma from '../../../prisma/schema/prisma.clint';
@@ -11,29 +10,30 @@ import prisma from '../../../prisma/schema/prisma.clint';
 //**********  addMembers   ************* */
 export const addMember = async (req: any, res: Response) => {
   const { routineID, username } = req.params;
-
+  // TODO
   try {
-    // Check if the member's account exists
-    const members_ac = await Account.findOne({ username });
-    if (!members_ac) return res.json({ message: "Account not found" });
+    // //
+    //  Check if the member's account exists
+    // const members_ac = await Account.findOne({ username });
+    // if (!members_ac) return res.json({ message: "Account not found" });
 
-    // Find the routine to add the member to
-    const routine = await Routine.findOne({ _id: routineID });
-    if (!routine) return res.json({ message: "Routine not found" });
+    // // Find the routine to add the member to
+    // const routine = await Routine.findOne({ _id: routineID });
+    // if (!routine) return res.json({ message: "Routine not found" });
 
-    // Check if the member is already added
-    const alreadyAdded = routine.members.includes(members_ac._id.toString());
-    if (alreadyAdded) return res.json({ message: "Member already added" });
+    // // Check if the member is already added
+    // const alreadyAdded = routine.members.includes(members_ac._id.toString());
+    // if (alreadyAdded) return res.json({ message: "Member already added" });
 
-    //add member
-    const addMember = new RoutineMember({ memberID: members_ac._id }); // Create a new RoutineMember instance
-    await addMember.save(); // Wait for the routineMember instance to be saved
+    // //add member
+    // const addMember = new RoutineMember({ memberID: members_ac._id }); // Create a new RoutineMember instance
+    // await addMember.save(); // Wait for the routineMember instance to be saved
 
 
-    // Add the member to the routine
-    routine.members.push(members_ac._id);
-    const new_member = await routine.save();
-    res.json({ message: "Member added successfully", addMember, new_member });
+    // // Add the member to the routine
+    // routine.members.push(members_ac._id);
+    // const new_member = await routine.save();
+    // res.json({ message: "Member added successfully", addMember, new_member });
 
     //
   } catch (error: any) {
@@ -46,25 +46,27 @@ export const addMember = async (req: any, res: Response) => {
 export const removeMember = async (req: any, res: Response) => {
   const { routineID, username } = req.params;
 
+  // TODO
+
   try {
-    // Check if the member's account exists
-    const member_ac = await Account.findOne({ username });
-    if (!member_ac) return res.json({ message: "Account not found" });
+    // // Check if the member's account exists
+    // const member_ac = await Account.findOne({ username });
+    // if (!member_ac) return res.json({ message: "Account not found" });
 
-    // Find the routine to remove the member from
-    const routine = await Routine.findOne({ _id: routineID });
-    if (!routine) return res.json({ message: "Routine not found" });
+    // // Find the routine to remove the member from
+    // const routine = await Routine.findOne({ _id: routineID });
+    // if (!routine) return res.json({ message: "Routine not found" });
 
-    // Check if the member is already added
-    const ifMemberFound = await RoutineMember.findOne({ memberID: member_ac._id, RutineID: routine });
-    if (!ifMemberFound) return res.json({ message: "Member Already removed" });
+    // // Check if the member is already added
+    // const ifMemberFound = await RoutineMember.findOne({ memberID: member_ac._id, RutineID: routine });
+    // if (!ifMemberFound) return res.json({ message: "Member Already removed" });
 
-    const removeMember = await RoutineMember.findByIdAndDelete(ifMemberFound._id);
+    // const removeMember = await RoutineMember.findByIdAndDelete(ifMemberFound._id);
 
-    // // Remove the member from the routine
-    // routine.members = routine.members.filter((member) => member.toString() !== member_ac._id.toString());
-    // const updated_routine = await routine.save();
-    res.json({ message: "Member removed successfully", removeMember });
+    // // // Remove the member from the routine
+    // // routine.members = routine.members.filter((member) => member.toString() !== member_ac._id.toString());
+    // // const updated_routine = await routine.save();
+    // res.json({ message: "Member removed successfully", removeMember });
 
   } catch (error: any) {
     console.error(error);
@@ -80,38 +82,40 @@ export const sendMemberRequest = async (req: any, res: Response) => {
   let activeStatus = "not_joined";
 
   try {
-    // Check if the member's account exists
-    const member_ac = await Account.findOne({ username });
-    if (!member_ac) {
-      return res.status(404).json({ message: "Account not found" });
-    }
 
-    // Find the routine to remove the member from
-    const routine = await Routine.findOne({ _id: routineID });
-    if (!routine) {
-      return res.status(404).json({ message: "Routine not found" });
-    }
+    // TODO : sendMemberRequest
+    // // Check if the member's account exists
+    // const member_ac = await Account.findOne({ username });
+    // if (!member_ac) {
+    //   return res.status(404).json({ message: "Account not found" });
+    // }
 
-    // Check if the member is already a part of the routine
-    const isMember = await RoutineMember.findOne({ RutineID: routineID, memberID: member_ac.id });
-    if (isMember) {
-      activeStatus = "joined";
-      return res.status(200).json({ message: "User is already a member of the routine", activeStatus });
-    }
+    // // Find the routine to remove the member from
+    // const routine = await Routine.findOne({ _id: routineID });
+    // if (!routine) {
+    //   return res.status(404).json({ message: "Routine not found" });
+    // }
 
-    // Check if the member's request has already been sent
-    const allradySend = routine.send_request.includes(member_ac._id.toString());
-    if (allradySend) {
-      activeStatus = "request_pending";
-      return res.status(200).json({ message: "Request already sent", activeStatus });
-    }
+    // // Check if the member is already a part of the routine
+    // const isMember = await RoutineMember.findOne({ RutineID: routineID, memberID: member_ac.id });
+    // if (isMember) {
+    //   activeStatus = "joined";
+    //   return res.status(200).json({ message: "User is already a member of the routine", activeStatus });
+    // }
 
-    // Add the member to the send request list
-    routine.send_request.push(member_ac._id);
-    const new_request = await routine.save();
+    // // Check if the member's request has already been sent
+    // const allradySend = routine.send_request.includes(member_ac._id.toString());
+    // if (allradySend) {
+    //   activeStatus = "request_pending";
+    //   return res.status(200).json({ message: "Request already sent", activeStatus });
+    // }
 
-    activeStatus = "request_pending";
-    res.status(200).json({ message: "Request sent successfully", activeStatus });
+    // // Add the member to the send request list
+    // routine.send_request.push(member_ac._id);
+    // const new_request = await routine.save();
+
+    // activeStatus = "request_pending";
+    // res.status(200).json({ message: "Request sent successfully", activeStatus });
 
   } catch (error: any) {
     console.error(error);
@@ -143,7 +147,6 @@ export const allMembers = async (req: any, res: Response) => {
       .select('-__v -blocklist -_id')
       .populate({
         path: 'memberID',
-        model: Account,
         select: '_id username name image',
         options: {
           skip: (page - 1) * limit,
@@ -195,7 +198,6 @@ export const allRequest = async (req: any, res: Response) => {
     const routine = await Routine.findOne({ _id: routineID }, { send_request: 1 })
       .populate({
         path: 'send_request',
-        model: Account,
         select: 'name username image',
         options: {
           sort: { createdAt: -1 },
@@ -221,61 +223,62 @@ export const acceptRequest = async (req: any, res: Response) => {
   const { username, acceptAll } = req.body;
 
   try {
-    // Find the routine by ID
-    const routine = await Routine.findById(routineID);
-    if (!routine) {
-      return res.status(404).json({ message: "Routine not found" });
-    }
-    console.log(acceptAll)
+    // TODO : 
+    // // Find the routine by ID
+    // const routine = await Routine.findById(routineID);
+    // if (!routine) {
+    //   return res.status(404).json({ message: "Routine not found" });
+    // }
+    // console.log(acceptAll)
 
-    if (acceptAll === 'true') {
-      // Accept all the requests in this routine
-      for (let i = 0; i < routine.send_request.length; i++) {
-        const memberId = routine.send_request[i];
+    // if (acceptAll === 'true') {
+    //   // Accept all the requests in this routine
+    //   for (let i = 0; i < routine.send_request.length; i++) {
+    //     const memberId = routine.send_request[i];
 
-        // Check if the member is already a member of the routine
-        const isMember = await RoutineMember.findOne({ memberID: memberId, RutineID: routineID });
+    //     // Check if the member is already a member of the routine
+    //     const isMember = await RoutineMember.findOne({ memberID: memberId, RutineID: routineID });
 
-        if (!isMember) {
-          // Remove the member from send_request array
-          // routine.send_request.pull(memberId);
-          await Routine.findOneAndUpdate({ _id: routineID },
-            { $pull: { send_request: memberId } }
-          );
-          // Create a new RoutineMember object and save it
-          const makeMember = new RoutineMember({ memberID: memberId, RutineID: routineID });
-          await makeMember.save();
+    //     if (!isMember) {
+    //       // Remove the member from send_request array
+    //       // routine.send_request.pull(memberId);
+    //       await Routine.findOneAndUpdate({ _id: routineID },
+    //         { $pull: { send_request: memberId } }
+    //       );
+    //       // Create a new RoutineMember object and save it
+    //       const makeMember = new RoutineMember({ memberID: memberId, RutineID: routineID });
+    //       await makeMember.save();
 
-        }
-      }
+    //     }
+    //   }
 
-      // Save the updated routine
-      await routine.save();
-      return res.json({ message: "All requests accepted" });
-    }
+    //   // Save the updated routine
+    //   await routine.save();
+    //   return res.json({ message: "All requests accepted" });
+    // }
 
 
-    // Find the member account by username
-    const member_ac = await Account.findOne({ username });
-    if (!member_ac) {
-      return res.status(404).json({ message: "Account not found" });
-    }
+    // // Find the member account by username
+    // const member_ac = await Account.findOne({ username });
+    // if (!member_ac) {
+    //   return res.status(404).json({ message: "Account not found" });
+    // }
 
-    // Check if the member is already a member of the routine
-    const isMember = await RoutineMember.findOne({ memberID: member_ac._id, RutineID: routineID });
-    if (isMember) {
-      return res.status(400).json({ message: "User is already a member" });
-    }
+    // // Check if the member is already a member of the routine
+    // const isMember = await RoutineMember.findOne({ memberID: member_ac._id, RutineID: routineID });
+    // if (isMember) {
+    //   return res.status(400).json({ message: "User is already a member" });
+    // }
 
-    const updatedRoutine = await Routine.findOneAndUpdate(
-      { _id: routineID },
-      { $addToSet: { members: member_ac._id }, $pull: { send_request: member_ac._id } },
-      { new: true }
-    );
+    // const updatedRoutine = await Routine.findOneAndUpdate(
+    //   { _id: routineID },
+    //   { $addToSet: { members: member_ac._id }, $pull: { send_request: member_ac._id } },
+    //   { new: true }
+    // );
 
-    // Create a new RoutineMember object and save it
-    const makeMember = new RoutineMember({ memberID: member_ac._id, RutineID: routineID });
-    await makeMember.save();
+    // // Create a new RoutineMember object and save it
+    // const makeMember = new RoutineMember({ memberID: member_ac._id, RutineID: routineID });
+    // await makeMember.save();
 
     res.json({ message: "Request accepted" });
   } catch (error: any) {
@@ -288,32 +291,33 @@ export const acceptRequest = async (req: any, res: Response) => {
 export const rejectMember = async (req: any, res: Response) => {
   const { routineID } = req.params;
   const { username } = req.body;
+  // TODO  :
 
   try {
-    const routine = await Routine.findById(routineID);
-    if (!routine) {
-      return res.status(404).json({ message: "Routine not found" });
-    }
+    // const routine = await Routine.findById(routineID);
+    // if (!routine) {
+    //   return res.status(404).json({ message: "Routine not found" });
+    // }
 
-    const member_ac = await Account.findOne({ username });
-    if (!member_ac) {
-      return res.status(404).json({ message: "Account not found" });
-    }
+    // const member_ac = await Account.findOne({ username });
+    // if (!member_ac) {
+    //   return res.status(404).json({ message: "Account not found" });
+    // }
 
-    // Check if user_id is present in the send_request array
-    const isSendRequest = routine.send_request.includes(member_ac._id);
-    if (!isSendRequest) {
-      return res.status(404).json({ message: "User id is not present in the send request array" });
-    }
+    // // Check if user_id is present in the send_request array
+    // const isSendRequest = routine.send_request.includes(member_ac._id);
+    // if (!isSendRequest) {
+    //   return res.status(404).json({ message: "User id is not present in the send request array" });
+    // }
 
-    const updatedRoutine = await Routine.findOneAndUpdate(
-      { _id: routineID },
-      { $pull: { send_request: member_ac._id } },
-      { new: true }
-    );
+    // const updatedRoutine = await Routine.findOneAndUpdate(
+    //   { _id: routineID },
+    //   { $pull: { send_request: member_ac._id } },
+    //   { new: true }
+    // );
 
 
-    res.status(200).json({ message: "Member request is rejected ", routine: updatedRoutine });
+    // res.status(200).json({ message: "Member request is rejected ", routine: updatedRoutine });
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ message: error.toString() });

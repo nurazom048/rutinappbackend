@@ -1,6 +1,5 @@
 import express, { Request, Response } from 'express';
 // Models
-import Account from '../../Account/models/Account.Model'
 import Routine from '../models/routine.models';
 import Class from '../models/class.model';
 import Summary from '../models/summary.models';

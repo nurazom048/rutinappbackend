@@ -1,15 +1,9 @@
 import express, { Request, Response } from 'express';
 
 // Models
-import Account from '../../Account/models/Account.Model';
 import Routine from '../models/routine.models';
-import RoutineMember from '../models/routineMembers.Model';
-import Summary from '../models/save_summary.model';
-import SaveSummaries from '../models/save_summary.model';
-import Classes from '../models/class.model';
-import Weekday from '../models/weakday.Model';
-import SaveRoutine from '../models/save_routine.model';
-import Class from '../models/class.model';
+import prisma from '../../../prisma/schema/prisma.clint';
+
 
 //! firebase
 import { initializeApp } from 'firebase/app';
@@ -23,9 +17,6 @@ const storage = getStorage();
 // routine firebase
 import { deleteSummariesFromFirebaseBaseOnRoutineID } from '../firebase/summary.firebase';
 import { getClasses } from '../helper/class.helper';
-import mongoose from 'mongoose';
-import { maineDB, RoutineDB } from '../../../prisma/mongodb.connection';
-import prisma from '../../../prisma/schema/prisma.clint';
 
 //*******************************************************************************/
 //--------------------------------- createRoutine  ------------------------------/
@@ -305,36 +296,36 @@ export const save_routines = async (req: any, res: Response) => {
   const limit = parseInt(req.query.limit) || 2;
 
   try {
-    // Find the account by primary username
-    const account = await Account.findById(id);
-    if (!account) return res.status(404).json({ message: "Account not found" });
+    // // Find the account by primary username
+    // const account = await Account.findById(id);
+    // if (!account) return res.status(404).json({ message: "Account not found" });
 
-    // Find the saved routines for the account and populate owner details
-    const savedRoutines = await SaveRoutine.find({ savedByAccountID: id })
-      .populate({
-        path: 'routineID',
-        select: 'name ownerid',
-        populate: {
-          path: 'ownerid',
-          model: Account,
+    // // Find the saved routines for the account and populate owner details
+    // const savedRoutines = await SaveRoutine.find({ savedByAccountID: id })
+    //   .populate({
+    //     path: 'routineID',
+    //     select: 'name ownerid',
+    //     populate: {
+    //       path: 'ownerid',
 
-          select: 'name username image'
-        }
-      })
-      .limit(limit)
-      .skip((page - 1) * limit);
 
-    // Count the total number of saved routines
-    const count = await SaveRoutine.countDocuments({ savedByAccountID: id });
+    //       select: 'name username image'
+    //     }
+    //   })
+    //   .limit(limit)
+    //   .skip((page - 1) * limit);
 
-    // Prepare response data
-    const response = {
-      savedRoutines: savedRoutines.map((routine: any) => routine.routineID),
-      currentPage: page,
-      totalPages: Math.ceil(count / limit)
-    };
+    // // Count the total number of saved routines
+    // const count = await SaveRoutine.countDocuments({ savedByAccountID: id });
 
-    res.status(200).json(response);
+    // // Prepare response data
+    // const response = {
+    //   savedRoutines: savedRoutines.map((routine: any) => routine.routineID),
+    //   currentPage: page,
+    //   totalPages: Math.ceil(count / limit)
+    // };
+
+    // res.status(200).json(response);
     // console.log(response);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -457,7 +448,7 @@ export const joined_routine = async (req: any, res: Response) => {
       .select(" name ownerid")
       .populate({
         path: 'ownerid',
-        model: Account,
+
         select: 'name image username'
       })
       .skip((page - 1) * limit)

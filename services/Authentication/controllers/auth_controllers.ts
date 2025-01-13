@@ -21,7 +21,6 @@ dotenv.config(); // Load environment variables from .env file
 import bcrypt from 'bcrypt';
 import { generateAuthToken, generateRefreshToken } from '../helper/Jwt.helper';
 import PendingAccount from '../../../Features/Account/models/pending_account.model';
-import Account from '../../../Features/Account/models/Account.Model';
 import { maineDB } from '../../../prisma/mongodb.connection';
 import prisma from '../../../prisma/schema/prisma.clint';
 

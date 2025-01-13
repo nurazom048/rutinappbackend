@@ -55,3 +55,14 @@ export const verifyToken = async (req: any, res: Response, next: NextFunction) =
     return res.status(401).json({ message: 'Authentication failed. Please log in again.' });
   }
 };
+
+// Helper function to generate tokens and set response headers
+export const generateAndSetTokens = (res: Response, accountId: string, username: string) => {
+  const authToken = generateAuthToken(accountId, username);
+  const refreshToken = generateRefreshToken(accountId, username);
+
+  res.setHeader('Authorization', `Bearer ${authToken}`);
+  res.setHeader('x-refresh-token', refreshToken);
+
+  return { authToken, refreshToken };
+};

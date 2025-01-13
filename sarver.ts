@@ -7,7 +7,7 @@ import http from 'http';
 import jwt, { Secret } from 'jsonwebtoken';
 
 // Import routes
-import auth_route from './Features/Account/routes/Features';
+import auth_route from './Features/Account/routes/auth_route';
 import routine_route from './Features/Routines/routes/Features';
 import class_route from './Features/Routines/routes/class_route';
 import summary from './Features/Routines/routes/summary_route';

@@ -1,6 +1,6 @@
-import { AccountType,Day,imageStorageProvider } from "enum"
-import { Class,Routine,RoutineMember,RoutinesJoinRequest,Summary,Weekday} from "routine"
-import {Notice,rePublish,NoticeBoardMember } from "notice"
+// import { AccountType,Day,imageStorageProvider } from "enum"
+// import { Class,Routine,RoutineMember,RoutinesJoinRequest,Summary,Weekday} from "routine"
+// import {Notice,rePublish,NoticeBoardMember } from "notice"
 
 model AccountData {
     id                    String   @id @default(uuid())

@@ -1,4 +1,3 @@
-import Account from '../models/Account.Model';
 import bcrypt from 'bcrypt';
 import express, { Request, Response } from 'express';
 
@@ -6,7 +5,6 @@ import express, { Request, Response } from 'express';
 import { initializeApp, getApp } from 'firebase/app';
 const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = require('firebase/storage');
 import { firebaseConfig } from "../../../config/firebase/firebase_storage";
-import Routine from '../../Routines/models/routine.models';
 import prisma from '../../../prisma/schema/prisma.clint';
 const storage = getStorage();
 
@@ -213,35 +211,45 @@ export const view_my_account = async (req: any, res: Response) => {
 
 
 //....view others Account...//
-export const view_others_Account = async (req: any, res: Response) => {
+
+
+export const viewOthersAccount = async (req: any, res: Response) => {
   const { username } = req.params;
-  console.log(username);
 
   try {
-    const user = await Account.findOne({ username }, { password: 0 })
-      .populate({
-        path: 'routines Saved_routines',
-        model: Routine,
-        options: {
-          sort: { createdAt: -1 },
-        },
-        populate: {
-          path: 'ownerid',
-          model: Account,
-          select: 'name username image coverImage',
-        },
-      });
+    // Fetch user account and routines
+    const user = await prisma.account.findUnique({
+      where: { username },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        about: true,
+        isVerified: true,
+        image: true,
+        imageStorageProvider: true,
+        coverImage: true,
+        coverImageStorageProvider: true,
+        accountType: true,
+        lastLoginTime: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-    if (!user) return res.status(404).json({ message: "User id not found " });
-
-    return res.status(200).json(user.toObject({ getters: true }));
-
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    // Remove null fields from the response
+    const filteredUser = Object.fromEntries(
+      Object.entries(user).filter(([_, value]) => value !== null)
+    );
+    return res.status(200).json({ user: filteredUser });
   } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ message: "Error getting routines" });
+    console.error("Error fetching account data:", error);
+    return res.status(500).json({ message: "Error getting routines" });
   }
 };
-
 //************************************************************************** */
 // ---------------------    changePassword   --------------------------------/
 //************************************************************************** */
@@ -252,10 +260,14 @@ export const changePassword = async (req: any, res: Response) => {
   const { oldPassword, newPassword } = req.body;
 
   try {
-    // Step 1: Find the account by ID
-    const account = await Account.findById(id);
+    // Step 1: Retrieve the account and account data
+    const account = await prisma.accountData.findUnique({
+      where: { ownerAccountId: id },
+      select: { password: true },
+    });
+
     if (!account) {
-      return res.status(400).json({ message: "Account not found" });
+      return res.status(404).json({ message: "Account not found" });
     }
 
     // Ensure the password is defined
@@ -272,14 +284,15 @@ export const changePassword = async (req: any, res: Response) => {
     // Step 3: Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update the password on Firebase
-    await auth().updateUser(account.id, {
-      password: newPassword
-    });
 
-    // Update the password in MongoDB
-    account.password = hashedPassword;
-    await account.save();
+    // Step 4: Update password in Firebase
+    await admin.auth().updateUser(id, { password: newPassword });
+
+    // Step 5: Update password in the database
+    await prisma.accountData.update({
+      where: { ownerAccountId: id },
+      data: { password: hashedPassword },
+    });
 
     // Step 4: Send response
     res.status(200).json({ message: "Password changed successfully" });
@@ -296,10 +309,10 @@ export const forgetPassword = async (req: any, res: Response) => {
 
   try {
     if (!email && !username) return res.status(400).json({ message: "Please fill the form" });
-
-    // Find the account by ID
-    const account = await Account.findOne({ $or: [{ email: email }, { phone: phone }, { username: username }] });
-    if (!account) return res.status(400).json({ message: "username or email is not valid" });
+    // TODO forget password by firebase forget password link email send
+    // // Find the account by ID
+    // const account = await Account.findOne({ $or: [{ email: email }, { phone: phone }, { username: username }] });
+    // if (!account) return res.status(400).json({ message: "username or email is not valid" });
 
 
 
@@ -311,8 +324,7 @@ export const forgetPassword = async (req: any, res: Response) => {
     // await account.save();
 
     // Send response
-    res.status(200).json({ message: "Password changed successfully", email: account.email });
-    //console.error({ message: "Password changed successfully" });
+    res.status(200).json({ message: "Password changed successfully", email: email });
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ message: "Error changing password" });

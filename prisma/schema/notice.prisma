@@ -1,5 +1,3 @@
-import { Account, Account, Account, Account } from "account"
-
 model NoticeBoardMember {
     id             String  @id @default(uuid())
     accountId      String

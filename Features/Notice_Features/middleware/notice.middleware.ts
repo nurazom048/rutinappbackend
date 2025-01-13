@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import Account, { AccountType } from '../../Account/models/Account.Model';
 import { printError } from '../../../utils/utils';
 
 

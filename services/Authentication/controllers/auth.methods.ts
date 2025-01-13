@@ -5,7 +5,6 @@ dotenv.config();
 
 
 // imports models
-import Account from '../../../Features/Account/models/Account.Model';
 import PendingAccount from '../../../Features/Account/models/pending_account.model';
 import prisma from '../../../prisma/schema/prisma.clint';
 
@@ -23,7 +22,7 @@ export const generateUsername = (email: string): string => {
 
 export const generateUniqUsername = async (email: string): Promise<string> => {
     const username = generateUsername(email);
-    const isUsed = await Account.findOne({ username }) || await PendingAccount.findOne({ username });
+    const isUsed = await prisma.account.findFirst({ where: { username } }) || await PendingAccount.findOne({ username });
 
     if (isUsed) {
         return username + Date.now();
