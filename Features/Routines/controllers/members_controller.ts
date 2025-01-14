@@ -4,41 +4,55 @@ import { Request, Response, NextFunction } from 'express';
 import Routine from '../models/routine.models';
 import RoutineMember from '../models/routineMembers.Model';
 import prisma from '../../../prisma/schema/prisma.clint';
+import { printD } from '../../../utils/utils';
 
 
 
 //**********  addMembers   ************* */
 export const addMember = async (req: any, res: Response) => {
   const { routineID, username } = req.params;
-  // TODO
   try {
-    // //
-    //  Check if the member's account exists
-    // const members_ac = await Account.findOne({ username });
-    // if (!members_ac) return res.json({ message: "Account not found" });
+    // Step 1: Check if the member's account exists
+    const memberAccount = await prisma.account.findUnique({
+      where: { username },
+    });
+    if (!memberAccount) return res.status(404).json({ message: "Account not found" });
+    // Step 2: Find the routine to add the member to
+    const routine = await prisma.routine.findUnique({
+      where: { id: routineID },
+    });
+    if (!routine) return res.status(404).json({ message: "Routine not found" });
 
-    // // Find the routine to add the member to
-    // const routine = await Routine.findOne({ _id: routineID });
-    // if (!routine) return res.json({ message: "Routine not found" });
+    // Step 3: Check if the member is already added to the routine
+    const alreadyAdded = await prisma.routineMember.findFirst({
+      where: {
+        routineId: routineID,
+        accountId: memberAccount.id,
+      },
+    });
+    if (alreadyAdded) return res.json({ message: "Member already added" });
+    // Step 4: Add the member to the routine
+    const addMember = await prisma.routineMember.create({
+      data: {
+        accountId: memberAccount.id,
+        routineId: routine.id,
+        notificationOn: false, // Default value
+        captain: false, // Default value
+        owner: false, // Default value
+        isSaved: false, // Default value
+        blacklist: false, // Default value
+      },
+    });
 
-    // // Check if the member is already added
-    // const alreadyAdded = routine.members.includes(members_ac._id.toString());
-    // if (alreadyAdded) return res.json({ message: "Member already added" });
-
-    // //add member
-    // const addMember = new RoutineMember({ memberID: members_ac._id }); // Create a new RoutineMember instance
-    // await addMember.save(); // Wait for the routineMember instance to be saved
-
-
-    // // Add the member to the routine
-    // routine.members.push(members_ac._id);
-    // const new_member = await routine.save();
-    // res.json({ message: "Member added successfully", addMember, new_member });
-
-    //
+    // Step 5: Return the response with the added member details
+    res.json({
+      message: "Member added successfully",
+      addMember,
+      routine,
+    });
   } catch (error: any) {
     console.error(error);
-    res.json({ message: error.toString() });
+    res.status(500).json({ message: error.toString() });
   }
 };
 
@@ -74,6 +88,7 @@ export const removeMember = async (req: any, res: Response) => {
   }
 };
 
+
 //***********  sendMemberRequest *************/
 
 export const sendMemberRequest = async (req: any, res: Response) => {
@@ -82,41 +97,65 @@ export const sendMemberRequest = async (req: any, res: Response) => {
   let activeStatus = "not_joined";
 
   try {
+    // Find the member account using Prisma
+    const member_ac = await prisma.account.findUnique({
+      where: { username },
+    });
+    if (!member_ac) {
+      return res.status(404).json({ message: "Account not found" });
+    }
 
-    // TODO : sendMemberRequest
-    // // Check if the member's account exists
-    // const member_ac = await Account.findOne({ username });
-    // if (!member_ac) {
-    //   return res.status(404).json({ message: "Account not found" });
-    // }
+    // Find the routine using Prisma
+    const routine = await prisma.routine.findUnique({
+      where: { id: routineID },
+      include: {
+        routineMembers: true, // Fetch related members to check if already joined
+        RoutinesJoinRequest: true, // Fetch requests to check if already sent
+      },
+    });
+    if (!routine) {
+      return res.status(404).json({ message: "Routine not found" });
+    }
 
-    // // Find the routine to remove the member from
-    // const routine = await Routine.findOne({ _id: routineID });
-    // if (!routine) {
-    //   return res.status(404).json({ message: "Routine not found" });
-    // }
+    // Check if the member is already a part of the routine
+    const isMember = routine.routineMembers.some(
+      (member: any) => member.accountId === member_ac.id
+    );
+    if (isMember) {
+      activeStatus = "joined";
+      return res.status(200).json({
+        message: "User is already a member of the routine",
+        activeStatus,
+      });
+    }
 
-    // // Check if the member is already a part of the routine
-    // const isMember = await RoutineMember.findOne({ RutineID: routineID, memberID: member_ac.id });
-    // if (isMember) {
-    //   activeStatus = "joined";
-    //   return res.status(200).json({ message: "User is already a member of the routine", activeStatus });
-    // }
+    // Check if the member's request has already been sent
+    const alreadySent = routine.RoutinesJoinRequest.some(
+      (request: any) => request.accountIdBy === member_ac.id
+    );
+    if (alreadySent) {
+      activeStatus = "request_pending";
+      return res.status(200).json({
+        message: "Request already sent",
+        activeStatus,
+      });
+    }
 
-    // // Check if the member's request has already been sent
-    // const allradySend = routine.send_request.includes(member_ac._id.toString());
-    // if (allradySend) {
-    //   activeStatus = "request_pending";
-    //   return res.status(200).json({ message: "Request already sent", activeStatus });
-    // }
+    // Create a new join request
+    const newRequest = await prisma.routinesJoinRequest.create({
+      data: {
+        accountIdBy: member_ac.id,
+        routineId: routine.id,
+        requestMessage: req.body.requestMessage || "", // Optional request message
+      },
+    });
 
-    // // Add the member to the send request list
-    // routine.send_request.push(member_ac._id);
-    // const new_request = await routine.save();
-
-    // activeStatus = "request_pending";
-    // res.status(200).json({ message: "Request sent successfully", activeStatus });
-
+    activeStatus = "request_pending";
+    res.status(200).json({
+      message: "Request sent successfully",
+      activeStatus,
+      newRequest,
+    });
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ message: error.toString() });
@@ -130,60 +169,77 @@ export const allMembers = async (req: any, res: Response) => {
   const { page = 1, limit = 10 } = req.query;
 
   try {
-    // Find the routine and its members
-    const routine = await Routine.findOne({ _id: routineID }, { members: 1 });
+    // Step 1: Find the routine and check if it exists
+    const routine = await prisma.routine.findUnique({
+      where: { id: routineID },
+      select: { id: true }, // We only need the routine ID to verify existence
+    });
+
     if (!routine) {
-      return res.json({ message: "Routine not found" });
+      return res.status(404).json({ message: 'Routine not found' });
     }
 
-    // Count the total number of members
-    const count = await RoutineMember.countDocuments({ RutineID: routineID });
+    // Step 2: Count the total number of members
+    const count = await prisma.routineMember.count({
+      where: { routineId: routineID },
+    });
 
-    // Calculate the total number of pages
-    const totalPages = Math.ceil(count / limit);
+    // Step 3: Calculate the total number of pages
+    const totalPages = Math.ceil(count / parseInt(limit));
 
-    // Find the members and populate the memberID field with pagination
-    const members = await RoutineMember.find({ RutineID: routineID })
-      .select('-__v -blocklist -_id')
-      .populate({
-        path: 'memberID',
-        select: '_id username name image',
-        options: {
-          skip: (page - 1) * limit,
-          limit: parseInt(limit),
-          sort: { createdAt: -1 },
+    // Step 4: Find the members with pagination and populate memberID
+    const members = await prisma.routineMember.findMany({
+      where: { routineId: routineID },
+      select: {
+        id: true,
+        notificationOn: true,
+        captain: true,
+        owner: true,
+        member: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            image: true,
+          },
         },
-      });
+      },
+      skip: (page - 1) * parseInt(limit),
+      take: parseInt(limit),
+      orderBy: { createdAt: 'desc' },
+    });
 
-    // Format the response by extracting the member objects
-    const formattedMembers = members
-      .map(({ memberID, notificationOn, captain, owner }: any) => {
-        if (!memberID) {
-          return null; // Skip null memberID
-        }
-        const { _id, username, name, image } = memberID;
-        return {
-          _id,
-          username,
-          name,
-          image,
-          notificationOn,
-          captain,
-          owner,
-        };
-      })
-      .filter((member: any) => member !== null);
+    // Step 5: Format the response, removing null fields
+    const formattedMembers = members.map((member) => {
+      const formattedMember: any = {
+        id: member.member.id,
+        username: member.member.username,
+        name: member.member.name,
+        notificationOn: member.notificationOn,
+        captain: member.captain,
+        owner: member.owner,
+      };
 
+      // Only add image if it's not null
+      if (member.member.image !== null) {
+        formattedMember.image = member.member.image;
+      }
+
+      // Remove null fields from formatted member object
+      return Object.fromEntries(Object.entries(formattedMember).filter(([_, v]) => v != null));
+    });
+
+    // Step 6: Return the response
     res.json({
-      message: "All Members",
+      message: 'All Members',
       currentPage: parseInt(page),
       totalPages,
-      totalCount: count || 1,
+      totalCount: count,
       members: formattedMembers,
     });
   } catch (error: any) {
     console.error(error);
-    res.json({ message: error.toString() });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -192,93 +248,163 @@ export const allMembers = async (req: any, res: Response) => {
 export const allRequest = async (req: any, res: Response) => {
   const { routineID } = req.params;
 
-
   try {
-    // Find the routine and  member 
-    const routine = await Routine.findOne({ _id: routineID }, { send_request: 1 })
-      .populate({
-        path: 'send_request',
-        select: 'name username image',
-        options: {
-          sort: { createdAt: -1 },
+    // Step 1: Find the routine and associated join requests
+    const routine = await prisma.routine.findUnique({
+      where: { id: routineID },
+      select: {
+        id: true,
+        RoutinesJoinRequest: { // Assuming this is the relation to the join requests
+          select: {
+            id: true,
+            requestMessage: true,
+            requestedAccount: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                image: true,
+              }
+            },
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc', // Sort by creation date
+          },
         },
-      });
+      },
+    });
 
-    if (!routine) return res.json({ message: "Routine not found" });
+    if (!routine) {
+      return res.status(404).json({ message: 'Routine not found' });
+    }
 
-    const count = routine.send_request.length;
-    res.json({ message: "all new request ", count, allRequest: routine.send_request });
+    const count = routine.RoutinesJoinRequest.length; // Count the requests
 
+    // Step 2: Format the response to exclude null fields
+    const formattedRequests = routine.RoutinesJoinRequest.map(request => {
+      const { requestedAccount, requestMessage, createdAt } = request;
+      const { id, username, name, image } = requestedAccount || {};
+
+      return {
+        id,
+        username,
+        name,
+        image: image ? image : undefined, // Don't include image if it's null
+        requestMessage,
+        createdAt,
+      };
+    });
+
+    // Step 3: Return the formatted response
+    res.json({
+      message: 'All new requests',
+      count,
+      allRequest: formattedRequests,
+    });
   } catch (error: any) {
     console.error(error);
-    res.json({ message: error.toString() });
+    res.status(500).json({ message: error.toString() });
   }
 };
 
 
 
+//**********  acceptRequest    ************* */
 
 export const acceptRequest = async (req: any, res: Response) => {
   const { routineID } = req.params;
   const { username, acceptAll } = req.body;
 
   try {
-    // TODO : 
-    // // Find the routine by ID
-    // const routine = await Routine.findById(routineID);
-    // if (!routine) {
-    //   return res.status(404).json({ message: "Routine not found" });
-    // }
-    // console.log(acceptAll)
+    // Find the routine by ID
+    const routine = await prisma.routine.findUnique({
+      where: {
+        id: routineID,
+      },
+      include: {
+        RoutinesJoinRequest: true, // Include join requests related to the routine
+      },
+    });
 
-    // if (acceptAll === 'true') {
-    //   // Accept all the requests in this routine
-    //   for (let i = 0; i < routine.send_request.length; i++) {
-    //     const memberId = routine.send_request[i];
+    if (!routine) {
+      return res.status(404).json({ message: "Routine not found" });
+    }
 
-    //     // Check if the member is already a member of the routine
-    //     const isMember = await RoutineMember.findOne({ memberID: memberId, RutineID: routineID });
+    if (acceptAll === 'true') {
+      // Accept all the requests in this routine
+      for (let i = 0; i < routine.RoutinesJoinRequest.length; i++) {
+        const request = routine.RoutinesJoinRequest[i];
+        const memberId = request.accountIdBy;
 
-    //     if (!isMember) {
-    //       // Remove the member from send_request array
-    //       // routine.send_request.pull(memberId);
-    //       await Routine.findOneAndUpdate({ _id: routineID },
-    //         { $pull: { send_request: memberId } }
-    //       );
-    //       // Create a new RoutineMember object and save it
-    //       const makeMember = new RoutineMember({ memberID: memberId, RutineID: routineID });
-    //       await makeMember.save();
+        // Check if the member is already a member of the routine
+        const isMember = await prisma.routineMember.findFirst({
+          where: {
+            accountId: memberId,
+            routineId: routineID,
+          },
+        });
 
-    //     }
-    //   }
+        if (!isMember) {
+          // Perform the transaction to delete request and add the member to the routine
+          await prisma.$transaction([
+            prisma.routinesJoinRequest.deleteMany({
+              where: {
+                accountIdBy: memberId,
+                routineId: routineID,
+              },
+            }),
+            prisma.routineMember.create({
+              data: {
+                accountId: memberId,
+                routineId: routineID,
+              },
+            }),
+          ]);
+        }
+      }
 
-    //   // Save the updated routine
-    //   await routine.save();
-    //   return res.json({ message: "All requests accepted" });
-    // }
+      return res.json({ message: "All requests accepted" });
+    }
 
+    // Find the member account by username
+    const member = await prisma.account.findUnique({
+      where: {
+        username: username,
+      },
+    });
 
-    // // Find the member account by username
-    // const member_ac = await Account.findOne({ username });
-    // if (!member_ac) {
-    //   return res.status(404).json({ message: "Account not found" });
-    // }
+    if (!member) {
+      return res.status(404).json({ message: "Account not found" });
+    }
 
-    // // Check if the member is already a member of the routine
-    // const isMember = await RoutineMember.findOne({ memberID: member_ac._id, RutineID: routineID });
-    // if (isMember) {
-    //   return res.status(400).json({ message: "User is already a member" });
-    // }
+    // Check if the member is already a member of the routine
+    const isMember = await prisma.routineMember.findFirst({
+      where: {
+        accountId: member.id,
+        routineId: routineID,
+      },
+    });
 
-    // const updatedRoutine = await Routine.findOneAndUpdate(
-    //   { _id: routineID },
-    //   { $addToSet: { members: member_ac._id }, $pull: { send_request: member_ac._id } },
-    //   { new: true }
-    // );
+    if (isMember) {
+      return res.status(400).json({ message: "User is already a member" });
+    }
 
-    // // Create a new RoutineMember object and save it
-    // const makeMember = new RoutineMember({ memberID: member_ac._id, RutineID: routineID });
-    // await makeMember.save();
+    // Perform the transaction to delete the join request and add the member
+    await prisma.$transaction([
+      prisma.routinesJoinRequest.deleteMany({
+        where: {
+          accountIdBy: member.id,
+          routineId: routineID,
+        },
+      }),
+      prisma.routineMember.create({
+        data: {
+          accountId: member.id,
+          routineId: routineID,
+        },
+      }),
+    ]);
 
     res.json({ message: "Request accepted" });
   } catch (error: any) {
@@ -286,6 +412,7 @@ export const acceptRequest = async (req: any, res: Response) => {
     res.status(500).json({ message: error.toString() });
   }
 };
+
 
 //*********** rejectMember *********************/
 export const rejectMember = async (req: any, res: Response) => {
@@ -401,32 +528,37 @@ export const kickOut = async (req: any, res: Response) => {
 //----------------------------notification on/off --------------------------------------/
 //**************************************************************************************/
 
-
-
 export const notification_On = async (req: any, res: Response) => {
-  const { routineId } = req.params; // Use camelCase for consistency
-  const { id: userId } = req.user; // Destructure `id` as `userId` for clarity
+  const { routineID } = req.params;
+  const { id: userId } = req.user;
+
+  if (!routineID) {
+    return res.status(400).json({ message: "Routine ID is required" });
+  }
 
   try {
     // Find the routine by ID
-    const routine = await prisma.routine.findUnique({ where: { id: routineId } });
+    const routine = await prisma.routine.findUnique({ where: { id: routineID } });
+
     if (!routine) {
       return res.status(404).json({ message: "Routine not found" });
     }
 
     // Check if the user is a member of this routine
     const isMember = await prisma.routineMember.findFirst({
-      where: { routineId, accountId: userId },
+      where: { routineId: routineID, accountId: userId },
     });
+
     if (!isMember) {
       return res.status(403).json({ message: "You are not a member of this routine" });
     }
 
     // Check if notifications are already turned on
     if (isMember.notificationOn) {
-      return res
-        .status(200)
-        .json({ message: "Notifications are already turned on", notificationOn: true });
+      return res.status(200).json({
+        message: "Notifications are already turned on",
+        notificationOn: true,
+      });
     }
 
     // Update the `notificationOn` field to `true`
@@ -436,25 +568,39 @@ export const notification_On = async (req: any, res: Response) => {
     });
 
     res.status(200).json({ message: "Notifications turned on", notificationOn: true });
+
   } catch (error: any) {
     console.error(error);
-    res.status(500).json({ message: error.toString() });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
 export const notification_Off = async (req: any, res: Response) => {
-  const { routineId } = req.params; // Use camelCase for consistency
+  const { routineID } = req.params; // Use camelCase for consistency
   const { id: userId } = req.user; // Destructure `id` as `userId` for clarity
+  printD('printing notificationOff');
 
   try {
     // Find the routine by ID
-    const routine = await prisma.routine.findUnique({ where: { id: routineId } });
+    const routine = await prisma.routine.findUnique({ where: { id: routineID } });
     if (!routine) {
       return res.status(404).json({ message: "Routine not found" });
     }
 
     // Check if the user is a member of this routine
     const isMember = await prisma.routineMember.findFirst({
-      where: { routineId, accountId: userId },
+      where: { routineId: routineID, accountId: userId },
     });
     if (!isMember) {
       return res.status(403).json({ message: "You are not a member of this routine" });

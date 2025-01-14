@@ -1,19 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import Routine from '../models/routine.models';
-import RoutineMember from '../models/routineMembers.Model';
-import Weekday from '../models/weakday.Model';
 import prisma from '../../../prisma/schema/prisma.clint';
-// Enum for weekdays
-// Enum for weekdays
-export enum Day {
-    SAT = "sat",
-    SUN = "sun",
-    MON = "mon",
-    TUE = "tue",
-    WED = "wed",
-    THU = "thu",
-    FRI = "fri",
-}
+import { Day } from '../../../utils/enum';
+
+
 export const classValidation = (req: Request, res: Response, next: NextFunction) => {
     console.log(req.body);
 
@@ -124,3 +113,50 @@ export const classEditValidation = (req: Request, res: Response, next: NextFunct
     }
 };
 
+
+
+//## Add Weekday Validation functions
+export const weekdayValidation = (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { startTime, endTime, room, day } = req.body;
+        const { classID } = req.params;
+
+        // Parse the start and end times
+        const startTimeMills: number = new Date(startTime).getTime();
+        const endTimeMills: number = new Date(endTime).getTime();
+
+        // Validation for classID, room, and day
+        if (!classID) {
+            return res.status(400).send({ message: 'Validation failed: classId is required' });
+        }
+
+        if (!room) {
+            return res.status(400).send({ message: 'Validation failed: room is required' });
+        }
+
+        if (!day || typeof day !== 'string' || !Object.values(Day).includes(day.toLowerCase() as Day)) {
+            return res.status(400).json({
+                message: `Validation failed: 'day' must be one of the following: ${Object.values(Day).join(", ")}`,
+            });
+        }
+
+        // Validation for start and end time
+        if (!startTimeMills) {
+            return res.status(400).send({ message: 'Validation failed: Start time is required' });
+        }
+
+        if (!endTimeMills) {
+            return res.status(400).send({ message: 'Validation failed: End time is required' });
+        }
+
+        if (endTimeMills <= startTimeMills) {
+            return res.status(400).send({ message: 'Validation failed: End time should be greater than start time' });
+        }
+
+        // If all validations pass, proceed to the next middleware/controller
+        next();
+    } catch (error) {
+        // Handle any errors that occur during validation
+        res.status(500).send({ message: 'Internal server error' });
+    }
+};

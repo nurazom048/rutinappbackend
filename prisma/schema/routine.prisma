@@ -52,7 +52,7 @@ model Routine {
     updatedAt      DateTime        @updatedAt // Timestamp when the routine was last updated
 
     savedBy             Account[]             @relation("AccountSavedRoutines") // Accounts that saved the routine
-    accountId           String? // Optional ID of the account associated with the routine (if applicable)
+    //accountId           String? // Optional ID of the account associated with the routine (if applicable)
     RoutinesJoinRequest RoutinesJoinRequest[] // Requests to join the routine
     Summary             Summary[]             @relation("RoutinesSummary")
 }

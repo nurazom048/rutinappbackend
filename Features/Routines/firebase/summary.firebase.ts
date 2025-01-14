@@ -14,7 +14,7 @@ import SaveSummaries from '../models/save_summary.model';
 
 
 // Upload summary's to Firebase Storage
-export const summaryImageUploader = async ({ files, class_id, routineID }: { files: any[], class_id: string, routineID: any }) => {
+export const summaryImageUploader = async ({ files, classId, routineID }: { files: any[], classId: string, routineID: any }) => {
     const downloadUrls = [];
     const newImageFileNames = [];
     const timestamp = Date.now();
@@ -23,13 +23,13 @@ export const summaryImageUploader = async ({ files, class_id, routineID }: { fil
         const filename = `${timestamp}-${i}-${files[i].originalname}`;
         newImageFileNames.push(filename);
 
-        const fileRef = ref(storage, `summary/routineID-${routineID}/classID-${class_id}/files/${filename}`);
+        const fileRef = ref(storage, `summary/routineID-${routineID}/classID-${classId}/files/${filename}`);
         const metadata = { contentType: files[i].mimetype };
         await uploadBytes(fileRef, files[i].buffer, metadata);
     }
 
     for (let i = 0; i < newImageFileNames.length; i++) {
-        const fileRef = ref(storage, `summary/routineID-${routineID}/classID-${class_id}/files/${newImageFileNames[i]}`);
+        const fileRef = ref(storage, `summary/routineID-${routineID}/classID-${classId}/files/${newImageFileNames[i]}`);
         try {
             const url = await getDownloadURL(fileRef);
             downloadUrls.push(url);

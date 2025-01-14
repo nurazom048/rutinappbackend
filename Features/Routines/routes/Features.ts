@@ -7,12 +7,11 @@ import {
     homeFeed, joined_routine, searchRoutine,
     save_routines, save_and_unsave_routine, current_user_status,
 } from '../controllers/routine.controllers';
-//priode
-import { periodModelValidation, } from '../validation/priode.validation';
+
 // Members
 import {
-    addMember, removeMember, allMembers, notification_Off, notification_On,
-    acceptRequest, rejectMember, allRequest, kickOut, leave, sendMemberRequest,
+    addMember, removeMember, allMembers, notification_Off, acceptRequest, rejectMember, allRequest, kickOut, leave, sendMemberRequest,
+    notification_On,
 } from '../controllers/members_controller';
 import { addCaptain, removeCaptain } from '../controllers/captens.controller';
 import { permission_add_Pride, peremption_add_member } from '../middleware/member_mid';

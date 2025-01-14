@@ -170,9 +170,6 @@ export const searchRoutine = async (req: any, res: Response) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
 
-  if (!src) {
-    return res.status(400).json({ message: "Search term is required" });
-  }
 
   try {
     const regex = new RegExp(src, "i"); // Case-insensitive regex search pattern
@@ -471,135 +468,60 @@ export const joined_routine = async (req: any, res: Response) => {
 // //************** user can see all routines where owner or joined ***********
 
 
-
-
 export const homeFeed = async (req: any, res: Response) => {
-  const { id } = req.user; // Logged-in user's ID
-  const { userID } = req.params; // Specific user ID to filter by (if provided)
+  const { id: loggedInUserId } = req.user;  // Logged-in user's ID
+  const { userID } = req.params;  // Optional user ID filter
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 3;
+  const skip = (page - 1) * limit;  // Calculate pagination offset
 
   try {
-    // Build the query for routines based on whether a userID is provided
-    const query = userID
-      ? { accountId: userID, owner: true } // Use accountId instead of memberID
-      : { OR: [{ accountId: id }, { owner: true }] }; // Correct field names
-
-    // Calculate the skip value for pagination
-    const skip = (page - 1) * limit;
-
-    // Find routines and include related routine details (Populate RutineID)
-    const routines = await prisma.routineMember.findMany({
-      where: query,
-      skip,
-      take: limit,
-      include: {
-        routine: { // Include the associated routine and select the desired fields
-          select: {
-            id: true, // Get the id of the routine
-            routineName: true // Get the name of the routine
-          }
-        }
-      }
+    // Step 1: Get IDs of routines joined by the logged-in user
+    const joinedRoutineIds = await prisma.routineMember.findMany({
+      where: { accountId: loggedInUserId },
+      select: { routineId: true },
     });
 
-    // Get the total count of routines matching the query for pagination
-    const totalCount = await prisma.routineMember.count({ where: query });
+    const routineIdList = joinedRoutineIds.map(({ routineId }) => routineId);
 
-    // Respond with the filtered and formatted routine data
+    // Step 2: Fetch routines based on userID presence
+    const routines = await prisma.routine.findMany({
+      where: userID
+        ? { ownerAccountId: userID }  // Show routines created by userID
+        : { id: { in: routineIdList } },  // Show routines joined by logged-in user
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        routineName: true,
+        routineOwner: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    // Step 3: Count total routines for pagination
+    const totalCount = await prisma.routine.count({
+      where: userID
+        ? { ownerAccountId: userID }
+        : { id: { in: routineIdList } },
+    });
+
+    // Step 4: Return the response with relevant data
     res.status(200).json({
-      message: 'success',
-      homeRoutines: routines.map(routine => ({
-        memberID: routine.accountId,
-        RutineID: routine.routine, // Now RutineID is populated with routine object (id, name)
-        notificationOn: routine.notificationOn,
-        captain: routine.captain,
-        owner: routine.owner,
-        isSaved: false, // Modify based on your logic for "saved"
-        blocklist: false, // Modify based on your blocklist logic
-      })),
+      message: 'Success',
+      homeRoutines: routines,
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit),
       totalItems: totalCount,
     });
   } catch (error: any) {
+    // Step 5: Handle errors gracefully
     res.status(500).json({ message: error.message });
   }
 };
-
-
-// export const homeFeed = async (req: any, res: Response) => {
-//   const { id } = req.user;
-//   const { userID } = req.params;
-//   const { osUserID } = req.body;
-//   const page = parseInt(req.query.page) || 1;
-//   const limit = parseInt(req.query.limit) || 3;
-
-//   try {
-//     // Find routines where the user is the owner or a member and Routine ID exists and is not null
-//     let query;
-
-//     if (userID) {
-//       // This query is for to find all the uploaded routine on a specific user
-//       query = { memberID: userID, owner: true };
-//     }
-//     // This query is for to find all the home routine of logged in user
-//     query = { memberID: userID || id };
-//     // Calculate the number of documents to skip
-//     const skip = (page - 1) * limit;
-//     // console.log(query);
-//     // console.log(userID);
-
-//     // Find all matching routines
-//     const routines = await RoutineMember.find(query, '-_id -__v')
-//       .populate({
-//         path: 'RutineID',
-//         select: 'name'
-//       })
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(limit);
-
-//     //  console.log(routines);
-
-//     // Get the IDs of routines with null RutineID
-//     // const nullRutineIDIds = routines
-//     //   .filter(routine => routine.RutineID === null || routine.RutineID === undefined || routine.RutineID === '')
-//     //   .map(routine => routine._id);
-//     const nullRutineIDIds: string[] = routines
-//       .filter((routine: any) => routine.RutineID === null || routine.RutineID === undefined || routine.RutineID === '')
-//       .map((routine: any) => routine._id);
-//     //  console.log(nullRutineIDIds);
-
-//     // Remove the objects with null RutineID from MongoDB
-//     await RoutineMember.deleteMany({ _id: { $in: nullRutineIDIds } });
-
-//     // Filter out the objects with null RutineID from the response
-//     //const filteredRoutines = routines.filter(routine => routine.RutineID !== null);
-//     const filteredRoutines: any[] = routines.filter((routine: any) => routine.RutineID);
-
-//     // Get the total count of matching routines
-//     const totalCount = await RoutineMember.countDocuments(query);
-
-//     if (page == 1 && !userID) {
-//       const updated = await Account.findByIdAndUpdate(req.user.id, { osUserID: osUserID }, { new: true });
-//       // console.log(updated)
-//     }
-//     // console.log({
-//     //   message: 'success',
-//     //   homeRoutines: filteredRoutines,
-//     //   currentPage: page,
-//     //   totalPages: Math.ceil(totalCount / limit),
-//     //   totalItems: totalCount,
-//     // })
-//     res.status(200).json({
-//       message: 'success',
-//       homeRoutines: filteredRoutines,
-//       currentPage: page,
-//       totalPages: Math.ceil(totalCount / limit),
-//       totalItems: totalCount,
-//     });
-//   } catch (error: any) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };

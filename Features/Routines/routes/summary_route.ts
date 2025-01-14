@@ -1,10 +1,9 @@
 import express from 'express';
 import multer from 'multer';
-import {
-    addSummary, remove_summary, saveUnsaveSummary,
-    update_summary, summary_status, get_class_summary_list,
-} from '../controllers/summary_controller';
+import { addSummary, saveUnsaveSummary, summary_status, get_class_summary_list, removeSummary } from '../controllers/summary_controller';
 import { verifyToken } from '../../../services/Authentication/helper/Authentication';
+import { validateSummaryAddRequest } from '../middleware/routines.middleware';
+import { summaryAddPermission, summaryModificationPermission } from '../middleware/permission.routine.mid';
 
 const app = express();
 
@@ -15,16 +14,16 @@ const upload = multer({
 });
 
 // 1 add summary
-app.post("/add/:class_id", upload.array('imageLinks', 12), verifyToken, addSummary);
-app.delete("/:summary_id", verifyToken, remove_summary);
+app.post("/add/:classID", upload.array('imageLinks', 12), verifyToken, validateSummaryAddRequest, summaryAddPermission, addSummary);
+app.delete("/:summaryID", verifyToken, summaryModificationPermission, removeSummary);
 
-// save
-app.post("/save", verifyToken, saveUnsaveSummary);
-app.post("/eddit/:summary_id", verifyToken, update_summary);
-app.post("/status/:summary_id", verifyToken, summary_status);
+
+app.post("/save", verifyToken, saveUnsaveSummary);// save
+app.post("/status/:summaryID", verifyToken, summary_status);
+// app.post("/edit/:summaryID", verifyToken, update_summary);
 
 // 2 summary
-app.get("/:class_id", verifyToken, get_class_summary_list);
-app.get("/", verifyToken, get_class_summary_list);
+app.get("/:classID", verifyToken, get_class_summary_list);// get class summary
+app.get("/", verifyToken, get_class_summary_list);// get saved summary
 
 export default app;

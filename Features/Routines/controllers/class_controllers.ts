@@ -82,70 +82,117 @@ export const create_class = async (req: any, res: Response) => {
 
 
 //*******************************************************************************/
-//-------------------------------- -Add weekday to class ------------------------------/
+//----------------------------Add weekday to class ------------------------------/
 //*******************************************************************************/
 
-export const addWeekday = async (req: any, res: Response) => {
-  // Come after middleware
+export const addWeekday = async (req: Request, res: Response) => {
   const { classID } = req.params;
-  const { num, room, start_time, end_time, start_time_2, end_time_2 } = req.body;
-  console.log(req.body)
+  const { day, room, startTime, endTime } = req.body;
 
   try {
-    //
-    const classFind = await Class.findById(classID);
-    if (!classFind) return res.status(404).send({ message: 'Class not found' });
+    // Start the transaction
+    const transaction = await prisma.$transaction(async (tx) => {
+      // Find the class and related routine
+      const classFind = await tx.class.findUnique({
+        where: { id: classID },
+        include: {
+          routine: true, // Ensure that the related routine is fetched
+        },
+      });
 
-    // create and save new weekday
-    const newWeekday = new Weekday({
-      class_id: classID,
-      routine_id: classFind.routine_id.toString(),
-      num,
-      room: room,
-      start_time,
-      end_time,
-      start_time_2,
-      end_time_2,
+      if (!classFind) throw new Error('Class not found'); // Throw an error to roll back the transaction
+
+      const routineId = classFind.routineId; // Get routineId from the class
+
+      // Create the new weekday record using Prisma
+      const newWeekday = await tx.weekday.create({
+        data: {
+          classId: classID,
+          routineId: routineId, // Relate to the found routine
+          Day: day.toLowerCase(), // Assuming `day` is passed as a string (e.g., "mon", "tue")
+          room: room,
+          startTime: new Date(startTime), // Assuming startTime and endTime are ISO strings
+          endTime: new Date(endTime),
+        },
+      });
+
+      // Add the new weekday to the routine's weekdays array (relational integrity handled automatically by Prisma)
+      await tx.routine.update({
+        where: { id: routineId },
+        data: {
+          weekdays: {
+            connect: {
+              id: newWeekday.id, // Connect the new weekday to the routine
+            },
+          },
+        },
+      });
+
+      // Return the new weekday if everything is successful
+      return newWeekday;
     });
-    await newWeekday.save();
 
-    // add new weekday to the weekday array of the routine
-    classFind.weekday.push(newWeekday._id);
-    await classFind.save();
-
-    res.send({ message: 'Weekday added successfully', newWeekday });
-  } catch (error: any) {
-    if (!handleValidationError(res, error)) {
-      return res.status(500).send({ message: error.message });
-    }
+    // Send the success response
+    res.send({ message: 'Weekday added successfully', newWeekday: transaction });
+  } catch (error) {
+    // Handle any errors that occur
+    console.error(error);
+    res.status(500).send({ message: 'Internal server error' });
   }
 };
-//******* deleteWeekdayById ************** */
-export const deleteWeekdayById = async (req: any, res: Response) => {
-  const { id, classID } = req.params;
+//*******************************************************************************/
+//---------------------------- deleteWeekdayById --------------------------------/
+//*******************************************************************************/
+
+export const deleteWeekdayById = async (req: Request, res: Response) => {
+  const { weekdayID } = req.params;
 
   try {
-    // Check if the class has at least 1 weekday
-    const weekdaysCount = await Weekday.countDocuments({ class_id: classID });
-    if (weekdaysCount === 1) {
-      return res.status(404).send({ message: 'Class must have at least 1 weekday, cannot delete it' });
-    }
+    // Start a transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // Fetch the weekday and associated class
+      const weekday = await tx.weekday.findUnique({
+        where: { id: weekdayID },
+        select: { id: true, classId: true },
+      });
 
-    // Find and delete the weekday
-    const weekday = await Weekday.findOneAndDelete({ _id: id });
-    if (!weekday) {
-      return res.status(404).send('Weekday not found');
-    }
+      if (!weekday) {
+        throw new Error('Weekday not found');
+      }
 
-    // Find the remaining weekdays for the class
-    const weekdays = await Weekday.find({ class_id: classID });
-    console.log({ message: 'Weekday deleted successfully', weekdays })
-    res.send({ message: 'Weekday deleted successfully', weekdays });
+      // Ensure the class has at least one remaining weekday
+      const weekdayCount = await tx.weekday.count({
+        where: { classId: weekday.classId },
+      });
+
+      if (weekdayCount <= 1) {
+        throw new Error('Class must have at least one weekday. Deletion not allowed.');
+      }
+
+      // Delete the weekday
+      const deletedWeekday = await tx.weekday.delete({
+        where: { id: weekdayID },
+      });
+
+      // Fetch remaining weekdays in the class
+      const remainingWeekdays = await tx.weekday.findMany({
+        where: { classId: weekday.classId },
+      });
+
+      return { deletedWeekday, remainingWeekdays };
+    });
+
+    // Return success response
+    res.status(200).json({
+      message: 'Weekday deleted successfully',
+      deletedWeekday: result.deletedWeekday,
+      weekdays: result.remainingWeekdays,
+    });
   } catch (error: any) {
-    res.status(500).send({ message: error.message, weekdays: [] });
+    console.error('Error deleting weekday:', error);
+    res.status(500).json({ message: error.message || 'Internal server error', weekdays: [] });
   }
 };
-
 
 
 //******* show all weekday in a class ************** */
@@ -400,37 +447,46 @@ export const findClass = async (req: any, res: Response) => {
 //------------------------- class Notification Time -----------------------//
 //*********************************************************************** */
 
-
 export const classNotification = async (req: any, res: Response) => {
   const { id } = req.user;
 
   try {
     // Step 1: Get all routine IDs where the user is a member
-    const findRoutines = await RoutineMember.find({ memberID: id });
-    if (!findRoutines) {
-      return res.status(404).send({ message: 'No routines found for the user' });
+    const routineMembers = await prisma.routineMember.findMany({
+      where: { accountId: id },
+      select: { routineId: true },
+    });
+
+    if (routineMembers.length === 0) {
+      return res.status(404).json({ message: 'No routines found for the user' });
     }
 
-    // Convert ObjectId to string and filter out null/undefined routine IDs
-    const filteredRoutineIds = findRoutines
-      .map(routine => routine.RutineID?.toString())
-      .filter(Boolean);
+    // Extract routine IDs from the results
+    const routineIds = routineMembers.map((member) => member.routineId);
 
-    // Step 2: Find weekdays associated with the routine IDs and populate class_id and routine_id
-    const allDaysWithNull = await Weekday.find({ routine_id: { $in: filteredRoutineIds } })
-      .populate({
-        path: 'class_id',
-        select: '-weekday' // Exclude the 'weekday' field from the populated 'class_id' object
-      });
+    // Step 2: Find weekdays associated with the routine IDs
+    const weekdaysWithClasses = await prisma.weekday.findMany({
+      where: { routineId: { in: routineIds } },
+      include: {
+        class: {
+          select: {
+            id: true,
+            name: true,
+            instructorName: true,
+            subjectCode: true,
+          },
+        },
+      },
+    });
 
-    // Filter out weekdays that do not have a valid class_id
-    const allDays = allDaysWithNull.filter(weekday => weekday.class_id !== null);
+    // Filter out weekdays without valid classes
+    const validWeekdays = weekdaysWithClasses.filter((weekday) => weekday.class !== null);
 
-    // Step 3: Send response with the filtered weekdays
-    res.send({ allClassForNotification: allDays });
+    // Step 3: Send response with the filtered weekdays and class information
+    res.status(200).json({ allClassForNotification: validWeekdays });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: 'Server Error', notificationOnClasses: [] });
+    console.error('Error fetching class notifications:', error);
+    res.status(500).json({ message: 'Server Error', notificationOnClasses: [] });
   }
 };

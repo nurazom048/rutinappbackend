@@ -1,60 +1,53 @@
-import jwt from 'jsonwebtoken';
-import express, { Request, Response } from 'express';
-
 
 // Firebase admin sdk from Firebase config
 import admin from 'firebase-admin';
 const serviceAccount = require('../../../config/firebase/admin.sdk');
-// const serviceAccountCredentials = JSON.stringify(serviceAccount);
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-
-const firebaseAdmin = admin;
-
-// Firebase auth from Firebase config
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 const firebaseApp = require('../../../config/firebase/firebase.config');
 const auth = getAuth(firebaseApp);
 
+//
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-dotenv.config(); // Load environment variables from .env file
+import express, { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { generateAuthToken, generateRefreshToken } from '../helper/Jwt.helper';
 import PendingAccount from '../../../Features/Account/models/pending_account.model';
 import { maineDB } from '../../../prisma/mongodb.connection';
 import prisma from '../../../prisma/schema/prisma.clint';
 
-//*********** loginAccount **********/
+//**********************************************************************************************/
+// --------------------------------- login Account --------------------------------------------/
+//**********************************************************************************************/
 export const loginAccount = async (req: Request, res: Response) => {
   const { username, password, email, oneSignalUserId } = req.body;
-  console.log('loginReq' + { username, password, email, oneSignalUserId })
 
   try {
-    let account, accountData, pendingAccount;
+    let account = null;
+    let accountData = null;
 
-    // Check if account is pending
-    pendingAccount = await PendingAccount.findOne({
-      $or: [{ username }, { email }],
-    });
-
+    // Step 1: Check for pending account status
+    const pendingAccount = await PendingAccount.findOne({ $or: [{ username }, { email }] });
     if (pendingAccount) {
       const pendingAccountCredential = await admin.auth().getUserByEmail(pendingAccount.email);
-      console.log('pendingAccountCredential: ', pendingAccountCredential);
 
-      // Check if email is verified
+      // Verify email status
       if (!pendingAccountCredential.emailVerified) {
-        return res.status(401).json({ message: "Email is not verified", account: { email: pendingAccount.email }, pendingAccount });
+        return res.status(401).json({
+          message: "Email is not verified",
+          account: { email: pendingAccount.email },
+        });
       }
 
-      // Check if academy request is pending
       if (!pendingAccount.isAccept) {
-        return res.status(402).json({ message: "Academy request is pending", account: { email: pendingAccount.email }, pendingAccount });
+        return res.status(402).json({
+          message: "Academy request is pending",
+          account: { email: pendingAccount.email },
+        });
       }
     }
 
-    console.log('username ' + username + ' email ' + email + ' password ' + password);
-
-    // Find account by username or email
+    // Step 2: Find account by username or email
     if (username) {
       account = await prisma.account.findUnique({ where: { username } });
     } else if (email) {
@@ -62,90 +55,86 @@ export const loginAccount = async (req: Request, res: Response) => {
         where: { email },
         include: { accountID: true },
       });
+
       if (accountData) {
         account = accountData.accountID;
       }
     }
 
-    // If no account found, return an error
+    // Step 3: Handle if no account found
     if (!account) {
       return res.status(400).json({ message: "User not found" });
     }
 
-    // Check if the account is linked to Google Sign-In
+    // Step 4: Check for Google Sign-In
     if (accountData?.googleSignIn) {
       return res.status(400).json({ message: "Try to continue with Google" });
     }
-    console.log('account ' + account.name + ' accountData ' + accountData?.password + ' password ' + password);
 
-    // Compare the provided password with the stored password (hashed)
+    // Step 5: Verify password
     const passwordMatch = await bcrypt.compare(password, accountData?.password || "");
-    if (!passwordMatch) {
-      return res.status(400).json({ message: "Incorrect password" });
+    if (!passwordMatch) return res.status(400).json({ message: "Incorrect password" });
+
+    // Step 6: Ensure accountData is not null for Firebase sign-in
+    if (!accountData || !accountData.email) {
+      return res.status(400).json({ message: "Account data is missing or incomplete" });
     }
 
-    // Sign in with Firebase
-    const userCredential = await signInWithEmailAndPassword(auth, accountData?.email!, password);
-    console.log(userCredential.user.emailVerified);
-
-    // Check if the email is verified on Firebase
-    const user = userCredential.user;
-    if (!user.emailVerified) {
-      console.log(user.email + 'not verified');
-      console.log({ message: "Email is not verified", email: user.email })
-      return res.status(401).json({ message: "Email is not verified", email: user.email });
+    // Firebase sign-in to verify email
+    const userCredential = await signInWithEmailAndPassword(auth, accountData.email, password);
+    if (!userCredential.user.emailVerified) {
+      return res.status(401).json({ message: "Email is not verified", email: userCredential.user.email });
     }
 
-    // Generate JWT tokens (auth token and refresh token)
+    // Step 7: Generate JWT tokens
     const authToken = generateAuthToken(account.id, account.username);
     const refreshToken = generateRefreshToken(account.id, account.username);
 
-    // Set tokens in response headers
-    res.setHeader('Authorization', `Bearer ${authToken}`);
-    res.setHeader('x-refresh-token', refreshToken);
+    // Set tokens in headers
+    res.setHeader("Authorization", `Bearer ${authToken}`);
+    res.setHeader("x-refresh-token", refreshToken);
 
-    // Update account with last login time
+    // Step 8: Update last login time and store hashed password
+    const hashedPassword = await bcrypt.hash(password, 10);
     await prisma.account.update({
       where: { id: account.id },
       data: { lastLoginTime: new Date() },
     });
 
-    // Update accountData with the oneSignalUserId and hashed password
-    const hashedPassword = await bcrypt.hash(password, 10);
     await prisma.accountData.update({
       where: { ownerAccountId: account.id },
       data: {
-        oneSignalUserId: oneSignalUserId,
-        password: hashedPassword, // Save the new hashed password
+        oneSignalUserId,
+        password: hashedPassword,
       },
     });
-    console.log({
-      message: "Login successful",
-      authToken,
-      refreshToken,
-      account,
-    });
-    // Respond with success message, tokens, and account details
+
+    // Step 9: Send success response with email
     res.status(200).json({
       message: "Login successful",
       authToken,
       refreshToken,
-      account,
+      account: {
+        ...account,
+        accountData: { email: accountData.email },
+      },
     });
-  } catch (error: any) {
-    console.error('Login error:', error);
 
-    // Handle Firebase authentication errors
+  } catch (error: any) {
+    console.error("Login error:", error);
+
     if (error.code === "auth/wrong-password") {
       return res.status(400).json({ message: "Wrong password" });
-    } else if (error.code === "auth/invalid-email") {
-      return res.status(400).json({ message: "Invalid email" });
-    } else {
-      // Handle any other errors
-      return res.status(500).json({ message: `Error logging in: ${error.message}` });
     }
+
+    if (error.code === "auth/invalid-email") {
+      return res.status(400).json({ message: "Invalid email" });
+    }
+
+    return res.status(500).json({ message: `Error logging in: ${error.message}` });
   }
 };
+
 
 //**********************************************************************************************/
 // --------------------------------- Create Account --------------------------------------------/
