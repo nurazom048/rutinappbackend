@@ -1,21 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
-
-// Models
-import Routine from '../models/routine.models';
-import Class from '../models/class.model';
-import Weekday from '../models/weakday.Model';
-import RoutineMember from '../models/routineMembers.Model';
-
-
-// routine firebase and helper
-import { deleteSummariesFromFirebaseBaseOnClassId } from '../firebase/summary.firebase';
-import { getClasses } from '../helper/class.helper';
-import { handleValidationError } from '../../../utils/validation_error';
-import { printD } from '../../../utils/utils';
-import { RoutineDB } from '../../../prisma/mongodb.connection';
-import SaveSummary from '../models/save_summary.model';
-import Summary from '../models/summary.models';
+import { Request, Response } from 'express';
 import prisma from '../../../prisma/schema/prisma.clint';
 
 
@@ -218,7 +201,7 @@ export const allWeekdayInClass = async (req: any, res: Response) => {
 //*************************************************************************/
 //-------------------------  edit_class   ---------------------------------/
 //*************************************************************************/
-export const edit_class = async (req: any, res: Response) => {
+export const editClass = async (req: any, res: Response) => {
   const { classID } = req.params;
   const { name, instructorName, subjectCode } = req.body;
 
@@ -311,26 +294,6 @@ export const remove_class = async (req: any, res: Response) => {
   }
 };
 
-
-
-//************ show_weekday_classes *************** */
-export const show_weekday_classes = async (req: any, res: Response) => {
-  const { routineID, weekday } = req.params;
-  console.log(weekday);
-  try {
-    const routine = await Routine.findById(routineID);
-    if (!routine) return res.status(404).send('Routine not found');
-
-    const classes = await Class.find({
-      weekday: 1,
-      rutin_id: routineID,
-    }).sort({ start_time: 1 });
-
-    res.send({ classes });
-  } catch (error: any) {
-    res.status(400).send({ error });
-  }
-};
 
 //*********************************************************************************************/
 //---------------------------- Full Routine or All Class --------------------------------------/

@@ -1,6 +1,5 @@
 import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import { Server } from 'socket.io';
 import http from 'http';
@@ -8,7 +7,7 @@ import jwt, { Secret } from 'jsonwebtoken';
 
 // Import routes
 import auth_route from './Features/Account/routes/auth_route';
-import routine_route from './Features/Routines/routes/Features';
+import routine_route from './Features/Routines/routes/routine_route';
 import class_route from './Features/Routines/routes/class_route';
 import summary from './Features/Routines/routes/summary_route';
 import account from './Features/Account/routes/account_route';
@@ -24,17 +23,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
 //****************************************************************************/
-//
-//...............................  Routes.....................................//
-//
+//...............................Routes......................................./
 //****************************************************************************/
 // Account and auth 
 app.use("/auth", auth_route);
 app.use("/account", account);
 
 // Routine 
-app.use("/rutin", routine_route);
-app.use("/routine", routine_route);
 app.use("/routine", routine_route);
 app.use("/class", class_route);
 app.use("/summary", summary);

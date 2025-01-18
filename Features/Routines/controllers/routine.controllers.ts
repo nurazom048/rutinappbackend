@@ -1,7 +1,6 @@
 import express, { Request, Response } from 'express';
 
 // Models
-import Routine from '../models/routine.models';
 import prisma from '../../../prisma/schema/prisma.clint';
 
 
@@ -15,8 +14,7 @@ const storage = getStorage();
 
 
 // routine firebase
-import { deleteSummariesFromFirebaseBaseOnRoutineID } from '../firebase/summary.firebase';
-import { getClasses } from '../helper/class.helper';
+import { deleteRoutineMediaFolder } from '../firebase/routines.firebase';
 
 //*******************************************************************************/
 //--------------------------------- createRoutine  ------------------------------/
@@ -101,11 +99,11 @@ export const createRoutine = async (req: any, res: Response) => {
 //--------------------------------- deleteRoutine  ------------------------------/
 //*******************************************************************************/
 
-export const deleteRoutine = async (req: any, res: Response) => {
-  const { id } = req.params;  // Routine ID from request parameters
+export const deleteRoutineById = async (req: any, res: Response) => {
+  const { routineID } = req.params;  // Routine ID from request parameters
   const ownerId = req.user?.id; // Ensure `req.user` is populated with authenticated user details
 
-  if (!id || !ownerId) {
+  if (!routineID || !ownerId) {
     return res.status(400).json({ message: "Routine ID and ownerId are required" });
   }
 
@@ -115,7 +113,7 @@ export const deleteRoutine = async (req: any, res: Response) => {
       // Step 1: Check if the routine exists and belongs to the user
       const existingRoutine = await prisma.routine.findFirst({
         where: {
-          id,
+          id: routineID,
           routineOwner: { id: ownerId },
         },
       });
@@ -131,15 +129,8 @@ export const deleteRoutine = async (req: any, res: Response) => {
         },
       });
 
-      // Step 3: Remove the routine from the user's list of created routines
-      await prisma.account.update({
-        where: { id: ownerId },
-        data: {
-          createdRoutines: { disconnect: { id: existingRoutine.id } },
-        },
-      });
 
-      // Step 4: Delete the routine
+      // Step 3: Delete the routine
       const deletedRoutine = await prisma.routine.delete({
         where: { id: existingRoutine.id },
       });
@@ -147,6 +138,8 @@ export const deleteRoutine = async (req: any, res: Response) => {
       // Return the deleted routine details
       return deletedRoutine;
     });
+    // delete all the media file from firebase
+    await deleteRoutineMediaFolder(routineID);
 
     // If transaction completes successfully
     res.status(200).json({
@@ -431,38 +424,6 @@ export const current_user_status = async (req: any, res: Response) => {
 };
 
 
-///.... joined Routine ......///
-export const joined_routine = async (req: any, res: Response) => {
-  const { id } = req.user;
-
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 1;
-
-  try {
-    const count = await Routine.countDocuments({ members: id });
-
-    const routines = await Routine.find({ members: id })
-      .select(" name ownerid")
-      .populate({
-        path: 'ownerid',
-
-        select: 'name image username'
-      })
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    if (!routines) return res.status(404).json({ message: "No joined routines found" });
-
-    res.status(200).json({
-      routines,
-      currentPage: page,
-      totalPages: Math.ceil(count / limit)
-    });
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ message: "Error retrieving joined routines" });
-  }
-};
 
 
 // //************** user can see all routines where owner or joined ***********

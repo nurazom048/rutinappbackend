@@ -1,10 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-
-// Models
-import Routine from '../models/routine.models';
-import RoutineMember from '../models/routineMembers.Model';
 import prisma from '../../../prisma/schema/prisma.clint';
 import { printD } from '../../../utils/utils';
+import { ActiveStatus } from '../../../utils/enums';
 
 
 
@@ -452,21 +449,27 @@ export const rejectMember = async (req: any, res: Response) => {
 };
 
 
-//********************  leave members  *****************//
-export const leave = async (req: any, res: Response) => {
+
+
+//******************** Leave Members Functionality *****************//
+export const leaveMember = async (req: any, res: Response) => {
   const { routineID } = req.params;
   const { id } = req.user;
-  // console.log(routineID);
 
   try {
     // Step 1: Find the Routine
-    const routine = await Routine.findById(routineID);
-    if (!routine) {
-      return res.status(404).json({ message: "Routine not found" });
-    }
+    const routine = await prisma.routine.findUnique({
+      where: { id: routineID },
+    });
+    if (!routine) return res.status(404).json({ message: "Routine not found" });
 
     // Step 2: Check if the user is a member and not the owner
-    const member = await RoutineMember.findOne({ memberID: id, RutineID: routineID });
+    const member = await prisma.routineMember.findFirst({
+      where: {
+        accountId: id,
+        routineId: routineID,
+      },
+    });
     if (!member) {
       return res.status(404).json({ message: "User is not a member" });
     }
@@ -475,12 +478,16 @@ export const leave = async (req: any, res: Response) => {
     }
 
     // Step 3: Remove the member and send a success message
-    const leaveMember = await RoutineMember.findOneAndDelete({ memberID: id, RutineID: routineID });
+    const leaveMember = await prisma.routineMember.delete({
+      where: {
+        id: member.id,
+      },
+    });
 
     res.json({
       message: "Routine leave successful",
-      activeStatus: "not_joined",
-      routine: leaveMember
+      activeStatus: ActiveStatus.NOT_JOINED, // Use the enum value here
+      routine: leaveMember,
     });
   } catch (error: any) {
     console.error(error);
@@ -490,36 +497,46 @@ export const leave = async (req: any, res: Response) => {
 
 
 
-//*****************   kickOut  ************************ */
+//***************** Kick Out Member ************************//
 export const kickOut = async (req: any, res: Response) => {
   const { routineID, memberID } = req.params;
   const { id } = req.user;
-  // console.log(routineID);
-  // console.log(memberID);
 
   try {
     // Step 1: Find the Routine and check permission
-    const routine = await Routine.findById(routineID);
+    const routine = await prisma.routine.findUnique({
+      where: { id: routineID },
+    });
     if (!routine) return res.status(404).json({ message: "Routine not found" });
 
-    // Check if the logged-in user is the owner or a captain
-    const isHavePermission = await RoutineMember.findOne({ RutineID: routine.id, memberID: req.user.id });
-    if (!isHavePermission || (isHavePermission.owner === false && isHavePermission.captain === false)) {
-      return res.json({ message: "Only the captain and owner can modify" });
+    // Check if the current user is the owner of the routine
+    if (routine.ownerAccountId !== id)
+      return res.status(403).json({ message: "Only the owner can kick out members" });
+
+
+    // Step 2: Check if the member is in the routine
+    const member = await prisma.routineMember.findFirst({
+      where: {
+        accountId: memberID,
+        routineId: routineID,
+      },
+    });
+    if (!member) {
+      return res.status(404).json({ message: "Member not found in this routine" });
     }
 
-    // Check if the member is in the routine and not the owner
-    const isMember = await RoutineMember.findOne({ RutineID: routine.id, memberID: routineID });
-    if (!isMember) return res.status(400).json({ message: "User already removed" });
-    if (isMember.owner === true) return res.status(400).json({ message: "No one can kick the owner" });
+    // Step 3: Prevent kicking out the owner
+    if (member.owner) {
+      return res.status(400).json({ message: "The owner cannot be removed from the routine" });
+    }
 
-    // Remove the member and send a message
-    await RoutineMember.findByIdAndDelete(isMember._id);
+    // Step 4: Remove the member
+    await prisma.routineMember.delete({ where: { id: member.id } });
 
-    res.json({ message: "The member is kicked out" });
+    res.json({ message: "Member successfully removed from the routine" });
   } catch (error: any) {
     console.error(error);
-    res.json({ message: error.toString() });
+    res.status(500).json({ message: "An error occurred while removing the member" });
   }
 };
 

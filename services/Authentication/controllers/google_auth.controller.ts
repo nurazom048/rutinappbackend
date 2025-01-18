@@ -2,10 +2,8 @@
 // Firebase admin sdk from Firebase config
 import admin from 'firebase-admin';
 const serviceAccount = require('../../../config/firebase/admin.sdk');
-//
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import prisma from '../../../prisma/schema/prisma.clint';
-import { AccountType } from '../../../utils/enum';
 const firebaseApp = require('../../../config/firebase/firebase.config');
 const auth = getAuth(firebaseApp);
 
@@ -16,6 +14,7 @@ import { generateAuthToken, generateRefreshToken, } from '../helper/Jwt.helper';
 import { generateAndSetTokens } from '../helper/Authentication';
 import PendingAccount from '../../../Features/Account/models/pending_account.model';
 import nodemailer from 'nodemailer';
+import { AccountType } from '@prisma/client';
 
 
 

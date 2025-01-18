@@ -1,21 +1,11 @@
 import express from 'express';
 import { verifyToken } from "../../../services/Authentication/helper/Authentication";
 const app = express();
-// Routine
-import {
-    createRoutine, deleteRoutine,
-    homeFeed, joined_routine, searchRoutine,
-    save_routines, save_and_unsave_routine, current_user_status,
-} from '../controllers/routine.controllers';
-
-// Members
-import {
-    addMember, removeMember, allMembers, notification_Off, acceptRequest, rejectMember, allRequest, kickOut, leave, sendMemberRequest,
-    notification_On,
-} from '../controllers/members_controller';
-import { addCaptain, removeCaptain } from '../controllers/captens.controller';
-import { permission_add_Pride, peremption_add_member } from '../middleware/member_mid';
-import { createRoutineValidation, Peremption_To_delete_Routine } from '../middleware/routines.middleware';
+import { createRoutine, homeFeed, searchRoutine, save_routines, save_and_unsave_routine, current_user_status, deleteRoutineById } from '../controllers/routine.controllers';
+import { addMember, removeMember, allMembers, notification_Off, acceptRequest, rejectMember, allRequest, kickOut, leaveMember, sendMemberRequest, notification_On } from '../controllers/members_controller';
+import { addCaptain, removeCaptain } from '../controllers/captans.controller';
+import { createRoutineValidation } from '../middleware/routines.middleware';
+import { routineModificationPermission } from '../middleware/permission.routine.mid';
 //
 //
 //
@@ -25,16 +15,15 @@ import { createRoutineValidation, Peremption_To_delete_Routine } from '../middle
 //****************************************************************************/
 
 app.post("/create", verifyToken, createRoutineValidation, createRoutine);// for create routine
-app.delete("/:id",
+app.delete("/:routineID",
     verifyToken,
-    Peremption_To_delete_Routine,
-    deleteRoutine,); // delete routine
+    routineModificationPermission,
+    deleteRoutineById,); // delete routine
 
 app.post("/home/:userID", verifyToken, homeFeed); /// feed {user can see her uploaded routines}
 app.post("/home", verifyToken, homeFeed); /// feed {user can see her uploaded routines and joined routines}
 
-//
-app.post('/joined', verifyToken, joined_routine);
+
 
 //.. search routine ...//
 app.get('/search', searchRoutine);
@@ -50,11 +39,11 @@ app.post('/captain/add', verifyToken, addCaptain);
 app.delete('/captain/remove', verifyToken, removeCaptain);
 
 //........... Add member .....//
-app.post('/member/add/:routineID/:username', verifyToken, peremption_add_member, addMember);
-app.post('/member/remove/:routineID/:username', verifyToken, peremption_add_member, removeMember);
+app.post('/member/add/:routineID/:username', verifyToken, routineModificationPermission, addMember);
+app.post('/member/remove/:routineID/:username', verifyToken, routineModificationPermission, removeMember);
 app.post('/member/:routineID/', allMembers);
-app.post('/member/leave/:routineID', verifyToken, leave);
-app.delete('/member/kickout/:routineID/:memberID', verifyToken, kickOut);
+app.post('/member/leave/:routineID', verifyToken, leaveMember);
+app.delete('/member/kickout/:routineID/:memberID', verifyToken, routineModificationPermission, kickOut);
 
 //
 app.post('/member/send_request/:routineID', verifyToken, sendMemberRequest);

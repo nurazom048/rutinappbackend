@@ -1,4 +1,3 @@
-
 // Firebase admin sdk from Firebase config
 import admin from 'firebase-admin';
 const serviceAccount = require('../../../config/firebase/admin.sdk');
@@ -8,23 +7,26 @@ const firebaseApp = require('../../../config/firebase/firebase.config');
 const auth = getAuth(firebaseApp);
 
 //
-import mongoose from 'mongoose';
 import express, { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { generateAuthToken, generateRefreshToken } from '../helper/Jwt.helper';
 import PendingAccount from '../../../Features/Account/models/pending_account.model';
-import { maineDB } from '../../../prisma/mongodb.connection';
 import prisma from '../../../prisma/schema/prisma.clint';
+import { AccountType } from '@prisma/client';
+import { handleLoginError } from '../helper/handel.err';
 
 //**********************************************************************************************/
 // --------------------------------- login Account --------------------------------------------/
 //**********************************************************************************************/
+
 export const loginAccount = async (req: Request, res: Response) => {
   const { username, password, email, oneSignalUserId } = req.body;
 
   try {
-    let account = null;
-    let accountData = null;
+    let account: any = null;
+    let accountData: any = null;
+    console.log("username " + username + " password " + password);
+    console.log("email " + email);
 
     // Step 1: Check for pending account status
     const pendingAccount = await PendingAccount.findOne({ $or: [{ username }, { email }] });
@@ -50,11 +52,19 @@ export const loginAccount = async (req: Request, res: Response) => {
     // Step 2: Find account by username or email
     if (username) {
       account = await prisma.account.findUnique({ where: { username } });
+      if (account) {
+        accountData = await prisma.accountData.findFirst({
+          where: {
+            ownerAccountId: account.id, // Use the correct field for the relation
+          },
+        });
+      }
     } else if (email) {
       accountData = await prisma.accountData.findFirst({
         where: { email },
         include: { accountID: true },
       });
+      console.log("accountData" + accountData);
 
       if (accountData) {
         account = accountData.accountID;
@@ -70,14 +80,39 @@ export const loginAccount = async (req: Request, res: Response) => {
     if (accountData?.googleSignIn) {
       return res.status(400).json({ message: "Try to continue with Google" });
     }
+    console.log(accountData?.password);
+    console.log(password);
 
     // Step 5: Verify password
     const passwordMatch = await bcrypt.compare(password, accountData?.password || "");
-    if (!passwordMatch) return res.status(400).json({ message: "Incorrect password" });
+    let firebasePasswordsMatch = false;
 
-    // Step 6: Ensure accountData is not null for Firebase sign-in
-    if (!accountData || !accountData.email) {
-      return res.status(400).json({ message: "Account data is missing or incomplete" });
+    if (!passwordMatch) {
+      try {
+        // Ensure accountData is not null before accessing email
+        if (!accountData || !accountData.email) {
+          return res.status(400).json({ message: "Account data is missing or incomplete" });
+        }
+
+        // Try to verify Firebase password
+        const userCredential = await signInWithEmailAndPassword(auth, accountData.email, password);
+        if (userCredential) {
+          firebasePasswordsMatch = true;
+
+          // Update the local password with the Firebase password
+          const hashedPassword = await bcrypt.hash(password, 10);
+          await prisma.accountData.update({
+            where: { ownerAccountId: account.id },
+            data: { password: hashedPassword },
+          });
+        }
+      } catch (error: any) {
+        return handleLoginError(error, res);
+      }
+    }
+
+    if (!passwordMatch && !firebasePasswordsMatch) {
+      return res.status(400).json({ message: "Incorrect password" });
     }
 
     // Firebase sign-in to verify email
@@ -119,58 +154,38 @@ export const loginAccount = async (req: Request, res: Response) => {
         accountData: { email: accountData.email },
       },
     });
-
   } catch (error: any) {
-    console.error("Login error:", error);
-
-    if (error.code === "auth/wrong-password") {
-      return res.status(400).json({ message: "Wrong password" });
-    }
-
-    if (error.code === "auth/invalid-email") {
-      return res.status(400).json({ message: "Invalid email" });
-    }
-
-    return res.status(500).json({ message: `Error logging in: ${error.message}` });
+    return handleLoginError(error, res);
   }
 };
+
 
 
 //**********************************************************************************************/
 // --------------------------------- Create Account --------------------------------------------/
 //**********************************************************************************************/
 
-
 export const createAccount = async (req: Request, res: Response) => {
   const { name, username, password, phone, email, accountType } = req.body;
-  console.log('create account ');
-  //start a session
-  const session = await maineDB.startSession();
-  session.startTransaction();
-  try {
-    // Start a transaction for creating account and account data
-    const result = await prisma.$transaction(async (prisma) => {
 
-      // Handle academy-specific request if applicable
-      if (accountType === "academy") {
-        const pendingRequestResult = await createPendingRequest(req, res, session); // Assuming defined elsewhere
-        return res.status(200).json(pendingRequestResult);
+  try {
+    // Step 1: Start a transaction for creating account and account data
+    const result = await prisma.$transaction(async (prisma) => {
+      // Step 2: Handle academy-specific request if applicable
+      if (accountType === AccountType.academy) {
+        const pendingRequestResult = await createPendingRequest(req);
+        return pendingRequestResult; // Return result here instead of sending response
       }
 
-      // Encrypt password if provided
+      // Step 3: Encrypt password if provided
       const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
 
-      // Create the account in the `Account` model
+      // Step 4: Create the account in the `Account` model
       const createdAccount = await prisma.account.create({
-        data: {
-          name,
-          username,
-          accountType,
-
-        },
+        data: { name, username, accountType },
       });
 
-      // Create related data in the `AccountData` model
+      // Step 5: Create related data in the `AccountData` model
       const createdAccountData = await prisma.accountData.create({
         data: {
           phone,
@@ -178,21 +193,20 @@ export const createAccount = async (req: Request, res: Response) => {
           password: hashedPassword,
           ownerAccountId: createdAccount.id,
           googleSignIn: false,
-
         },
       });
 
-      // Check if the email already exists in Firebase
+      // Step 6: Check if the email already exists in Firebase
       try {
         await admin.auth().getUserByEmail(email);
         throw new Error("auth/email-already-in-use");
       } catch (error: any) {
         if (error.code !== "auth/user-not-found") {
-          throw error;
+          throw error; // Propagate Firebase error if not user-not-found
         }
       }
 
-      // Create Firebase user account
+      // Step 7: Create Firebase user account
       const firebaseAuthCreate = await admin.auth().createUser({
         displayName: name,
         uid: createdAccount.id,
@@ -208,12 +222,13 @@ export const createAccount = async (req: Request, res: Response) => {
         firebaseAuthCreate,
       };
     });
-    console.log(result)
+
+    // Step 8: Send response only once
     res.status(200).json(result);
   } catch (error: any) {
     console.error("Error creating account:", error);
 
-    // Handle errors gracefully
+    // Step 9: Graceful error handling
     const errorMessage =
       error.code === "auth/invalid-email"
         ? "Invalid email"
@@ -226,22 +241,36 @@ export const createAccount = async (req: Request, res: Response) => {
     res.status(400).json({ message: errorMessage });
   }
 };
+
 // Create the createPendingRequest function
-const createPendingRequest = async (req: Request, res: Response, session: mongoose.ClientSession) => {
+const createPendingRequest = async (req: Request) => {
   const { name, username, password, phone, email, accountType, contractInfo } = req.body;
 
-  if (!contractInfo) return { message: 'contractInfo is required' };
+  // Step 1: Validate required fields
+  if (!contractInfo) {
+    return { message: "contractInfo is required" };
+  }
 
-  const emailAlreadyUsed = await PendingAccount.findOne({ email }).session(session);
-  if (emailAlreadyUsed) return { message: "Request already pending with this email" };
+  // Step 2: Check if email already exists in pending accounts
+  const emailAlreadyUsed = await PendingAccount.findOne({ email });
+  if (emailAlreadyUsed) {
+    return { message: "Request already pending with this email" };
+  }
 
+  // Step 3: Check if the email already exists in Firebase
+  try {
+    await admin.auth().getUserByEmail(email);
+    throw new Error("auth/email-already-in-use");
+  } catch (error: any) {
+    if (error.code !== "auth/user-not-found") {
+      throw error; // Propagate Firebase error if not user-not-found
+    }
+  }
 
-
-
-
-  // Encrypt the new password
+  // Step 4: Encrypt the new password
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  // Step 5: Create a pending account request
   const account = new PendingAccount({
     name,
     username,
@@ -250,24 +279,26 @@ const createPendingRequest = async (req: Request, res: Response, session: mongoo
     email,
     account_type: accountType,
     contractInfo,
-
   });
 
+  // Step 6: Create Firebase user account
   const firebaseAuthCreate = await admin.auth().createUser({
-    displayName: account.name,
     uid: account.id,
+    displayName: account.name,
     email: email,
     password: password,
     emailVerified: false,
   });
 
-  const createdAccount = await account.save({ session });
+  // Step 7: Save the pending account request
+  const createdAccount = await account.save();
 
-  return { message: "Request sent successfully", createdAccount, firebaseAuthCreate };
+  return {
+    message: "Request sent successfully",
+    createdAccount,
+    firebaseAuthCreate,
+  };
 };
-
-
-
 
 
 

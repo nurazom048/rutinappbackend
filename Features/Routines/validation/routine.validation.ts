@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../../../prisma/schema/prisma.clint';
-import { Day } from '../../../utils/enum';
+import { Day } from '@prisma/client';
 
 
 export const classValidation = (req: Request, res: Response, next: NextFunction) => {

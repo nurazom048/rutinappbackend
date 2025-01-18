@@ -19,7 +19,7 @@ const upload = multer({
 //... Edit account....///
 router.post("/edit", verifyToken, upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'image', maxCount: 1 }]), edit_account);
 router.post("/edit/change_password/", verifyToken, changePassword);
-// later add security
+// // later add security
 router.post("/edit/forgotPassword/", forgetPassword);
 
 router.route("/").post(verifyToken, upload.single('image'), view_my_account);

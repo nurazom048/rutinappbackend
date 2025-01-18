@@ -1,8 +1,3 @@
-//
-
-
-
-// print ==> consoloe.log()
 export const print = (string: string) => {
   console.log("Debug Print : " + string);
 };

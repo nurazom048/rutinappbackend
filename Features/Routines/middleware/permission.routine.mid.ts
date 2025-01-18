@@ -83,3 +83,31 @@ export const summaryModificationPermission = async (req: any, res: Response, nex
         return res.status(500).json({ message: "Internal Server Error." });
     }
 };
+
+//@ RoutineModificationPermission
+export const routineModificationPermission = async (req: any, res: Response, next: NextFunction) => {
+    const { routineID } = req.params;
+    const { id } = req.user;
+
+    try {
+
+        // Step 1: Check if routine exists
+        const routine = await prisma.routine.findFirst({ where: { id: routineID } });
+        if (!routine) return res.status(404).send({ message: 'Routine not found' });
+
+        // Step 2: Check permission: owner or captain
+        const routineMember = await prisma.routineMember.findFirst({
+            where: { routineId: routine.id, accountId: id },
+        });
+        if (!routineMember || (!routineMember.captain && routine.ownerAccountId.toString() !== id)) {
+            return res.status(401).json({ message: 'Only captains and owners can Modify Routine' });
+        }
+
+
+        next();
+
+    } catch (error) {
+        console.error('Error in checkClassAndPermission middleware:', error);
+        res.status(500).send({ message: 'Server error' });
+    }
+};

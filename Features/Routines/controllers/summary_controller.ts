@@ -1,17 +1,4 @@
 import express, { Request, Response } from 'express';
-// Models
-import Routine from '../models/routine.models';
-import Summary from '../models/summary.models';
-import RoutineMember from '../models/routineMembers.Model';
-import SaveSummary from '../models/save_summary.model';
-import { RoutineDB, maineDB } from '../../../prisma/mongodb.connection';
-
-// firebase
-import { summaryImageUploader } from '../firebase/summary.firebase';
-
-
-
-
 //! firebase
 const { initializeApp } = require('firebase/app');
 const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = require('firebase/storage');
@@ -22,11 +9,13 @@ const storage = getStorage();
 // prisma
 import prisma from '../../../prisma/schema/prisma.clint';
 import { imageStorageProvider } from '@prisma/client';
-//***************************************************************************************/
+import { summaryImageUploader } from '../firebase/routines.firebase';
+//
+//
+//
+//*********************************************************************************/
 //--------------------------- -add summary  --------------------------------------/
-//**************************************************************************************/
-
-
+//********************************************************************************/
 // Helper function to check file MIME types and upload summaries
 export const addSummary = async (req: any, res: Response) => {
   const { message, checkedType } = req.body;
@@ -158,36 +147,9 @@ export const get_class_summary_list = async (req: any, res: Response) => {
 };
 
 
-//************ update  summary list *************** */
-export const update_summary = async (req: any, res: Response) => {
-  const { summary_id } = req.params;
-  const { id } = req.user;
 
-  try {
-    // find the class that contains the summary
-    const finsSummary = await Summary.findByIdAndUpdate(summary_id, { text: req.body.text });
-    // const classInstance = await Class.findOne({ 'summary._id': summary_id });
-    if (!finsSummary) return res.status(404).json({ message: 'Summary not found' });
-
-    // find the routine that contains the class and check if the current user has permission to edit
-    const routineInstance = await Routine.findById(finsSummary.id);
-    if (!routineInstance) return res.status(404).json({ message: 'Routine not found' });
-    if (id !== routineInstance.ownerid.toString() && finsSummary.ownerId !== id)
-      return res.status(401).json({ message: 'You do not have permission to edit a summary' });
-
-    // update the summary and send response
-    const updatedSummary = await Summary.findByIdAndUpdate(summary_id, { text: req.body.text });
-    if (!updatedSummary) {
-      return res.status(404).json({ message: "Summary not found" });
-    }
-    return res.status(200).send({ message: "Summary Updated successfully" });
-  } catch (error: any) {
-    return res.status(400).send(error.message);
-  }
-};
 
 //************* SUMMARY STATUS ********************/
-
 export const summary_status = async (req: any, res: Response) => {
   try {
     const { summaryID } = req.params;
@@ -239,7 +201,6 @@ export const summary_status = async (req: any, res: Response) => {
 //*************************************************************************************/
 //--------------------------------- saveUnsaveSummary ----------------------------------/
 //*************************************************************************************/
-
 export const saveUnsaveSummary = async (req: any, res: Response) => {
   try {
     const { save, summaryId } = req.body;
