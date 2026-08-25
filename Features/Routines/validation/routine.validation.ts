@@ -5,6 +5,18 @@ import { Day } from '../../../prisma/client';
 
 const VALID_DAYS = ['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri'];
 
+export const normalizeDay = (d: any): 'sat' | 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' => {
+    const s = String(d || '').toLowerCase().trim();
+    if (s.startsWith('sun')) return 'sun';
+    if (s.startsWith('mon')) return 'mon';
+    if (s.startsWith('tue')) return 'tue';
+    if (s.startsWith('wed')) return 'wed';
+    if (s.startsWith('thu')) return 'thu';
+    if (s.startsWith('fri')) return 'fri';
+    if (s.startsWith('sat')) return 'sat';
+    return 'sun';
+};
+
 export const classValidation = (req: Request, res: Response, next: NextFunction) => {
     console.log(req.body);
 
@@ -22,12 +34,14 @@ export const classValidation = (req: Request, res: Response, next: NextFunction)
         if (!subjectCode) {
             return res.status(400).json({ message: "Validation failed: 'subjectCode' is required" });
         }
-        const normalizedWeekday = String(weekday || '').toLowerCase().trim();
+        const normalizedWeekday = normalizeDay(weekday);
         if (!weekday || typeof weekday !== "string" || !VALID_DAYS.includes(normalizedWeekday)) {
             return res.status(400).json({
                 message: `Validation failed: 'weekday' must be one of: ${VALID_DAYS.join(", ")}`,
             });
         }
+        req.body.weekday = normalizedWeekday;
+
         if (!room) {
             return res.status(400).json({ message: "Validation failed: 'room' is required" });
         }
@@ -133,13 +147,14 @@ export const weekdayValidation = (req: Request, res: Response, next: NextFunctio
         }
 
         const validDays = ['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri'];
-        const normalizedDay = String(day || '').toLowerCase().trim();
+        const normalizedDay = normalizeDay(day);
 
         if (!day || !validDays.includes(normalizedDay)) {
             return res.status(400).json({
                 message: `Validation failed: 'day' must be one of: ${validDays.join(", ")}`,
             });
         }
+        req.body.day = normalizedDay;
 
         const startTimeMills: number = new Date(startTime).getTime();
         const endTimeMills: number = new Date(endTime).getTime();
@@ -162,3 +177,4 @@ export const weekdayValidation = (req: Request, res: Response, next: NextFunctio
         return res.status(500).json({ message: error.message || 'Internal server error in validation' });
     }
 };
+

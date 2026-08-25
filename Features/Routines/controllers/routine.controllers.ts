@@ -432,42 +432,80 @@ export const allClass = async (req: any, res: Response) => {
   }
 };
 
+const normalizeDayHelper = (d: any): 'sat' | 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' => {
+  const s = String(d || '').toLowerCase().trim();
+  if (s.startsWith('sun')) return 'sun';
+  if (s.startsWith('mon')) return 'mon';
+  if (s.startsWith('tue')) return 'tue';
+  if (s.startsWith('wed')) return 'wed';
+  if (s.startsWith('thu')) return 'thu';
+  if (s.startsWith('fri')) return 'fri';
+  if (s.startsWith('sat')) return 'sat';
+  return 'sun';
+};
+
 export const create_class = async (req: any, res: Response) => {
-  const { name, subjectCode, instructorName, startTime, endTime, room, weekday } = req.body;
+  const { name, subjectCode, instructorName, startTime, endTime, room, weekday, schedules } = req.body;
   const routineId = req.params.routineId || req.params.routineID;
 
   if (!routineId) return res.status(400).json({ message: "Routine ID is required" });
 
   try {
-    const parsedStartTime = new Date(startTime);
-    const parsedEndTime = new Date(endTime);
-
-    if (isNaN(parsedStartTime.getTime()) || isNaN(parsedEndTime.getTime())) {
-      return res.status(400).json({ message: "Invalid startTime or endTime format" });
-    }
-
-    const formattedWeekday = String(weekday).toLowerCase().trim() as any;
-
     const result = await prisma.$transaction(async (tx) => {
       const createdClass = await tx.class.create({
         data: { name, subjectCode, instructorName, routineId },
       });
 
-      const createdWeekday = await tx.weekday.create({
-        data: {
-          class: { connect: { id: createdClass.id } },
-          routine: { connect: { id: routineId } },
-          Day: formattedWeekday,
-          room: String(room),
-          startTime: parsedStartTime,
-          endTime: parsedEndTime,
-        },
-      });
+      const createdWeekdays = [];
 
-      return { createdClass, createdWeekday };
+      if (Array.isArray(schedules) && schedules.length > 0) {
+        for (const item of schedules) {
+          const itemDay = normalizeDayHelper(item.day || item.Day || weekday);
+          const itemRoom = String(item.roomNumber || item.room || room);
+          const itemStart = new Date(item.startTime || startTime);
+          const itemEnd = new Date(item.endTime || endTime);
+
+          const wd = await tx.weekday.create({
+            data: {
+              class: { connect: { id: createdClass.id } },
+              routine: { connect: { id: routineId } },
+              Day: itemDay,
+              room: itemRoom,
+              startTime: itemStart,
+              endTime: itemEnd,
+            },
+          });
+          createdWeekdays.push(wd);
+        }
+      } else {
+        const parsedStartTime = new Date(startTime);
+        const parsedEndTime = new Date(endTime);
+        const formattedWeekday = normalizeDayHelper(weekday);
+
+        const wd = await tx.weekday.create({
+          data: {
+            class: { connect: { id: createdClass.id } },
+            routine: { connect: { id: routineId } },
+            Day: formattedWeekday,
+            room: String(room),
+            startTime: parsedStartTime,
+            endTime: parsedEndTime,
+          },
+        });
+        createdWeekdays.push(wd);
+      }
+
+      return { createdClass, createdWeekdays };
     });
-    console.log({ message: "Class and weekday created successfully:", result });
-    res.status(201).json({ message: "Class and weekday created successfully", result });
+
+    console.log({ message: "Class and weekday(s) created successfully:", result });
+    res.status(201).json({
+      message: "Class and weekday created successfully",
+      result: {
+        createdClass: result.createdClass,
+        createdWeekday: result.createdWeekdays[0]
+      }
+    });
   } catch (error: any) {
     console.error({ message: "Error creating class and weekday", error });
     res.status(500).json({ message: "Internal Server Error", error: error.message });
@@ -491,15 +529,48 @@ export const findClass = async (req: any, res: Response) => {
 
 export const editClass = async (req: any, res: Response) => {
   const { classID } = req.params;
-  const { name, instructorName, subjectCode } = req.body;
+  const { name, instructorName, subjectCode, schedules, weekdays: bodyWeekdays, addWeekdays, removeWeekdayIds } = req.body;
 
   try {
+    const existingClass = await prisma.class.findUnique({ where: { id: classID } });
+    if (!existingClass) return res.status(404).json({ message: "Class not found" });
+
     const updatedClass = await prisma.class.update({
       where: { id: classID },
-      data: { name, instructorName, subjectCode },
+      data: {
+        ...(name && { name }),
+        ...(instructorName && { instructorName }),
+        ...(subjectCode && { subjectCode }),
+      },
     });
 
-    res.status(200).json({ class: updatedClass, message: 'Class updated successfully' });
+    const schedulesList = schedules || bodyWeekdays || addWeekdays;
+
+    if (Array.isArray(schedulesList) && schedulesList.length > 0) {
+      await prisma.weekday.deleteMany({ where: { classId: classID } });
+
+      for (const item of schedulesList) {
+        const itemDay = normalizeDayHelper(item.day || item.Day);
+        const itemRoom = String(item.roomNumber || item.room || '');
+        const itemStart = new Date(item.startTime);
+        const itemEnd = new Date(item.endTime);
+
+        await prisma.weekday.create({
+          data: {
+            classId: classID,
+            routineId: existingClass.routineId,
+            Day: itemDay,
+            room: itemRoom,
+            startTime: itemStart,
+            endTime: itemEnd,
+          },
+        });
+      }
+    }
+
+    const updatedWeekdays = await prisma.weekday.findMany({ where: { classId: classID } });
+
+    res.status(200).json({ class: updatedClass, weekdays: updatedWeekdays, message: 'Class updated successfully' });
   } catch (error: any) {
     console.error('Error updating class:', error);
     res.status(500).send({ message: error.message });
