@@ -1,35 +1,75 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
-const DOMAIN = process.env.SITE_DOMAIN || "https://classmaster.top";
-const LOGO_URL = `${DOMAIN}/assets/logo.png`;
+export const getFrontendDomain = (): string => {
+  const env = (globalThis as any).process?.env || {};
+  const domain = env.FRONTEND_URL || env.SITE_DOMAIN || 'https://classmaster.top';
+  return domain.replace(/\/+$/, '');
+};
 
 /**
- * 1. WebSite Schema Generator (Enables Google Sitelinks Search Box)
+ * 1. WebSite & Sitelinks Schema Generator (Enables Google Sitelinks Search Box and Direct Navigation Sitelinks)
  */
 export function generateWebSiteSchema() {
-  return {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Classmaster",
-    "alternateName": ["Classmaster Top", "Classmaster Platform"],
-    "url": DOMAIN,
-    "description": "Classmaster is an all-in-one educational platform for routines, notices, and academic institution management.",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": {
-        "@type": "EntryPoint",
-        "urlTemplate": `${DOMAIN}/search?q={search_term_string}`
-      },
-      "query-input": "required name=search_term_string"
+  const DOMAIN = getFrontendDomain();
+  
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Classmaster",
+      "alternateName": ["Classmaster Top", "Classmaster Educational Platform"],
+      "url": DOMAIN,
+      "description": "Classmaster is an all-in-one educational platform connecting students, teachers, and institutions with dynamic class routines, notices, and academic tools.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": `${DOMAIN}/search?q={search_term_string}`
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "Classmaster Navigation Sitelinks",
+      "itemListElement": [
+        {
+          "@type": "SiteNavigationElement",
+          "position": 1,
+          "name": "About Classmaster",
+          "description": "Learn more about Classmaster educational platform and services.",
+          "url": `${DOMAIN}/about`
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 2,
+          "name": "Notices & Announcements",
+          "description": "View official notices, exam routines, and academic updates.",
+          "url": `${DOMAIN}/search`
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 3,
+          "name": "User & Academy Profiles",
+          "description": "Explore institutions, teachers, and student profiles on Classmaster.",
+          "url": `${DOMAIN}/profile`
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 4,
+          "name": "Contact & Support",
+          "description": "Get in touch with Classmaster support and institution admins.",
+          "url": `${DOMAIN}/contact`
+        }
+      ]
     }
-  };
+  ];
 }
 
 /**
  * 2. Person Schema Generator (User Profiles)
  */
 export function generatePersonSchema(user: any) {
+  const DOMAIN = getFrontendDomain();
   const profileUrl = `${DOMAIN}/profile/${encodeURIComponent(user.username)}`;
   const schema: any = {
     "@context": "https://schema.org",
@@ -63,6 +103,7 @@ export function generatePersonSchema(user: any) {
  * 3. EducationalOrganization Schema Generator (Institutions/Coaching Centers)
  */
 export function generateEducationalOrganizationSchema(institution: any) {
+  const DOMAIN = getFrontendDomain();
   const instUrl = `${DOMAIN}/institution/${encodeURIComponent(institution.username || institution.name)}`;
   const schema: any = {
     "@context": "https://schema.org",
@@ -125,11 +166,10 @@ export function extractTextFromDescription(desc: any): string {
  * 4. Article / Announcement Schema Generator (Notices)
  */
 export function generateArticleSchema(notice: any) {
+  const DOMAIN = getFrontendDomain();
+  const LOGO_URL = `${DOMAIN}/assets/logo.png`;
   const noticeUrl = `${DOMAIN}/notice/${notice.id}`;
   const publisherName = notice.Account?.name || "Classmaster";
-  const publisherImage = notice.Account?.image
-    ? (notice.Account.image.startsWith("http") ? notice.Account.image : `${DOMAIN}/${notice.Account.image}`)
-    : LOGO_URL;
 
   const plainDesc = extractTextFromDescription(notice.description);
 

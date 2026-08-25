@@ -1,7 +1,10 @@
-import { Request, Response } from 'express';
 import prisma from '../../../prisma/schema/prisma.clint';
 
-const DOMAIN = process.env.SITE_DOMAIN || 'https://classmaster.top';
+const getFrontendDomain = (): string => {
+  const env = (globalThis as any).process?.env || {};
+  const domain = env.FRONTEND_URL || env.SITE_DOMAIN || 'https://classmaster.top';
+  return domain.replace(/\/+$/, '');
+};
 
 function escapeXml(unsafe: string): string {
   if (!unsafe) return '';
@@ -21,8 +24,10 @@ function formatDate(date?: Date | null): string {
 /**
  * Controller to generate dynamic XML sitemap conforming to sitemaps.org spec
  */
-export const generateSitemap = async (req: Request, res: Response) => {
+export const generateSitemap = async (req: any, res: any) => {
   try {
+    const DOMAIN = getFrontendDomain();
+
     // 1. Static Pages
     const staticUrls = [
       { url: `${DOMAIN}/`, priority: '1.0', changefreq: 'daily' },
@@ -73,7 +78,7 @@ export const generateSitemap = async (req: Request, res: Response) => {
       take: 1000,
     });
 
-    // XML Construction
+    // XML Construction - Ensure NO leading whitespace or blank lines before <?xml
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
@@ -124,10 +129,10 @@ export const generateSitemap = async (req: Request, res: Response) => {
 
     xml += `</urlset>`;
 
-    // Set XML Response Headers
-    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    // Set headers strictly as requested
+    res.set('Content-Type', 'application/xml');
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=14400');
-    return res.status(200).send(xml);
+    return res.status(200).send(xml.slice(xml.indexOf('<?xml')));
   } catch (error: any) {
     console.error('Error generating sitemap.xml:', error);
     return res.status(500).json({ message: 'Failed to generate sitemap', error: error.message });
